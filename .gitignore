@@ -1,0 +1,19 @@
+# Android / Gradle
+app/.gradle/
+app/build/
+app/app/build/
+app/local.properties
+app/.kotlin/
+*.iml
+.idea/
+captures/
+.externalNativeBuild/
+.cxx/
+
+# Pipeline dati
+node_modules/
+public/
+
+# Sistema
+.DS_Store
+Thumbs.db
