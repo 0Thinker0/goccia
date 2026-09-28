@@ -12,8 +12,9 @@ on:
       gpu:
         description: "Rendering grafico dell'emulatore"
         type: choice
-        options: [swiftshader_indirect, swangle_indirect, guest]
-        default: swiftshader_indirect
+        # con swiftshader_indirect MapLibre non disegna segnaposto ed etichette: swangle si
+        options: [swangle_indirect, swiftshader_indirect, guest]
+        default: swangle_indirect
       giro:
         description: "Tutte le schermate o solo le mappe"
         type: choice
@@ -24,11 +25,11 @@ permissions:
   contents: write
 
 concurrency:
-  group: prova-${{ github.ref }}-${{ inputs.gpu || 'swiftshader_indirect' }}-${{ inputs.giro || 'completo' }}
+  group: prova-${{ github.ref }}-${{ inputs.gpu || 'swangle_indirect' }}-${{ inputs.giro || 'completo' }}
   cancel-in-progress: true
 
 env:
-  GPU: ${{ inputs.gpu || 'swiftshader_indirect' }}
+  GPU: ${{ inputs.gpu || 'swangle_indirect' }}
   GIRO: ${{ inputs.giro || 'completo' }}
 
 jobs:
@@ -78,7 +79,7 @@ jobs:
           [ -d /tmp/prova ] || exit 0
           # il giro di serie va in ci-prova, le varianti in un ramo a parte
           RAMO=ci-prova
-          if [ "$GPU" != swiftshader_indirect ] || [ "$GIRO" != completo ]; then RAMO="ci-prova-$GIRO-$GPU"; fi
+          if [ "$GPU" != swangle_indirect ] || [ "$GIRO" != completo ]; then RAMO="ci-prova-$GIRO-$GPU"; fi
           cd /tmp/prova
           git init -q -b "$RAMO"
           git add .

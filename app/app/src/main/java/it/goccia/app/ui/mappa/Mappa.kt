@@ -237,13 +237,14 @@ fun SchermataMappa(
             val elementi = vistaEv?.zona?.vicine.orEmpty().take(MASSIMO_PIN).map { cv ->
                 val c = cv.colonnina
                 val sel = c.id == selezionataEv
-                val testo = c.kw?.let { Formati.kw(it) } ?: "–"
+                // senza potenza nota il segnaposto mostra solo il fulmine
+                val testo = c.kw?.let { Formati.kw(it) } ?: ""
                 val chiave = "c-$testo-$sel"
                 if (immaginiCaricate.add(chiave)) {
                     s.addImage(
                         chiave,
-                        if (sel) pin.disegna(testo, Colori.Petrolio.toArgb(), true)
-                        else pin.disegna(testo, android.graphics.Color.WHITE, false, Colori.PetrolioScuro.toArgb(), Colori.Petrolio.toArgb()),
+                        if (sel) pin.disegna(testo, Colori.Petrolio.toArgb(), true, fulmine = testo.isEmpty())
+                        else pin.disegna(testo, android.graphics.Color.WHITE, false, Colori.PetrolioScuro.toArgb(), Colori.Petrolio.toArgb(), fulmine = testo.isEmpty()),
                     )
                 }
                 Feature.fromGeometry(Point.fromLngLat(c.lon, c.lat)).apply {

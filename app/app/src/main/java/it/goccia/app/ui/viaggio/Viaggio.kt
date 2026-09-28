@@ -571,12 +571,12 @@ private fun CardSosta(
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             if (mediaAutostrada != null && !d.autostradale) {
                 val cent = ((mediaAutostrada - p.prezzo.millesimi) / 10.0).roundToInt()
-                if (cent >= 2) Badge("−$cent cent vs area di servizio", Colori.VerdeChiaro, Colori.VerdeTesto)
+                if (cent >= 2) Badge("−$cent cent vs autostrada", Colori.VerdeChiaro, Colori.VerdeTesto)
             }
             if (quantita != null) {
                 val risparmio = mediaAutostrada?.takeIf { !d.autostradale }?.let { (it - p.prezzo.millesimi) / 1000.0 * quantita }
                 Badge(
-                    if (risparmio != null && risparmio >= 1) "Risparmi ~${Formati.euro(risparmio)} sul pieno"
+                    if (risparmio != null && risparmio >= 1) "Risparmi ~${Formati.euro(risparmio)}"
                     else "~${Formati.numero(quantita, 0)} ${if (carburante == Carburante.METANO) "kg" else "l"} · ${Formati.euro(quantita * p.prezzo.euro)}",
                     Colori.Superficie,
                     Colori.TestoChip,
@@ -617,7 +617,10 @@ private fun RigaAlternativa(a: LungoIlPercorso, riferimento: Int?, onClick: () -
     }
 }
 
-/** Un segnaposto sulla mappa del viaggio: prezzo di un distributore o potenza di una colonnina. */
+/**
+ * Un segnaposto sulla mappa del viaggio: prezzo di un distributore o potenza di una colonnina
+ * (testo vuoto: solo il fulmine). [ordine] piu basso = piu importante, disegnato sopra gli altri.
+ */
 data class PinViaggio(
     val lat: Double,
     val lon: Double,
@@ -627,7 +630,12 @@ data class PinViaggio(
     val ordine: Double,
     val coloreTesto: Int = android.graphics.Color.WHITE,
     val coloreBordo: Int = android.graphics.Color.WHITE,
-)
+) {
+    companion object {
+        /** l'ordine delle soste scelte: sopra a tutto */
+        const val SCELTO = -1_000_000.0
+    }
+}
 
 private fun pinCarburante(s: StatoViaggio.Pronto): List<PinViaggio> {
     val sosteId = s.piano.soste.map { it.punto.distributore.id }.toSet()
@@ -635,7 +643,7 @@ private fun pinCarburante(s: StatoViaggio.Pronto): List<PinViaggio> {
     return mostrati.map { p ->
         val scelto = p.distributore.id in sosteId || (s.piano.senzaSoste && p == s.piano.migliore)
         val colore = if (scelto) Colori.Inchiostro else if (p.distributore.autostradale) Colori.Rosso else Colori.VerdeTesto
-        PinViaggio(p.distributore.lat, p.distributore.lon, Formati.prezzo(p.prezzo.millesimi), colore.toArgb(), scelto, if (scelto) -1.0 else p.prezzo.millesimi.toDouble())
+        PinViaggio(p.distributore.lat, p.distributore.lon, Formati.prezzo(p.prezzo.millesimi), colore.toArgb(), scelto, if (scelto) PinViaggio.SCELTO else p.prezzo.millesimi.toDouble())
     }
 }
 
@@ -663,7 +671,7 @@ internal fun MappaViaggio(campioni: List<PuntoPercorso>, pin: List<PinViaggio>) 
                 )
                 val elementi = pin.map { p ->
                     val chiave = "v-${p.testo}-${p.colore}-${p.coloreTesto}-${p.scelto}"
-                    stile.addImage(chiave, disegnatore.disegna(p.testo, p.colore, p.scelto, p.coloreTesto, p.coloreBordo))
+                    stile.addImage(chiave, disegnatore.disegna(p.testo, p.colore, p.scelto, p.coloreTesto, p.coloreBordo, fulmine = p.testo.isEmpty()))
                     Feature.fromGeometry(Point.fromLngLat(p.lon, p.lat)).apply {
                         addStringProperty("icona", chiave)
                         addNumberProperty("ordine", p.ordine)
@@ -676,7 +684,9 @@ internal fun MappaViaggio(campioni: List<PuntoPercorso>, pin: List<PinViaggio>) 
                         PropertyFactory.iconImage(Expression.get("icona")),
                         PropertyFactory.iconAnchor(Property.ICON_ANCHOR_BOTTOM),
                         PropertyFactory.iconAllowOverlap(true),
-                        PropertyFactory.symbolSortKey(Expression.get("ordine")),
+                        // qui si vedono tutti: chi viene disegnato dopo sta sopra, quindi la sosta scelta
+                        // (ordine piu basso) deve avere la chiave piu alta
+                        PropertyFactory.symbolSortKey(Expression.product(Expression.literal(-1), Expression.get("ordine"))),
                     ),
                 )
                 val lat = campioni.map { it.lat }
