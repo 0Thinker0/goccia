@@ -1,8 +1,12 @@
 package it.goccia.app.ui
 
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import it.goccia.app.Contenitore
+import it.goccia.app.guida.GuidaInCorso
+import it.goccia.app.guida.ServizioGuida
+import it.goccia.app.logica.PercorsoGuida
 import it.goccia.app.dati.Auto
 import it.goccia.app.dati.Avviso
 import it.goccia.app.dati.Carburante
@@ -149,6 +153,9 @@ sealed interface StatoViaggio {
         val livello: Double,
         val nomeAuto: String?,
         val capienza: Double,
+        val consumo: Double = 6.0,
+        val pienoCompleto: Boolean = true,
+        val self: Boolean = true,
     ) : StatoViaggio
 
     data class ProntoElettrico(
@@ -767,6 +774,9 @@ class GocciaViewModel(private val c: Contenitore) : ViewModel() {
                         livello = livello,
                         nomeAuto = auto?.nome,
                         capienza = capienza,
+                        consumo = consumo,
+                        pienoCompleto = pienoCompleto,
+                        self = u.impostazioni.preferisciSelf,
                     )
                 }
                 val recente = ViaggioRecente(partenza.nome, da.lat, da.lon, arrivo.nome, arrivo.coordinate.lat, arrivo.coordinate.lon, System.currentTimeMillis())
@@ -789,6 +799,48 @@ class GocciaViewModel(private val c: Contenitore) : ViewModel() {
     fun chiudiViaggio() {
         lavoroViaggio?.cancel()
         _viaggio.value = StatoViaggio.Vuoto
+    }
+
+    /**
+     * Avvia la modalita autostrada sul viaggio appena calcolato: il servizio segue la posizione
+     * lungo il percorso. Falso se manca il viaggio o il permesso di posizione.
+     */
+    fun avviaGuida(context: Context): Boolean {
+        val u = utente.value
+        val (percorso, livello) = when (val s = _viaggio.value) {
+            is StatoViaggio.Pronto -> PercorsoGuida.AlCarburante(
+                destinazione = s.arrivo.nome,
+                lunghezzaKm = s.percorso.distanzaKm,
+                campioni = s.campioni,
+                strade = s.percorso.strade,
+                lungo = s.lungo,
+                carburante = s.carburante,
+                self = s.self,
+                capienza = s.capienza,
+                consumo = s.consumo,
+                pienoCompleto = s.pienoCompleto,
+            ) to s.livello
+            is StatoViaggio.ProntoElettrico -> PercorsoGuida.Elettrico(
+                destinazione = s.arrivo.nome,
+                lunghezzaKm = s.percorso.distanzaKm,
+                campioni = s.campioni,
+                strade = s.percorso.strade,
+                lungo = s.lungo,
+                capacita = s.auto.capienza,
+                consumo = s.auto.consumo,
+                acKw = s.auto.acKw,
+                dcKw = s.auto.dcKw,
+                prese = u.prese,
+                arrivoMinimo = s.piano.arrivoMinimo,
+                tariffa = ::tariffaDi,
+            ) to s.piano.partenza
+            else -> return false
+        }
+        if (!ServizioGuida.permessoPosizione(context)) return false
+        GuidaInCorso.prepara(percorso, livello)
+        val avviato = ServizioGuida.avvia(context)
+        if (!avviato) GuidaInCorso.termina()
+        return avviato
     }
 
     /** Distanza dal centro attuale, per le liste (preferiti, avvisi). */

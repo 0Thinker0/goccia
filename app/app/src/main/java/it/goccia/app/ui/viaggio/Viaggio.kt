@@ -113,6 +113,7 @@ fun SchermataViaggio(
     onDistributore: (Distributore) -> Unit,
     onAuto: () -> Unit,
     onColonnina: (Colonnina) -> Unit,
+    onAutostrada: () -> Unit,
 ) {
     LaunchedEffect(Unit) {
         vm.avvia()
@@ -122,11 +123,11 @@ fun SchermataViaggio(
     when (val s = stato) {
         is StatoViaggio.Pronto -> {
             BackHandler { vm.chiudiViaggio() }
-            Risultato(vm, s, onDistributore)
+            Risultato(vm, s, onDistributore, onAutostrada)
         }
         is StatoViaggio.ProntoElettrico -> {
             BackHandler { vm.chiudiViaggio() }
-            RisultatoElettrico(vm, s, onColonnina)
+            RisultatoElettrico(vm, s, onColonnina, onAutostrada)
         }
         else -> Pianifica(vm, s, onAuto)
     }
@@ -419,8 +420,9 @@ private fun Scelta(
 private fun durata(minuti: Int): String = if (minuti < 60) "$minuti min" else "${minuti / 60} h ${minuti % 60} min"
 
 @Composable
-private fun Risultato(vm: GocciaViewModel, s: StatoViaggio.Pronto, onDistributore: (Distributore) -> Unit) {
+private fun Risultato(vm: GocciaViewModel, s: StatoViaggio.Pronto, onDistributore: (Distributore) -> Unit, onAutostrada: () -> Unit) {
     val context = LocalContext.current
+    val avviaGuida = rememberAvvioGuida(vm, onAutostrada)
     val vista by vm.vista.collectAsStateWithLifecycle()
     val piano = s.piano
     val carburante = s.carburante
@@ -451,7 +453,16 @@ private fun Risultato(vm: GocciaViewModel, s: StatoViaggio.Pronto, onDistributor
                     Text("${s.partenza.nome} → ${s.arrivo.nome}", style = Testi.Titolo, maxLines = 2)
                     Text("${Formati.numero(s.percorso.distanzaKm, 0)} km · ${durata(s.percorso.durataMin)}", style = Testi.Didascalia.copy(color = Colori.Testo2, fontWeight = FontWeight.SemiBold))
                 }
-                if (autostrada) Badge("Autostrada", Colori.GrigioBadge, Colori.TestoChip, icona = Icone.Autostrada)
+                if (autostrada) {
+                    // come nel design: la targhetta porta alla modalita autostrada
+                    Badge(
+                        "Autostrada",
+                        Colori.GrigioBadge,
+                        Colori.TestoChip,
+                        modifier = Modifier.clip(RoundedCornerShape(50)).clickable(onClick = avviaGuida),
+                        icona = Icone.Autostrada,
+                    )
+                }
             }
 
             if (piano.senzaSoste) {
@@ -502,6 +513,8 @@ private fun Risultato(vm: GocciaViewModel, s: StatoViaggio.Pronto, onDistributor
             if (s.lungo.isEmpty()) {
                 Text("Non abbiamo trovato distributori con prezzi recenti lungo questo percorso.", style = Testi.Didascalia.copy(color = Colori.Testo2))
             }
+
+            CardModalitaAutostrada(elettrica = false, onAvvia = avviaGuida)
 
             val tappe = piano.soste.map { it.punto.distributore }.ifEmpty { listOfNotNull(piano.migliore?.distributore) }
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {

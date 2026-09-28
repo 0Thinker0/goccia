@@ -71,8 +71,9 @@ private fun pinElettrici(s: StatoViaggio.ProntoElettrico): List<PinViaggio> {
 }
 
 @Composable
-internal fun RisultatoElettrico(vm: GocciaViewModel, s: StatoViaggio.ProntoElettrico, onColonnina: (Colonnina) -> Unit) {
+internal fun RisultatoElettrico(vm: GocciaViewModel, s: StatoViaggio.ProntoElettrico, onColonnina: (Colonnina) -> Unit, onAutostrada: () -> Unit) {
     val context = LocalContext.current
+    val avviaGuida = rememberAvvioGuida(vm, onAutostrada)
     val utente by vm.utente.collectAsStateWithLifecycle()
     val piano = s.piano
     val auto = s.auto
@@ -234,6 +235,8 @@ internal fun RisultatoElettrico(vm: GocciaViewModel, s: StatoViaggio.ProntoElett
                     style = Testi.Didascalia.copy(color = Colori.Testo2),
                 )
             }
+
+            CardModalitaAutostrada(elettrica = true, onAvvia = avviaGuida)
 
             BottonePrimario(
                 "Avvia con Google Maps",

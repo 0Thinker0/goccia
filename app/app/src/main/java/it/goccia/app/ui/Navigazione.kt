@@ -60,6 +60,8 @@ import it.goccia.app.ui.profilo.SchermataStatistiche
 import it.goccia.app.ui.rifornimento.SchermataRifornimento
 import it.goccia.app.ui.tema.Colori
 import it.goccia.app.ui.tema.Testi
+import it.goccia.app.guida.GuidaInCorso
+import it.goccia.app.ui.viaggio.SchermataAutostrada
 import it.goccia.app.ui.viaggio.SchermataViaggio
 
 object Rotte {
@@ -81,6 +83,7 @@ object Rotte {
     const val SOSTIENI = "sostieni"
     const val COLONNINA = "colonnina/{id}"
     const val TARIFFA = "tariffa"
+    const val AUTOSTRADA = "autostrada"
 
     fun dettaglio(provincia: String, id: Long) = "dettaglio/$provincia/$id"
     fun rifornimento(provincia: String? = null, id: Long? = null) = "rifornimento?prov=${provincia ?: ""}&id=${id ?: -1}"
@@ -110,7 +113,13 @@ private fun NavHostController.vaiAScheda(rotta: String) {
 }
 
 @Composable
-fun GocciaRadice(vm: GocciaViewModel, distributoreDaAprire: Pair<String, Long>?, onAperto: () -> Unit) {
+fun GocciaRadice(
+    vm: GocciaViewModel,
+    distributoreDaAprire: Pair<String, Long>?,
+    onAperto: () -> Unit,
+    apriGuida: Boolean = false,
+    onGuidaAperta: () -> Unit = {},
+) {
     val nav = rememberNavController()
     val utente by vm.utente.collectAsStateWithLifecycle()
     val inizio = remember { if (utente.introduzioneVista) Rotte.HOME else Rotte.INTRO }
@@ -120,6 +129,14 @@ fun GocciaRadice(vm: GocciaViewModel, distributoreDaAprire: Pair<String, Long>?,
         val (provincia, id) = distributoreDaAprire ?: return@LaunchedEffect
         if (utente.introduzioneVista) nav.navigate(Rotte.dettaglio(provincia, id))
         onAperto()
+    }
+    // tocco sulla notifica della modalita autostrada
+    LaunchedEffect(apriGuida) {
+        if (!apriGuida) return@LaunchedEffect
+        if (GuidaInCorso.attiva && nav.currentDestination?.route != Rotte.AUTOSTRADA) {
+            nav.navigate(Rotte.AUTOSTRADA) { launchSingleTop = true }
+        }
+        onGuidaAperta()
     }
 
     val voce by nav.currentBackStackEntryAsState()
@@ -185,6 +202,7 @@ fun GocciaRadice(vm: GocciaViewModel, distributoreDaAprire: Pair<String, Long>?,
                     onDistributore = { nav.navigate(Rotte.dettaglio(it.provincia, it.id)) },
                     onAuto = { nav.navigate(Rotte.auto(vm.utente.value.autoCorrente?.id)) },
                     onColonnina = { nav.navigate(Rotte.colonnina(it.id)) },
+                    onAutostrada = { nav.navigate(Rotte.AUTOSTRADA) { launchSingleTop = true } },
                 )
             }
             composable(Rotte.PREFERITI) {
@@ -293,6 +311,7 @@ fun GocciaRadice(vm: GocciaViewModel, distributoreDaAprire: Pair<String, Long>?,
                 )
             }
             composable(Rotte.TARIFFA) { SchermataTariffa(vm = vm, onIndietro = { nav.popBackStack() }) }
+            composable(Rotte.AUTOSTRADA) { SchermataAutostrada(vm = vm, onIndietro = { nav.popBackStack() }) }
         }
         if (conBarra) {
             BarraNavigazione(schedaCorrente) { nav.vaiAScheda(it) }
