@@ -1,0 +1,83 @@
+name: Prezzi del giorno
+
+on:
+  schedule:
+    # Il MIMIT pubblica i CSV al mattino, a volte in ritardo: due passaggi al giorno.
+    - cron: "35 6 * * *"
+    - cron: "5 11 * * *"
+  push:
+    branches: [main]
+    paths: ["pipeline/**", "site/**", ".github/workflows/dati.yml"]
+  workflow_dispatch:
+    inputs:
+      archivio_giorni:
+        description: "Ricostruisci lo storico degli ultimi N giorni dall'archivio pubblico (vuoto = automatico)"
+        required: false
+        default: ""
+      forza:
+        description: "Pubblica anche se l'estrazione del giorno è già online"
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  prepara:
+    runs-on: ubuntu-latest
+    outputs:
+      nuovo: ${{ steps.pipeline.outputs.nuovo }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Test della pipeline
+        working-directory: pipeline
+        run: npm test
+
+      - name: Configura GitHub Pages
+        id: pages
+        uses: actions/configure-pages@v5
+
+      - name: Scarica ed elabora i prezzi
+        id: pipeline
+        working-directory: pipeline
+        env:
+          ARCHIVIO: ${{ inputs.archivio_giorni }}
+          FORZA: ${{ inputs.forza || github.event_name == 'push' }}
+          SITO: ${{ steps.pages.outputs.base_url }}
+        run: |
+          ARGS=(--uscita ../public --sito ../site --precedente-url "${SITO}/")
+          if [ -n "$ARCHIVIO" ]; then ARGS+=(--archivio-giorni "$ARCHIVIO"); fi
+          if [ "$FORZA" = "true" ]; then ARGS+=(--forza); fi
+          node src/index.js "${ARGS[@]}"
+
+      - name: Inserisci il nome del repository nelle pagine
+        if: steps.pipeline.outputs.nuovo == 'true'
+        run: sed -i "s#__REPO__#${{ github.repository }}#g" public/*.html
+
+      - uses: actions/upload-pages-artifact@v3
+        if: steps.pipeline.outputs.nuovo == 'true'
+        with:
+          path: public
+
+  pubblica:
+    needs: prepara
+    if: needs.prepara.outputs.nuovo == 'true'
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - name: Pubblica su GitHub Pages
+        id: deploy
+        uses: actions/deploy-pages@v4

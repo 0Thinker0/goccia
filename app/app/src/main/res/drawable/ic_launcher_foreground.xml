@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Goccia bianca centrata nell'area sicura dell'icona adattiva (108dp, contenuto utile 66dp) -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <group
+        android:translateX="30"
+        android:translateY="30"
+        android:scaleX="2"
+        android:scaleY="2">
+        <path
+            android:fillColor="#FFFFFFFF"
+            android:pathData="M12,2.5c3.6,4.4 6.6,8.2 6.6,11.6a6.6,6.6 0,0 1,-13.2 0c0,-3.4 3,-7.2 6.6,-11.6z" />
+        <path
+            android:strokeColor="#FF0B7A75"
+            android:strokeWidth="1.8"
+            android:strokeLineCap="round"
+            android:pathData="M9.2,14.6a2.9,2.9 0,0 0,2.8 2.6" />
+    </group>
+</vector>
