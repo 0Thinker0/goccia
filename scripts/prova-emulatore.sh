@@ -13,6 +13,7 @@ PASSI="$USCITA/passi.txt"
 
 n=0
 foto() {
+  python3 "$QUI/tocca.py" --solo-dialoghi >> "$PASSI" 2>&1
   n=$((n + 1))
   local nome
   nome=$(printf "%02d-%s" "$n" "$1")
@@ -30,6 +31,10 @@ scorri() { adb shell input swipe 540 1900 540 700 500; sleep 1.5; }
 scrivi() { adb shell input text "$1"; sleep 1.5; }
 
 adb logcat -c
+# l'emulatore appena avviato e lento: lasciamo stabilizzare il launcher
+adb shell input keyevent KEYCODE_HOME
+sleep 15
+python3 "$QUI/tocca.py" --esiste "Wait" >> "$PASSI" 2>&1 && python3 "$QUI/tocca.py" "Wait" >> "$PASSI" 2>&1
 adb install -r -g "$APK" >> "$PASSI" 2>&1
 # posizione finta: piazza Maggiore a Bologna
 adb emu geo fix 11.3426 44.4938
