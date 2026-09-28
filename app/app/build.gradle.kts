@@ -12,6 +12,9 @@ val datiUrl: String = (System.getenv("GOCCIA_DATI_URL")?.takeIf { it.isNotBlank(
 
 val numeroBuild: Int = System.getenv("GITHUB_RUN_NUMBER")?.toIntOrNull() ?: 1
 
+// Per la prova sull'emulatore (x86_64) servono anche le librerie native x86.
+val tutteLeAbi: Boolean = providers.gradleProperty("goccia.tutteLeAbi").isPresent
+
 // Repository GitHub (per i link "segnala un problema" e "codice sorgente").
 val repository: String = System.getenv("GITHUB_REPOSITORY")?.takeIf { it.isNotBlank() }
     ?: providers.gradleProperty("goccia.repo").get()
@@ -29,7 +32,7 @@ android {
         buildConfigField("String", "DATI_URL", "\"$datiUrl\"")
         buildConfigField("String", "REPO", "\"$repository\"")
         // i telefoni Android sono ARM: niente librerie x86 (solo emulatori) e APK piu leggero
-        ndk { abiFilters += listOf("arm64-v8a", "armeabi-v7a") }
+        if (!tutteLeAbi) ndk { abiFilters += listOf("arm64-v8a", "armeabi-v7a") }
     }
 
     signingConfigs {
