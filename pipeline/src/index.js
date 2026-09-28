@@ -9,6 +9,8 @@
 //   --precedente-cartella dir         legge lo stato pubblicato da una cartella invece che dal sito
 //   --forza                           rielabora anche se l'estrazione e gia pubblicata
 //   --senza-minimi                    salta i controlli sul numero minimo di righe (solo per i test)
+//   --colonnine-forza                 scarica di nuovo le colonnine anche se hanno meno di una settimana
+//   --senza-colonnine                 non pubblica le colonnine (solo per i test)
 
 import { appendFile, readFile } from 'node:fs/promises';
 import { parseArgs } from 'node:util';
@@ -16,6 +18,7 @@ import { gunzipSync } from 'node:zlib';
 import { leggiEstrazione, parseAnagrafica, parsePrezzi } from './csv.js';
 import { costruisci, statoDa } from './elabora.js';
 import { daArchivio, daMimit, dateFinoA, ultimaDataArchivio } from './fonti.js';
+import { aggiornaColonnine } from './colonnine.js';
 import { caricaPrecedente, scriviSito } from './stato.js';
 
 // Soglie prudenziali: un giorno normale ha ~24.000 impianti e ~93.000 prezzi.
@@ -31,7 +34,9 @@ const { values: opz } = parseArgs({
     prezzi: { type: 'string' },
     'archivio-giorni': { type: 'string' },
     forza: { type: 'boolean', default: false },
-    'senza-minimi': { type: 'boolean', default: false }
+    'senza-minimi': { type: 'boolean', default: false },
+    'colonnine-forza': { type: 'boolean', default: false },
+    'senza-colonnine': { type: 'boolean', default: false }
   }
 });
 
@@ -127,14 +132,30 @@ async function main() {
   }
 
   const dimensioni = await scriviSito(risultato, { uscita: opz.uscita, sito: opz.sito });
+  // le colonnine viaggiano con i prezzi: ogni pubblicazione del sito deve contenerle
+  const colonnine = opz['senza-colonnine']
+    ? null
+    : await aggiornaColonnine({
+        uscita: opz.uscita,
+        url: opz['precedente-url'],
+        cartella: opz['precedente-cartella'],
+        forza: opz['colonnine-forza']
+      });
   const s = risultato.statistiche;
   console.log(`\nEstrazione ${risultato.estrazione}`);
   console.log(`  impianti in anagrafica ${s.impiantiAnagrafica}, pubblicati ${s.impiantiPubblicati}, senza prezzi ${s.impiantiSenzaPrezzi}`);
-  console.log(`  righe prezzi ${s.righePrezzi}, senza impianto ${s.prezziSenzaImpianto}, fuori scala ${s.prezziFuoriScala}`);
+  console.log(`  righe prezzi ${s.righePrezzi}, senza impianto ${s.prezziSenzaImpianto}, fuori scala ${s.prezziFuoriScala}, lontani dalla mediana ${s.prezziAnomali}`);
   console.log(`  scarti anagrafica ${JSON.stringify(s.scartiAnagrafica)}, scarti prezzi ${JSON.stringify(s.scartiPrezzi)}`);
   console.log(`  province ${risultato.province.size}, impianti con coordinate sbagliate esclusi ${s.coordinateDubbie}`);
   console.log(`  comuni ${risultato.comuni.comuni.length} (${kb(dimensioni.comuni.byte)}, gzip ${kb(dimensioni.comuni.gzip)})`);
   console.log(`  dimensioni: indice ${kb(dimensioni.indice.byte)}, prezzi ${kb(dimensioni.p)} (gzip ${kb(dimensioni.pGz)}), storico ${kb(dimensioni.s)}, cronologia ${kb(dimensioni.h)} (gzip ${kb(dimensioni.hGz)})`);
+  if (colonnine) {
+    console.log(
+      `  colonnine ${colonnine.conteggio} (${colonnine.origine}${colonnine.generato ? `, del ${colonnine.generato.slice(0, 10)}` : ''}), ` +
+        `tessere ${colonnine.tessere}, ${kb(colonnine.byte)} (gzip ${kb(colonnine.gzip)})` +
+        (colonnine.avviso ? `, avviso: ${colonnine.avviso}` : '')
+    );
+  }
   await uscitaGithub('nuovo', 'true');
   await uscitaGithub('estrazione', risultato.estrazione);
 }

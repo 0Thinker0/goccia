@@ -146,7 +146,7 @@ private fun ContenutoDettaglio(vm: GocciaViewModel, d: Distributore, onIndietro:
             Row(Modifier.padding(start = 20.dp, end = 20.dp, top = 12.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 val allerta = preferito?.avvisaCalo == true
                 BottoneSecondario(
-                    if (allerta) "Avviso attivo" else "Avvisami se scende",
+                    if (allerta) "Avviso attivo" else "Attiva avviso",
                     {
                         if (preferito == null) vm.preferito(d, true) else vm.avvisaCalo(d.id, !allerta)
                     },
@@ -155,7 +155,7 @@ private fun ContenutoDettaglio(vm: GocciaViewModel, d: Distributore, onIndietro:
                     coloreIcona = if (allerta) Colori.Petrolio else Colori.Inchiostro,
                 )
                 BottoneSecondario(
-                    if (preferito != null) "Nei preferiti" else "Aggiungi ai preferiti",
+                    if (preferito != null) "Salvato" else "Salva",
                     { vm.preferito(d, preferito == null) },
                     Modifier.weight(1f),
                     icona = if (preferito != null) Icone.StellaPiena else Icone.Stella,
@@ -195,7 +195,7 @@ private fun ContenutoDettaglio(vm: GocciaViewModel, d: Distributore, onIndietro:
                 BottonePrimario(
                     "Naviga",
                     { naviga(context, d, utente.impostazioni.navigazione) },
-                    Modifier.weight(1f),
+                    Modifier.weight(0.7f),
                     icona = Icone.Naviga,
                     altezza = 54.dp,
                     forma = RoundedCornerShape(16.dp),
@@ -203,7 +203,7 @@ private fun ContenutoDettaglio(vm: GocciaViewModel, d: Distributore, onIndietro:
                 BottoneSecondario(
                     "Ho fatto il pieno qui",
                     onRifornimento,
-                    Modifier.weight(1f),
+                    Modifier.weight(1.3f),
                     icona = Icone.Piu,
                     altezza = 54.dp,
                     forma = RoundedCornerShape(16.dp),

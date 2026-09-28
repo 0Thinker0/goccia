@@ -24,13 +24,17 @@ export function pulisci(s) {
 }
 
 /**
- * Converte un testo tutto maiuscolo in un titolo leggibile.
- * Se il testo contiene gia minuscole lo lascia com'e.
+ * Converte un testo tutto maiuscolo (o scritto "a frase", con la sola iniziale maiuscola)
+ * in un titolo leggibile. Nei testi gia scritti con maiuscole e minuscole ammorbidisce solo
+ * le parole urlate: "Autostrada A1 MILANO-NAPOLI" -> "Autostrada A1 Milano-Napoli".
  */
 export function titolo(s, { indirizzo = false } = {}) {
   if (!s) return s;
-  // testi gia scritti con maiuscole e minuscole restano com'erano
-  if (/[a-zà-ÿ]/.test(s) && /[A-ZÀ-Þ]/.test(s)) return s;
+  if (/[a-zà-ÿ]/.test(s) && /[A-ZÀ-Þ]/.test(s)) {
+    const resto = s.slice(1);
+    const aFrase = resto === resto.toLowerCase() && s.includes(' ');
+    if (!aFrase) return ammorbidisci(s);
+  }
   const parole = s.toLowerCase().split(' ');
   return parole
     .map((p, i) => {
@@ -47,6 +51,20 @@ export function titolo(s, { indirizzo = false } = {}) {
         .split('-')
         .map((pezzo) => cap(pezzo))
         .join('-');
+    })
+    .join(' ');
+}
+
+/** Parole tutte maiuscole di almeno quattro lettere, dentro un testo misto, scritte normali. */
+function ammorbidisci(s) {
+  return s
+    .split(' ')
+    .map((p, i) => {
+      const m = /^([A-ZÀ-Þ][A-ZÀ-Þ'’-]{3,})([,.;:]?)$/.exec(p);
+      if (!m) return p;
+      const parola = m[1].toLowerCase();
+      if (i > 0 && MINUSCOLE.has(parola)) return parola + m[2];
+      return parola.split('-').map(cap).join('-') + m[2];
     })
     .join(' ');
 }

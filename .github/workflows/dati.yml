@@ -18,6 +18,10 @@ on:
         description: "Pubblica anche se l'estrazione del giorno è già online"
         type: boolean
         default: false
+      colonnine:
+        description: "Scarica di nuovo le colonnine da OpenStreetMap (di solito una volta a settimana)"
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -54,15 +58,17 @@ jobs:
         env:
           ARCHIVIO: ${{ inputs.archivio_giorni }}
           FORZA: ${{ inputs.forza || github.event_name == 'push' }}
+          COLONNINE: ${{ inputs.colonnine }}
           SITO: ${{ steps.pages.outputs.base_url }}
         run: |
           ARGS=(--uscita ../public --sito ../site --precedente-url "${SITO}/")
           if [ -n "$ARCHIVIO" ]; then ARGS+=(--archivio-giorni "$ARCHIVIO"); fi
           if [ "$FORZA" = "true" ]; then ARGS+=(--forza); fi
+          if [ "$COLONNINE" = "true" ]; then ARGS+=(--forza --colonnine-forza); fi
           set -o pipefail
           node src/index.js "${ARGS[@]}" 2>&1 | tee pipeline.log
           # riassunto visibile anche dalle API (annotazioni)
-          grep -E "^Estrazione|impianti in anagrafica|province |comuni |dimensioni|Errore" pipeline.log | while IFS= read -r riga; do echo "::notice::${riga}"; done || true
+          grep -E "^Estrazione|impianti in anagrafica|righe prezzi|province |comuni |colonnine|dimensioni|Errore" pipeline.log | while IFS= read -r riga; do echo "::notice::${riga}"; done || true
 
       - name: Inserisci il nome del repository nelle pagine
         if: steps.pipeline.outputs.nuovo == 'true'
