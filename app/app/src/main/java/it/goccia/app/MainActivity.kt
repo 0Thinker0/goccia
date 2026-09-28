@@ -13,6 +13,7 @@ import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import androidx.compose.runtime.getValue
 import it.goccia.app.avvisi.Notifiche
+import it.goccia.app.guida.ServizioGuida
 import it.goccia.app.ui.GocciaRadice
 import it.goccia.app.ui.GocciaViewModel
 import it.goccia.app.ui.tema.GocciaTema
@@ -26,6 +27,9 @@ class MainActivity : ComponentActivity() {
     /** Distributore da aprire perche l'utente ha toccato una notifica. */
     private val daAprire = MutableStateFlow<Pair<String, Long>?>(null)
 
+    /** Tocco sulla notifica della modalita autostrada. */
+    private val apriGuida = MutableStateFlow(false)
+
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge(
             statusBarStyle = SystemBarStyle.light(Color.TRANSPARENT, Color.TRANSPARENT),
@@ -36,7 +40,14 @@ class MainActivity : ComponentActivity() {
         setContent {
             GocciaTema {
                 val apri by daAprire.collectAsStateWithLifecycle()
-                GocciaRadice(vm = vm, distributoreDaAprire = apri, onAperto = { daAprire.value = null })
+                val guida by apriGuida.collectAsStateWithLifecycle()
+                GocciaRadice(
+                    vm = vm,
+                    distributoreDaAprire = apri,
+                    onAperto = { daAprire.value = null },
+                    apriGuida = guida,
+                    onGuidaAperta = { apriGuida.value = false },
+                )
             }
         }
     }
@@ -52,6 +63,10 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun leggi(intent: Intent?) {
+        if (intent?.getStringExtra(ServizioGuida.EXTRA_APRI) == ServizioGuida.APRI_AUTOSTRADA) {
+            apriGuida.value = true
+            return
+        }
         val provincia = intent?.getStringExtra(Notifiche.EXTRA_PROVINCIA) ?: return
         val id = intent.getLongExtra(Notifiche.EXTRA_DISTRIBUTORE, -1L)
         if (id > 0) daAprire.value = provincia to id

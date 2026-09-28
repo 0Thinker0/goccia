@@ -128,6 +128,46 @@ tocca "Calcola soste"
 foto viaggio-risultato 30
 adb shell input swipe 540 2000 540 1300 500
 foto viaggio-risultato-2 2
+
+nota "modalita autostrada"
+trova "Modalità autostrada"
+foto autostrada 10
+# simuliamo il viaggio: i punti del percorso e della sosta consigliata li scrive l'app nel log
+kill "$GEO" 2> /dev/null
+posiziona() { for _ in 1 2 3 4 5; do adb emu geo fix "$1" "$2" > /dev/null 2>&1; sleep 2; done; }
+coordinate() { echo "$1" | sed -n "s/.*$2 = \([-0-9.]*\),\([-0-9.]*\).*/\2 \1/p" | head -n 1; }
+PERCORSO=$(adb logcat -d -s Goccia:I | grep "guida: percorso" | tail -n 1)
+nota "log: ${PERCORSO#*Goccia}"
+C=$(coordinate "$PERCORSO" "km 60")
+if [ -n "$C" ]; then
+  posiziona $C
+  foto autostrada-km60 4
+fi
+SOSTA=$(adb logcat -d -s Goccia:I | grep "guida: consigliata" | tail -n 1)
+nota "log: ${SOSTA#*Goccia}"
+C=$(coordinate "$SOSTA" "8 km prima")
+if [ -n "$C" ]; then
+  posiziona $C
+  foto autostrada-preavviso 3
+  adb shell cmd statusbar expand-notifications
+  foto autostrada-notifiche 3
+  adb shell cmd statusbar collapse
+  sleep 1
+fi
+C=$(echo "$SOSTA" | sed -n 's/.*al km [0-9]* = \([-0-9.]*\),\([-0-9.]*\).*/\2 \1/p')
+if [ -n "$C" ]; then
+  # fermi al distributore per quasi due minuti: l'app chiede se abbiamo fatto il pieno
+  for _ in $(seq 1 26); do adb emu geo fix $C > /dev/null 2>&1; sleep 4; done
+  foto autostrada-domanda 2
+  tocca "Sì, il pieno"
+  foto autostrada-pieno 3
+fi
+trova "Termina la modalità autostrada"
+sleep 3
+( while true; do adb emu geo fix 11.3426 44.4938 > /dev/null 2>&1; sleep 2; done ) &
+GEO=$!
+foto autostrada-fine 3
+
 indietro
 for _ in 1 2 3; do esiste "Preferiti" && break; indietro; done
 
@@ -208,6 +248,10 @@ adb shell input swipe 540 2000 540 1100 500
 foto ev-viaggio-risultato-2 2
 adb shell input swipe 540 2000 540 1100 500
 foto ev-viaggio-risultato-3 2
+trova "Modalità autostrada"
+foto ev-autostrada 10
+trova "Termina la modalità autostrada"
+sleep 3
 indietro
 for _ in 1 2 3; do esiste "Profilo" && break; indietro; done
 

@@ -2,6 +2,16 @@
 
 App Android gratuita per trovare il distributore di carburante più conveniente: prezzi ufficiali di oggi, mappa, preferiti, avvisi di prezzo e consigli su quando e dove fare il pieno. Per le auto elettriche: colonnine vicine, costo di ogni ricarica con la propria tariffa, confronto con la ricarica a casa e soste di ricarica nei viaggi. Niente account, niente pubblicità, niente abbonamenti.
 
+Cosa fa:
+
+- **Home**: i distributori più convenienti vicino a te, autonomia stimata della tua auto, risparmio del mese e andamento dei prezzi in provincia.
+- **Mappa e lista**: prezzi di oggi per benzina, gasolio, GPL e metano, oppure le colonnine con i filtri per presa e potenza.
+- **Viaggio**: calcola il percorso e dice dove e quanto fare rifornimento (o ricaricare) in base all'auto e al livello di partenza, confrontando le aree di servizio con i distributori a pochi minuti dall'autostrada.
+- **Modalità autostrada**: durante il viaggio segue la posizione con una notifica fissa, aggiorna km, autonomia e sosta consigliata, avvisa 10 km prima e chiede se hai fatto il pieno quando ti fermi a un distributore.
+- **Preferiti e avvisi**: notifiche quando un preferito abbassa il prezzo o in zona si scende sotto la tua soglia.
+- **Auto elettriche**: tariffa di casa (prezzo, bolletta o stima, fasce, fotovoltaico, perdite), tariffe delle colonnine, costi e tempi di ricarica.
+- **Widget** per la schermata Home: il più conveniente vicino a te e il livello stimato della tua auto.
+
 ## Installare l'anteprima
 
 Ogni modifica all'app produce una nuova versione di prova:
@@ -40,6 +50,7 @@ Tutto gira su servizi gratuiti: GitHub Actions per elaborare i dati e compilare 
 
 - Pipeline: `cd pipeline && npm test`
 - App: `cd app && ./gradlew testDebugUnitTest assembleDebug` (serve JDK 17 e l'SDK Android)
+- Prova sull'emulatore: il workflow "Prova sull'emulatore" installa l'APK, attraversa le schermate (compresi widget e modalità autostrada con un viaggio simulato) e pubblica screenshot e log nel ramo `ci-prova`. Usa il rendering SwANGLE: con il vecchio SwiftShader MapLibre non disegna segnaposto ed etichette.
 
 Nella build su GitHub l'indirizzo dei dati viene preso dalle Pages del repository; in locale da `app/gradle.properties` (`goccia.datiUrl`).
 
