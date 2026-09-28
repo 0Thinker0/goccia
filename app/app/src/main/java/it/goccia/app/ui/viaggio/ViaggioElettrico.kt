@@ -57,9 +57,10 @@ private fun pinElettrici(s: StatoViaggio.ProntoElettrico): List<PinViaggio> {
     val mostrate = (s.piano.soste.map { it.punto } + s.piano.alternative).distinctBy { it.colonnina.id }
     return mostrate.map { p ->
         val scelta = p.colonnina.id in scelte
-        val testo = p.colonnina.kw?.let { Formati.kw(it) } ?: "–"
+        // senza potenza nota il segnaposto mostra solo il fulmine
+        val testo = p.colonnina.kw?.let { Formati.kw(it) } ?: ""
         if (scelta) {
-            PinViaggio(p.colonnina.lat, p.colonnina.lon, testo, Colori.Petrolio.toArgb(), true, -1.0)
+            PinViaggio(p.colonnina.lat, p.colonnina.lon, testo, Colori.Petrolio.toArgb(), true, PinViaggio.SCELTO)
         } else {
             PinViaggio(
                 p.colonnina.lat, p.colonnina.lon, testo, android.graphics.Color.WHITE, false, -(p.colonnina.kw ?: 0.0),
