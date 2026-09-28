@@ -71,6 +71,63 @@ function allinea(datePrecedenti, valoriPrecedenti, dateNuove, oggi, valoreOggi) 
 
 const soloNull = (serie) => serie.every((v) => v == null);
 
+/**
+ * Quanto puo scostarsi un prezzo dalla mediana italiana dello stesso carburante e modalita.
+ * Fuori da qui e quasi sempre un errore di battitura o un listino vecchio rimasto nel sistema
+ * (un gasolio a 1,38 quando la mediana e 2,39): meglio non mostrarlo che consigliarlo.
+ * GPL e metano variano molto di piu tra zone e autostrade.
+ */
+export const SCOSTAMENTO = { B: [0.8, 1.3], G: [0.8, 1.3], L: [0.7, 1.5], M: [0.65, 1.5] };
+const MINIMO_PER_MEDIANA = 50;
+
+/**
+ * Toglie i prezzi assurdi rispetto al resto d'Italia. Lavora sui prezzi raccolti per impianto
+ * ({p: {famiglia: {s, st, v, vt}}, x: Map di speciali}) e restituisce quanti ne ha scartati.
+ */
+export function scartaPrezziAnomali(perImpianto, riferimento) {
+  const recente = (ts) => ts != null && riferimento - ts <= GIORNI_VECCHIO * 86400;
+  const valori = {};
+  for (const voce of perImpianto.values()) {
+    for (const [fam, slot] of Object.entries(voce.p)) {
+      if (slot.s != null && recente(slot.st)) ((valori[fam] ??= { s: [], v: [] }).s).push(slot.s);
+      if (slot.v != null && recente(slot.vt)) ((valori[fam] ??= { s: [], v: [] }).v).push(slot.v);
+    }
+  }
+  const mediane = {};
+  for (const [fam, m] of Object.entries(valori)) {
+    for (const k of ['s', 'v']) {
+      if (m[k].length >= MINIMO_PER_MEDIANA) (mediane[fam] ??= {})[k] = mediana(m[k]);
+    }
+  }
+  const fuori = (fam, k, prezzo, extra = 0) => {
+    const m = mediane[fam]?.[k];
+    const limiti = SCOSTAMENTO[fam];
+    if (!m || !limiti) return false;
+    return prezzo < m * limiti[0] || prezzo > m * (limiti[1] + extra);
+  };
+  let scartati = 0;
+  for (const voce of perImpianto.values()) {
+    for (const [fam, slot] of Object.entries(voce.p)) {
+      for (const [k, kt] of [['s', 'st'], ['v', 'vt']]) {
+        if (slot[k] != null && fuori(fam, k, slot[k])) {
+          delete slot[k];
+          delete slot[kt];
+          scartati++;
+        }
+      }
+      if (slot.s == null && slot.v == null) delete voce.p[fam];
+    }
+    // i carburanti speciali costano di solito un po' di piu: margine piu largo verso l'alto
+    for (const [chiave, x] of voce.x) {
+      if (x.f && fuori(x.f, x.s ? 's' : 'v', x.p, 0.15)) {
+        voce.x.delete(chiave);
+        scartati++;
+      }
+    }
+  }
+  return scartati;
+}
+
 /** Medie per famiglia e modalita (s = self, v = servito) sugli impianti stradali con prezzo recente. */
 export function calcolaMedie(impianti, riferimento) {
   const recente = (ts) => ts != null && riferimento - ts <= GIORNI_VECCHIO * 86400;
@@ -199,6 +256,9 @@ export function costruisci({ anagrafica, prezzi, precedente = statoVuoto(), gene
       }
     }
   }
+
+  // 1b. prezzi assurdi rispetto al resto d'Italia
+  statistiche.prezziAnomali = scartaPrezziAnomali(perImpianto, riferimento);
 
   // 2. impianti raggruppati per provincia
   const perProvincia = new Map();

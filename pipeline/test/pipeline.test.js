@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { famigliaSpeciale } from '../src/carburanti.js';
 import { istanteEstrazione, parseAnagrafica, parsePrezzi, romaEpoch } from '../src/csv.js';
-import { coordinateDubbie, costruisci, statoDa } from '../src/elabora.js';
+import { coordinateDubbie, costruisci, scartaPrezziAnomali, statoDa } from '../src/elabora.js';
 import { nomeBandiera, pulisciIndirizzo, pulisciNome, titolo } from '../src/testo.js';
 import * as fx from './fixtures.js';
 
@@ -12,6 +12,10 @@ test('titoli leggibili dal maiuscolo', () => {
   assert.equal(titolo("VIA DELL'INDUSTRIA"), "Via dell'Industria");
   assert.equal(titolo('CASTEL SAN PIETRO TERME'), 'Castel San Pietro Terme');
   assert.equal(titolo('Via Dalmine 23'), 'Via Dalmine 23');
+  assert.equal(titolo('Via triumvirato 87/a'), 'Via Triumvirato 87/A');
+  assert.equal(titolo('Mc service di fava giuseppe'), 'Mc Service di Fava Giuseppe');
+  assert.equal(titolo('Autostrada A1 MILANO-NAPOLI, Km. 83'), 'Autostrada A1 Milano-Napoli, Km. 83');
+  assert.equal(titolo('Eni'), 'Eni');
   assert.equal(pulisciIndirizzo('SS.189 KM. 64+649 - C.DA SAN MICHELE  S.N.C  '), 'SS.189 km. 64+649 - C.da San Michele snc');
   assert.equal(pulisciIndirizzo('VIA EMILIA LEVANTE 214  40139'), 'Via Emilia Levante 214');
   assert.equal(pulisciNome('19829 AGRIGENTO'), 'Agrigento');
@@ -22,7 +26,7 @@ test('titoli leggibili dal maiuscolo', () => {
   assert.equal(pulisciIndirizzo('Via Via De Gasperi 1 40065, Pianoro (bo) 1'), 'Via De Gasperi 1');
   assert.equal(
     pulisciIndirizzo('Autostrada A13 BOLOGNA-PADOVA, Km. 11+700, dir. Sud - 40010'),
-    'Autostrada A13 BOLOGNA-PADOVA, Km. 11+700, dir. Sud'
+    'Autostrada A13 Bologna-Padova, Km. 11+700, dir. Sud'
   );
 });
 
@@ -137,4 +141,31 @@ test('lo storico si accumula giorno dopo giorno ed e idempotente', () => {
   });
   assert.deepEqual(ripetuto.province.get('BO').storico.giorni, ['2026-09-26', '2026-09-27']);
   assert.deepEqual(ripetuto.province.get('BO').cronologia.impianti['100'].g.G, [1709, 1689]);
+});
+
+test('prezzi lontanissimi dalla mediana italiana scartati', () => {
+  const adesso = 1_790_000_000;
+  const perImpianto = new Map();
+  // 60 gasoli self tra 2,339 e 2,398 (mediana 2,369): tutti normali
+  for (let i = 0; i < 60; i++) {
+    perImpianto.set(i, { p: { G: { s: 2339 + i, st: adesso - 3600 } }, x: new Map() });
+  }
+  // errore di battitura: 1,379 invece di 2,379
+  perImpianto.set(100, { p: { G: { s: 1379, st: adesso - 3600, v: 2549, vt: adesso - 3600 } }, x: new Map() });
+  // troppo caro
+  perImpianto.set(101, { p: { G: { s: 3199, st: adesso - 3600 } }, x: new Map() });
+  // speciale di famiglia gasolio: un po' piu caro va bene, a meta prezzo no
+  perImpianto.set(102, {
+    p: { G: { s: 2399, st: adesso - 3600 } },
+    x: new Map([
+      ['hvo|1', { d: 'HVO', f: 'G', p: 2799, s: 1, t: adesso }],
+      ['blue diesel|1', { d: 'Blue Diesel', f: 'G', p: 1199, s: 1, t: adesso }]
+    ])
+  });
+  const scartati = scartaPrezziAnomali(perImpianto, adesso);
+  assert.equal(scartati, 3);
+  assert.deepEqual(perImpianto.get(100).p, { G: { v: 2549, vt: adesso - 3600 } });
+  assert.equal(perImpianto.get(101).p.G, undefined);
+  assert.deepEqual([...perImpianto.get(102).x.keys()], ['hvo|1']);
+  assert.equal(perImpianto.get(5).p.G.s, 2344);
 });

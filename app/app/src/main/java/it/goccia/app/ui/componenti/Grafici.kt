@@ -96,7 +96,14 @@ fun GraficoLinea(
             if (etichettaMedia != null) {
                 val testo = misuratore.measure(etichettaMedia, stile)
                 val yTesto = if (ym - cima < 24.dp.toPx()) ym + 4.dp.toPx() else ym - testo.size.height - 2.dp.toPx()
-                drawText(testo, topLeft = Offset(size.width - testo.size.width, yTesto))
+                // a destra c'e il pallino dell'ultimo giorno: se ci finisce sopra, l'etichetta va a sinistra
+                val (ultimoI, ultimoV) = punti.last()
+                val yUltimo = y(ultimoV)
+                val margine = 10.dp.toPx()
+                val sovrapposta = x(ultimoI) > size.width - testo.size.width - margine &&
+                    yUltimo + margine > yTesto && yUltimo - margine < yTesto + testo.size.height
+                val xTesto = if (sovrapposta) sinistra else size.width - testo.size.width
+                drawText(testo, topLeft = Offset(xTesto, yTesto))
             }
         }
 

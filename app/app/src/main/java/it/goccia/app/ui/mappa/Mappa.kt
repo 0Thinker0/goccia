@@ -64,8 +64,11 @@ import it.goccia.app.ui.tema.Colori
 import it.goccia.app.ui.tema.Forme
 import it.goccia.app.ui.tema.Testi
 import it.goccia.app.ui.tema.ombra
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.withTimeoutOrNull
 import org.maplibre.android.camera.CameraUpdateFactory
 import org.maplibre.android.geometry.LatLng
+import org.maplibre.android.geometry.LatLngBounds
 import org.maplibre.android.maps.MapLibreMap
 import org.maplibre.android.maps.Style
 import org.maplibre.android.style.expressions.Expression
@@ -173,12 +176,22 @@ fun SchermataMappa(vm: GocciaViewModel, onDistributore: (Distributore) -> Unit, 
         }
     }
 
-    // la posizione (o il comune cercato) cambia: spostiamo la mappa
+    // la posizione (o il comune cercato) cambia: spostiamo la mappa e, appena arrivano i prezzi,
+    // allarghiamo la vista quanto basta per vedere i distributori piu vicini
     val centro = dati.centro
     LaunchedEffect(mappa, centro) {
         val m = mappa ?: return@LaunchedEffect
         val c = centro ?: return@LaunchedEffect
         m.animateCamera(CameraUpdateFactory.newLatLngZoom(LatLng(c.coordinate.lat, c.coordinate.lon), 13.0), 600)
+        val attorno = withTimeoutOrNull(20_000) { vm.vista.first { it != null && it.centro == c } } ?: return@LaunchedEffect
+        val vicini = attorno.zona.offerte.sortedBy { it.distanzaKm }.take(4)
+        if (vicini.isEmpty()) return@LaunchedEffect
+        val limiti = LatLngBounds.Builder()
+            .include(LatLng(c.coordinate.lat + 0.004, c.coordinate.lon + 0.005))
+            .include(LatLng(c.coordinate.lat - 0.004, c.coordinate.lon - 0.005))
+        vicini.forEach { limiti.include(LatLng(it.distributore.lat, it.distributore.lon)) }
+        fun px(valore: Int) = with(densita) { valore.dp.roundToPx() }
+        m.animateCamera(CameraUpdateFactory.newLatLngBounds(limiti.build(), px(48), px(190), px(48), px(260)), 700)
     }
     LaunchedEffect(stile, centro) {
         val s = stile ?: return@LaunchedEffect

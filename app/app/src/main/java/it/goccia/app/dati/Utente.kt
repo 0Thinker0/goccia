@@ -27,6 +27,9 @@ enum class Alimentazione(val etichetta: String) {
 
     val elettrica: Boolean get() = this == ELETTRICA
 
+    /** Si ricarica dalla presa: servono la tariffa di casa e le colonnine. */
+    val ricaricabile: Boolean get() = this == ELETTRICA || this == IBRIDA_PLUGIN
+
     val unitaCapienza: String
         get() = when (this) {
             ELETTRICA -> "kWh"
@@ -73,6 +76,10 @@ data class Auto(
     val livello: Double = 0.5,
     /** quando e stato indicato il livello (epoch millis): da li in poi lo stimiamo */
     val livelloIl: Long = 0,
+    /** solo elettriche: potenza massima di ricarica in corrente alternata (caricatore di bordo), kW */
+    val acKw: Double = 11.0,
+    /** solo elettriche: potenza massima di ricarica in corrente continua, kW */
+    val dcKw: Double = 100.0,
 )
 
 @Serializable
@@ -171,6 +178,54 @@ data class Impostazioni(
     val caloPreferiti: Boolean = true,
     val orarioSilenzioso: Boolean = true,
     val navigazione: AppNavigazione = AppNavigazione.CHIEDI,
+    /** colonnine: prese compatibili con l'auto (codici di Presa); vuoto = tutte */
+    val prese: List<String> = listOf("C", "T"),
+    /** colonnine: potenza minima mostrata, kW (0 = tutte) */
+    val potenzaMinima: Int = 0,
+)
+
+/** Come l'utente ci dice quanto paga l'energia a casa. */
+@Serializable
+enum class ModoTariffa(val etichetta: String) {
+    PREZZO("Prezzo al kWh"),
+    BOLLETTA("Dalla bolletta"),
+    STIMA("Usa una stima"),
+}
+
+/** Quando ricarica di solito a casa: con la bioraria cambia il prezzo, con i pannelli quasi azzera. */
+@Serializable
+enum class Abitudine(val etichetta: String) {
+    SERA("Sera e notte"),
+    GIORNO("Di giorno"),
+    FOTOVOLTAICO("Fotovoltaico"),
+}
+
+@Serializable
+data class TariffaCasa(
+    val modo: ModoTariffa = ModoTariffa.STIMA,
+    val bioraria: Boolean = false,
+    /** €/kWh tutto compreso (energia, trasporto, oneri e IVA), tariffa monoraria */
+    val prezzo: Double = 0.26,
+    /** bioraria: lunedi-venerdi 8-19 */
+    val f1: Double = 0.25,
+    /** bioraria: sere, notti, weekend e festivi */
+    val f23: Double = 0.27,
+    /** dalla bolletta: totale senza quote fisse e kWh consumati nello stesso periodo */
+    val bollettaEuro: Double = 0.0,
+    val bollettaKwh: Double = 0.0,
+    val abitudine: Abitudine = Abitudine.SERA,
+    /** con i pannelli: quanto ti pagherebbero l'energia venduta in rete, €/kWh */
+    val fotovoltaico: Double = 0.0,
+    /** energia persa in calore durante la ricarica, percentuale */
+    val perdite: Int = 10,
+)
+
+/** Quanto paga l'utente alle colonnine con il suo abbonamento o la sua app; null = stima. */
+@Serializable
+data class TariffeColonnine(
+    val ac: Double? = null,
+    val dc: Double? = null,
+    val hpc: Double? = null,
 )
 
 /** Un viaggio calcolato di recente, per ripeterlo con un tocco. */
@@ -204,6 +259,8 @@ data class DatiUtente(
     val viaggiRecenti: List<ViaggioRecente> = emptyList(),
     /** quando l'utente ha chiuso l'invito a sostenere il progetto */
     val donazioneChiusaIl: Long = 0,
+    val tariffaCasa: TariffaCasa = TariffaCasa(),
+    val tariffeColonnine: TariffeColonnine = TariffeColonnine(),
 ) {
     val autoCorrente: Auto? get() = auto.firstOrNull { it.id == autoAttiva } ?: auto.firstOrNull()
 
@@ -220,4 +277,13 @@ data class DatiUtente(
     fun luogo(id: String?): Luogo? = id?.let { i -> luoghi.firstOrNull { it.id == i } }
 
     val casa: Luogo? get() = luoghi.firstOrNull { it.tipo == TipoLuogo.CASA }
+
+    /** L'auto attiva e elettrica: Home, mappa e viaggi parlano di colonnine. */
+    val elettrica: Boolean get() = autoCorrente?.alimentazione?.elettrica == true
+
+    /** Un'auto a carburante del garage, per confrontare i costi con l'elettrica. */
+    val autoACarburante: Auto? get() = auto.firstOrNull { !it.alimentazione.elettrica }
+
+    /** Le prese scelte nei filtri delle colonnine. */
+    val prese: Set<Presa> get() = impostazioni.prese.mapNotNull { Presa.daCodice(it) }.toSet()
 }

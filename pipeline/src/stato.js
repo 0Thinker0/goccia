@@ -7,7 +7,7 @@ import { statoVuoto } from './elabora.js';
 
 export const RADICE_DATI = 'dati/v1/';
 
-async function conLimite(elementi, limite, lavoro) {
+export async function conLimite(elementi, limite, lavoro) {
   const coda = [...elementi];
   const operai = Array.from({ length: Math.min(limite, coda.length) }, async () => {
     while (coda.length) await lavoro(coda.shift());
@@ -15,12 +15,10 @@ async function conLimite(elementi, limite, lavoro) {
   await Promise.all(operai);
 }
 
-/**
- * Carica lo stato pubblicato l'ultima volta, da un sito (GitHub Pages) o da una cartella.
- * Se non c'e nulla (primo avvio) restituisce uno stato vuoto.
- */
-export async function caricaPrecedente({ url, cartella }) {
-  const leggi = async (percorso) => {
+/** Legge un file JSON pubblicato, dal sito o da una cartella; null se manca o non si legge. */
+export function lettore({ url, cartella }) {
+  return async (percorso) => {
+    if (!url && !cartella) return null;
     try {
       if (cartella) return JSON.parse(await readFile(join(cartella, percorso), 'utf8'));
       const risposta = await fetch(new URL(percorso, url), { signal: AbortSignal.timeout(60_000) });
@@ -30,6 +28,14 @@ export async function caricaPrecedente({ url, cartella }) {
       return null;
     }
   };
+}
+
+/**
+ * Carica lo stato pubblicato l'ultima volta, da un sito (GitHub Pages) o da una cartella.
+ * Se non c'e nulla (primo avvio) restituisce uno stato vuoto.
+ */
+export async function caricaPrecedente({ url, cartella }) {
+  const leggi = lettore({ url, cartella });
   if (!url && !cartella) return statoVuoto();
   const indice = await leggi(`${RADICE_DATI}indice.json`);
   if (!indice) return statoVuoto();
@@ -44,7 +50,7 @@ export async function caricaPrecedente({ url, cartella }) {
   return { indice, storico, cronologia };
 }
 
-async function scriviJson(percorso, oggetto) {
+export async function scriviJson(percorso, oggetto) {
   await mkdir(dirname(percorso), { recursive: true });
   const testo = JSON.stringify(oggetto);
   await writeFile(percorso, testo);
