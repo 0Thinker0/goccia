@@ -329,6 +329,8 @@ class GocciaViewModel(private val c: Contenitore) : ViewModel() {
 
     fun haPermessoPosizione(): Boolean = posizione.haPermesso()
 
+    fun localizzazioneAttiva(): Boolean = posizione.localizzazioneAttiva()
+
     /** Posizione di adesso (per salvare un luogo): null se non disponibile. */
     suspend fun posizioneAttuale(): Coordinate? = posizione.attuale()
 

@@ -33,6 +33,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.SolidColor
@@ -532,6 +534,18 @@ fun Stepper(
 
 // ---------- campi di testo ----------
 
+/**
+ * Il segnaposto sta dentro il campo (decorationBox): cosi lo leggono anche TalkBack e gli
+ * strumenti di accessibilita, che altrimenti lo considerano coperto dal campo e lo saltano.
+ */
+@Composable
+private fun ConSegnaposto(vuoto: Boolean, segnaposto: String, stile: TextStyle, campo: @Composable () -> Unit) {
+    Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.CenterStart) {
+        if (vuoto && segnaposto.isNotEmpty()) Text(segnaposto, style = stile, maxLines = 1)
+        campo()
+    }
+}
+
 @Composable
 fun CampoRicerca(
     testo: String,
@@ -539,6 +553,7 @@ fun CampoRicerca(
     modifier: Modifier = Modifier,
     segnaposto: String = "Cerca comune",
     onCerca: () -> Unit = {},
+    focus: FocusRequester? = null,
 ) {
     val forma = Forme.Campo
     Row(
@@ -552,19 +567,17 @@ fun CampoRicerca(
         horizontalArrangement = Arrangement.spacedBy(10.dp),
     ) {
         Icon(Icone.Cerca, null, tint = Colori.Testo3, modifier = Modifier.size(20.dp))
-        Box(Modifier.weight(1f), contentAlignment = Alignment.CenterStart) {
-            if (testo.isEmpty()) Text(segnaposto, style = Testi.Corpo.copy(color = Colori.Segnaposto), maxLines = 1)
-            BasicTextField(
-                value = testo,
-                onValueChange = onTesto,
-                singleLine = true,
-                textStyle = Testi.Corpo,
-                cursorBrush = SolidColor(Colori.Petrolio),
-                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
-                keyboardActions = KeyboardActions(onSearch = { onCerca() }),
-                modifier = Modifier.fillMaxWidth(),
-            )
-        }
+        BasicTextField(
+            value = testo,
+            onValueChange = onTesto,
+            singleLine = true,
+            textStyle = Testi.Corpo,
+            cursorBrush = SolidColor(Colori.Petrolio),
+            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+            keyboardActions = KeyboardActions(onSearch = { onCerca() }),
+            modifier = Modifier.weight(1f).then(if (focus != null) Modifier.focusRequester(focus) else Modifier),
+            decorationBox = { campo -> ConSegnaposto(testo.isEmpty(), segnaposto, Testi.Corpo.copy(color = Colori.Segnaposto), campo) },
+        )
         if (testo.isNotEmpty()) {
             BottoneIcona(Icone.Chiudi, "Cancella", { onTesto("") }, dimensione = 32.dp, dimensioneIcona = 16.dp, colore = Colori.Testo3)
         }
@@ -596,20 +609,16 @@ fun CampoTesto(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(6.dp),
         ) {
-            Box(Modifier.weight(1f), contentAlignment = Alignment.CenterStart) {
-                if (valore.isEmpty() && segnaposto.isNotEmpty()) {
-                    Text(segnaposto, style = stile.copy(color = Colori.Segnaposto), maxLines = 1)
-                }
-                BasicTextField(
-                    value = valore,
-                    onValueChange = onValore,
-                    singleLine = true,
-                    textStyle = stile,
-                    cursorBrush = SolidColor(Colori.Petrolio),
-                    keyboardOptions = KeyboardOptions(keyboardType = tastiera, imeAction = ImeAction.Done),
-                    modifier = Modifier.fillMaxWidth(),
-                )
-            }
+            BasicTextField(
+                value = valore,
+                onValueChange = onValore,
+                singleLine = true,
+                textStyle = stile,
+                cursorBrush = SolidColor(Colori.Petrolio),
+                keyboardOptions = KeyboardOptions(keyboardType = tastiera, imeAction = ImeAction.Done),
+                modifier = Modifier.weight(1f),
+                decorationBox = { campo -> ConSegnaposto(valore.isEmpty(), segnaposto, stile.copy(color = Colori.Segnaposto), campo) },
+            )
             if (suffisso != null) Text(suffisso, style = Testi.Chip.copy(color = Colori.Testo3))
         }
     }
