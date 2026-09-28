@@ -317,9 +317,10 @@ private fun SchedaPosizione(stato: StatoGuida, s: SituazioneGuida?, onRifornito:
         }
         if (s != null) {
             val livello = s.livello.toFloat()
+            // rosso in riserva (sotto il 10%), ambra sotto un quarto
             val colore = when {
-                livello < 0.15f -> Color(0xFFEF4444)
-                livello < 0.3f -> Colori.Ambra
+                livello < 0.1f -> Color(0xFFEF4444)
+                livello < 0.25f -> Colori.Ambra
                 else -> Color(0xFF2DD4BF)
             }
             Box(

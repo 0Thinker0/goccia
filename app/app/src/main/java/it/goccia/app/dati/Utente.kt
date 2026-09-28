@@ -264,10 +264,14 @@ data class DatiUtente(
 ) {
     val autoCorrente: Auto? get() = auto.firstOrNull { it.id == autoAttiva } ?: auto.firstOrNull()
 
-    /** Il carburante da mostrare: scelto dall'utente, altrimenti quello dell'auto. */
+    /**
+     * Il carburante da mostrare: scelto dall'utente, altrimenti quello dell'auto; con l'elettrica
+     * attiva quello dell'auto a carburante del garage, se c'e.
+     */
     val carburante: Carburante
         get() = impostazioni.carburante?.let { Carburante.daCodice(it) }
             ?: autoCorrente?.alimentazione?.carburante
+            ?: autoACarburante?.alimentazione?.carburante
             ?: Carburante.BENZINA
 
     fun ePreferito(id: Long): Boolean = preferiti.any { it.id == id }
