@@ -138,6 +138,59 @@ nota "home dopo il rifornimento"
 tocca "Home"
 foto home-finale 4
 
+nota "auto elettrica: nuova auto"
+tocca "Profilo"
+sleep 2
+tocca --descrizione "Aggiungi auto"
+foto ev-nuova-auto 3
+tocca "Elettrica"
+foto ev-auto-elettrica 2
+tocca "Salva"
+sleep 3
+for _ in 1 2 3; do esiste "Home" && break; indietro; done
+
+nota "auto elettrica: home"
+tocca "Home"
+foto ev-home 15
+scorri
+foto ev-home-2
+scorri
+foto ev-home-3
+
+nota "auto elettrica: colonnine"
+tocca "Mappa"
+foto ev-mappa 15
+tocca "Dettagli e costi"
+foto ev-colonnina 5
+scorri
+foto ev-colonnina-2 2
+scorri
+foto ev-colonnina-3 2
+indietro
+for _ in 1 2 3; do esiste "Viaggio" && break; indietro; done
+
+nota "auto elettrica: viaggio"
+tocca "Viaggio"
+foto ev-viaggio 3
+tocca "Calcola soste"
+foto ev-viaggio-risultato 40
+adb shell input swipe 540 2000 540 1100 500
+foto ev-viaggio-risultato-2 2
+adb shell input swipe 540 2000 540 1100 500
+foto ev-viaggio-risultato-3 2
+indietro
+for _ in 1 2 3; do esiste "Profilo" && break; indietro; done
+
+nota "auto elettrica: tariffa di casa"
+tocca "Profilo"
+tocca --descrizione "Impostazioni"
+tocca "Tariffa di casa"
+foto ev-tariffa 3
+scorri
+foto ev-tariffa-2
+scorri
+foto ev-tariffa-3
+
 kill "$GEO" 2> /dev/null
 
 adb logcat -d -b crash > "$USCITA/crash.txt" 2>&1
