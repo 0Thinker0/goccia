@@ -1,4 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Goccia</string>
+    <string name="widget_prezzi">Goccia · il più conveniente</string>
+    <string name="widget_prezzi_descrizione">Il distributore più conveniente vicino a te, con il prezzo di oggi</string>
+    <string name="widget_auto">Goccia · la tua auto</string>
+    <string name="widget_auto_descrizione">Autonomia della tua auto e quando fare il pieno</string>
 </resources>

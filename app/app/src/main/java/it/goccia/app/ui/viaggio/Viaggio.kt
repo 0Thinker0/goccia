@@ -1,6 +1,7 @@
 package it.goccia.app.ui.viaggio
 
 import android.content.Context
+import android.util.Log
 import android.net.Uri
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
@@ -660,6 +661,7 @@ internal fun MappaViaggio(campioni: List<PuntoPercorso>, pin: List<PinViaggio>) 
                     }
                 }
                 stile.addSource(GeoJsonSource("goccia-soste", FeatureCollection.fromFeatures(elementi)))
+                Log.i("Goccia", "viaggio: ${elementi.size} segnaposto sulla mappa")
                 stile.addLayer(
                     SymbolLayer("goccia-soste", "goccia-soste").withProperties(
                         PropertyFactory.iconImage(Expression.get("icona")),

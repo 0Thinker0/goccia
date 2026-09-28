@@ -107,6 +107,7 @@ dependencies {
     implementation(libs.play.services.location)
     implementation(libs.maplibre)
     implementation(libs.androidx.work.runtime)
+    implementation(libs.androidx.glance.appwidget)
 
     testImplementation(libs.junit)
 }

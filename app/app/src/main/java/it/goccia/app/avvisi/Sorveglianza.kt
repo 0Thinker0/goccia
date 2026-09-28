@@ -19,6 +19,7 @@ import it.goccia.app.logica.FUSO_ITALIA
 import it.goccia.app.logica.Formati
 import it.goccia.app.logica.Territorio
 import it.goccia.app.logica.ValutaAvvisi
+import it.goccia.app.widget.Widget
 import java.io.IOException
 import java.time.ZonedDateTime
 import java.util.concurrent.TimeUnit
@@ -47,6 +48,8 @@ object Sorveglianza {
 
 class ControlloPrezziWorker(context: Context, parametri: WorkerParameters) : CoroutineWorker(context, parametri) {
     override suspend fun doWork(): Result = try {
+        // i widget mostrano i prezzi del giorno anche se l'app non viene aperta
+        Widget.aggiornaTutti(applicationContext)
         ControlloPrezzi(applicationContext).esegui()
         Result.success()
     } catch (e: IOException) {

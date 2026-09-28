@@ -1,6 +1,7 @@
 package it.goccia.app.ui.mappa
 
 import android.graphics.RectF
+import android.util.Log
 import android.view.Gravity
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -214,6 +215,7 @@ fun SchermataMappa(
             val attorno = withTimeoutOrNull(20_000) { vm.vista.first { it != null && it.centro == c } }
             attorno?.zona?.offerte.orEmpty().sortedBy { it.distanzaKm }.take(4).map { LatLng(it.distributore.lat, it.distributore.lon) }
         }
+        Log.i("Goccia", "mappa: adatto la vista a ${vicini.size} punti vicini")
         if (vicini.isEmpty()) return@LaunchedEffect
         val limiti = LatLngBounds.Builder()
             .include(LatLng(c.coordinate.lat + 0.004, c.coordinate.lon + 0.005))
@@ -250,7 +252,9 @@ fun SchermataMappa(
                     addNumberProperty("ordine", if (sel) -1_000.0 else -(c.kw ?: 0.0))
                 }
             }
-            s.getSourceAs<GeoJsonSource>(SORGENTE_PREZZI)?.setGeoJson(FeatureCollection.fromFeatures(elementi))
+            val sorgente = s.getSourceAs<GeoJsonSource>(SORGENTE_PREZZI)
+            sorgente?.setGeoJson(FeatureCollection.fromFeatures(elementi))
+            Log.i("Goccia", "mappa: ${elementi.size} colonnine, sorgente ${if (sorgente != null) "ok" else "assente"}")
             return@LaunchedEffect
         }
         val v = vista ?: return@LaunchedEffect
@@ -267,7 +271,9 @@ fun SchermataMappa(
                 addNumberProperty("ordine", if (sel) -1 else o.prezzo.millesimi)
             }
         }
-        s.getSourceAs<GeoJsonSource>(SORGENTE_PREZZI)?.setGeoJson(FeatureCollection.fromFeatures(elementi))
+        val sorgente = s.getSourceAs<GeoJsonSource>(SORGENTE_PREZZI)
+        sorgente?.setGeoJson(FeatureCollection.fromFeatures(elementi))
+        Log.i("Goccia", "mappa: ${elementi.size} prezzi, sorgente ${if (sorgente != null) "ok" else "assente"}")
     }
 
     Box(Modifier.fillMaxSize().background(Colori.Sfondo)) {

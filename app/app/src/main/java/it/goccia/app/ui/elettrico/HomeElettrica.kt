@@ -37,6 +37,7 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import it.goccia.app.dati.Colonnina
 import it.goccia.app.dati.DatiUtente
+import it.goccia.app.logica.ColonninaVicina
 import it.goccia.app.logica.Elettrico
 import it.goccia.app.logica.FonteTariffa
 import it.goccia.app.logica.Formati
@@ -117,7 +118,7 @@ fun LazyListScope.sezioniElettriche(
                 )
             }
         }
-        else -> items(vicine.take(3), key = { "colonnina-" + it.colonnina.id }) { v ->
+        else -> items(scelteHome(vicine), key = { "colonnina-" + it.colonnina.id }) { v ->
             CardColonnina(
                 v.colonnina,
                 v.distanzaKm,
@@ -255,4 +256,12 @@ private fun CardCosto100(vm: GocciaViewModel, utente: DatiUtente, onTariffa: () 
             style = Testi.Didascalia.copy(color = Colori.Testo2),
         )
     }
+}
+
+/** Le due colonnine piu vicine e, se non c'e gia, la veloce (in continua) piu vicina. */
+private fun scelteHome(vicine: List<ColonninaVicina>): List<ColonninaVicina> {
+    val prime = vicine.take(2)
+    val veloce = vicine.firstOrNull { it.colonnina.continua }
+    val scelte = if (veloce != null && veloce !in prime) prime + veloce else vicine.take(3)
+    return scelte.sortedBy { it.distanzaKm }
 }

@@ -382,6 +382,7 @@ class GocciaViewModel(private val c: Contenitore) : ViewModel() {
         }
         val centro = if (nuovaPosizione || _dati.value.centro == null) trovaCentro() ?: _dati.value.centro else _dati.value.centro
         impostaCentroInterno(centro)
+        c.aggiornaWidget()
     }
 
     private suspend fun trovaCentro(): Centro? {

@@ -8,13 +8,24 @@ import it.goccia.app.dati.ArchivioUtente
 import it.goccia.app.dati.DatiRepository
 import it.goccia.app.dati.Instradamento
 import it.goccia.app.dati.ServizioPosizione
+import it.goccia.app.widget.Widget
 import java.io.File
 import java.util.concurrent.TimeUnit
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.flow.debounce
+import kotlinx.coroutines.flow.drop
+import kotlinx.coroutines.launch
 import okhttp3.OkHttpClient
 import org.maplibre.android.MapLibre
 
-/** Gli oggetti condivisi dall'app e dal controllo degli avvisi in background. */
+/** Gli oggetti condivisi dall'app, dai widget e dal controllo degli avvisi in background. */
 class Contenitore(context: Context) {
+    private val appContext = context.applicationContext
+    private val ambito = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+
     val http: OkHttpClient = OkHttpClient.Builder()
         .connectTimeout(15, TimeUnit.SECONDS)
         .readTimeout(30, TimeUnit.SECONDS)
@@ -31,6 +42,19 @@ class Contenitore(context: Context) {
     val archivio = ArchivioUtente(File(context.filesDir, "utente.json"))
     val posizione = ServizioPosizione(context.applicationContext)
     val instradamento = Instradamento(http)
+
+    /** Ridisegna i widget con i dati appena scaricati. */
+    fun aggiornaWidget() {
+        ambito.launch { Widget.aggiornaTutti(appContext) }
+    }
+
+    /** Quando cambiano auto, carburante o livello, i widget si aggiornano da soli (con calma). */
+    @OptIn(FlowPreview::class)
+    fun osservaUtente() {
+        ambito.launch {
+            archivio.dati.drop(1).debounce(3_000).collect { Widget.aggiornaTutti(appContext) }
+        }
+    }
 }
 
 class GocciaApp : Application() {
@@ -43,6 +67,7 @@ class GocciaApp : Application() {
         MapLibre.getInstance(this)
         Notifiche.creaCanale(this)
         Sorveglianza.pianifica(this)
+        contenitore.osservaUtente()
     }
 }
 
