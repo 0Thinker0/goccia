@@ -8,6 +8,13 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.Crossfade
 import androidx.compose.foundation.background
+import kotlin.math.roundToInt
+import it.goccia.app.ui.componenti.Stepper
+import it.goccia.app.ui.componenti.Interruttore
+import it.goccia.app.ui.componenti.CampoTesto
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -54,9 +61,12 @@ import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import it.goccia.app.avvisi.Notifiche
+import it.goccia.app.dati.Abitudine
 import it.goccia.app.dati.Alimentazione
 import it.goccia.app.dati.Auto
 import it.goccia.app.dati.Luogo
+import it.goccia.app.dati.ModoTariffa
+import it.goccia.app.dati.TariffaCasa
 import it.goccia.app.dati.TipoLuogo
 import it.goccia.app.logica.Formati
 import it.goccia.app.ui.GocciaViewModel
@@ -76,7 +86,7 @@ import it.goccia.app.ui.tema.Testi
 import it.goccia.app.ui.tema.ombra
 import kotlinx.coroutines.launch
 
-private const val PASSI = 4
+private enum class Passo { BENVENUTO, PERMESSI, AUTO, TARIFFA, LUOGHI }
 
 @Composable
 fun SchermataIntro(vm: GocciaViewModel, onFine: () -> Unit) {
@@ -84,16 +94,44 @@ fun SchermataIntro(vm: GocciaViewModel, onFine: () -> Unit) {
     BackHandler(enabled = passo > 0) { passo-- }
 
     // dati dell'auto, tenuti qui per non perderli tornando indietro
+    val idAuto = rememberSaveable { vm.nuovoId() }
     var nome by rememberSaveable { mutableStateOf("") }
     var alimentazione by rememberSaveable { mutableStateOf(Alimentazione.BENZINA) }
     var capienza by rememberSaveable { mutableDoubleStateOf(Alimentazione.BENZINA.capienzaTipica) }
     var consumo by rememberSaveable { mutableStateOf(Formati.numero(Alimentazione.BENZINA.consumoTipico, 1)) }
 
+    // tariffa di casa (solo per chi ricarica dalla presa)
+    var sceltaTariffa by rememberSaveable { mutableIntStateOf(2) }
+    var prezzoCasa by rememberSaveable { mutableDoubleStateOf(0.26) }
+    var euroBolletta by rememberSaveable { mutableStateOf("") }
+    var kwhBolletta by rememberSaveable { mutableStateOf("") }
+    var bioraria by rememberSaveable { mutableStateOf(false) }
+    var pannelli by rememberSaveable { mutableStateOf(false) }
+
+    val passi = if (alimentazione.ricaricabile) Passo.entries else Passo.entries - Passo.TARIFFA
+    val attuale = passi[passo.coerceIn(0, passi.lastIndex)]
+
+    fun salvaTariffa() {
+        val modo = listOf(ModoTariffa.PREZZO, ModoTariffa.BOLLETTA, ModoTariffa.STIMA)[sceltaTariffa]
+        vm.salvaTariffaCasa(
+            TariffaCasa(
+                modo = modo,
+                bioraria = bioraria && modo == ModoTariffa.PREZZO,
+                prezzo = prezzoCasa,
+                f1 = prezzoCasa,
+                f23 = prezzoCasa,
+                bollettaEuro = Formati.leggiNumero(euroBolletta)?.takeIf { it > 0 } ?: 0.0,
+                bollettaKwh = Formati.leggiNumero(kwhBolletta)?.takeIf { it > 0 } ?: 0.0,
+                abitudine = if (pannelli) Abitudine.FOTOVOLTAICO else Abitudine.SERA,
+            ),
+        )
+    }
+
     fun salvaAuto() {
         val valore = Formati.leggiNumero(consumo)?.takeIf { it > 0 && it < 100 } ?: alimentazione.consumoTipico
         vm.salvaAuto(
             Auto(
-                id = vm.nuovoId(),
+                id = idAuto,
                 nome = nome.trim().ifBlank { "La mia auto" },
                 alimentazione = alimentazione,
                 capienza = capienza,
@@ -118,11 +156,11 @@ fun SchermataIntro(vm: GocciaViewModel, onFine: () -> Unit) {
             Box(Modifier.weight(1f))
             BottoneTesto("Salta", onFine, colore = Colori.Testo2)
         }
-        Crossfade(targetState = passo, label = "introduzione", modifier = Modifier.weight(1f)) { p ->
+        Crossfade(targetState = attuale, label = "introduzione", modifier = Modifier.weight(1f)) { p ->
             when (p) {
-                0 -> Benvenuto()
-                1 -> Permessi()
-                2 -> Column(
+                Passo.BENVENUTO -> Benvenuto()
+                Passo.PERMESSI -> Permessi()
+                Passo.AUTO -> Column(
                     Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(start = 20.dp, end = 20.dp, top = 12.dp, bottom = 12.dp),
                     verticalArrangement = Arrangement.spacedBy(22.dp),
                 ) {
@@ -144,24 +182,43 @@ fun SchermataIntro(vm: GocciaViewModel, onFine: () -> Unit) {
                         onConsumo = { consumo = it },
                     )
                 }
-                else -> Luoghi(vm)
+                Passo.TARIFFA -> PassoTariffa(
+                    stima = vm.stime.casa,
+                    scelta = sceltaTariffa,
+                    onScelta = { sceltaTariffa = it },
+                    prezzo = prezzoCasa,
+                    onPrezzo = { prezzoCasa = it },
+                    euroBolletta = euroBolletta,
+                    onEuroBolletta = { euroBolletta = it },
+                    kwhBolletta = kwhBolletta,
+                    onKwhBolletta = { kwhBolletta = it },
+                    bioraria = bioraria,
+                    onBioraria = { bioraria = it },
+                    pannelli = pannelli,
+                    onPannelli = { pannelli = it },
+                )
+                Passo.LUOGHI -> Luoghi(vm)
             }
         }
         Column(Modifier.padding(start = 28.dp, end = 28.dp, bottom = 28.dp, top = 12.dp), verticalArrangement = Arrangement.spacedBy(22.dp)) {
-            IndicatorePassi(passo, PASSI)
+            IndicatorePassi(passo, passi.size)
             BottonePrimario(
-                when (passo) {
-                    0 -> "Iniziamo"
-                    PASSI - 1 -> "Fatto, andiamo!"
+                when {
+                    passo == 0 -> "Iniziamo"
+                    passo == passi.lastIndex -> "Fatto, andiamo!"
                     else -> "Continua"
                 },
                 onClick = {
-                    when (passo) {
-                        2 -> {
+                    when {
+                        attuale == Passo.AUTO -> {
                             salvaAuto()
                             passo++
                         }
-                        PASSI - 1 -> onFine()
+                        attuale == Passo.TARIFFA -> {
+                            salvaTariffa()
+                            passo++
+                        }
+                        passo == passi.lastIndex -> onFine()
                         else -> passo++
                     }
                 },
@@ -433,5 +490,111 @@ private fun Luoghi(vm: GocciaViewModel) {
                 style = Testi.Didascalia.copy(color = Color(0xFF1F3A4A)),
             )
         }
+    }
+}
+
+/** Passo per chi ricarica dalla presa: quanto costa l'energia a casa. */
+@Composable
+private fun PassoTariffa(
+    stima: Double,
+    scelta: Int,
+    onScelta: (Int) -> Unit,
+    prezzo: Double,
+    onPrezzo: (Double) -> Unit,
+    euroBolletta: String,
+    onEuroBolletta: (String) -> Unit,
+    kwhBolletta: String,
+    onKwhBolletta: (String) -> Unit,
+    bioraria: Boolean,
+    onBioraria: (Boolean) -> Unit,
+    pannelli: Boolean,
+    onPannelli: (Boolean) -> Unit,
+) {
+    Column(
+        Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(start = 20.dp, end = 20.dp, top = 12.dp, bottom = 12.dp),
+        verticalArrangement = Arrangement.spacedBy(14.dp),
+    ) {
+        Text(
+            "SOLO PER AUTO ELETTRICHE E PLUG-IN",
+            style = Testi.TitoloGruppo.copy(color = Colori.Petrolio),
+            modifier = Modifier.padding(horizontal = 8.dp),
+        )
+        Titolo(
+            "Quanto paghi la luce a casa?",
+            "Così ti diciamo quanto costa ricaricare a casa, rispetto alle colonnine.",
+            Modifier.padding(start = 8.dp, end = 8.dp, bottom = 6.dp),
+        )
+        val opzioni = listOf("So il prezzo al kWh", "Lo calcolo dalla bolletta", "Non lo so, usa una stima")
+        opzioni.forEachIndexed { i, testo ->
+            val attiva = scelta == i
+            Column(
+                Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(18.dp))
+                    .background(if (attiva) Colori.PetrolioTenue else Colori.Superficie)
+                    .border(if (attiva) 1.5.dp else 1.dp, if (attiva) Colori.Petrolio else Colori.Bordo, RoundedCornerShape(18.dp))
+                    .clickable { onScelta(i) }
+                    .padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Box(
+                        Modifier
+                            .size(22.dp)
+                            .clip(CircleShape)
+                            .border(if (attiva) 6.dp else 2.dp, if (attiva) Colori.Petrolio else Colori.Linea, CircleShape),
+                    )
+                    Text(testo, style = Testi.CorpoForte.copy(fontWeight = if (attiva) FontWeight.ExtraBold else FontWeight.SemiBold))
+                }
+                if (attiva) {
+                    when (i) {
+                        0 -> {
+                            Text("Tutto compreso, come in bolletta", style = Testi.Didascalia.copy(color = Colori.Testo2))
+                            Stepper(
+                                Formati.numero(prezzo, 3) + " €/kWh",
+                                onMeno = { onPrezzo(((prezzo - 0.005).coerceAtLeast(0.0) * 200).roundToInt() / 200.0) },
+                                onPiu = { onPrezzo(((prezzo + 0.005) * 200).roundToInt() / 200.0) },
+                                descrizioneMeno = "Abbassa il prezzo di mezzo centesimo",
+                                descrizionePiu = "Alza il prezzo di mezzo centesimo",
+                            )
+                        }
+                        1 -> {
+                            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                                CampoTesto(euroBolletta, onEuroBolletta, Modifier.weight(1f), suffisso = "€", tastiera = KeyboardType.Decimal, segnaposto = "84,20")
+                                CampoTesto(kwhBolletta, onKwhBolletta, Modifier.weight(1f), suffisso = "kWh", tastiera = KeyboardType.Number, segnaposto = "320")
+                            }
+                            val euro = Formati.leggiNumero(euroBolletta)
+                            val kwh = Formati.leggiNumero(kwhBolletta)
+                            Text(
+                                "Totale senza quote fisse ÷ kWh consumati = " +
+                                    if (euro != null && kwh != null && kwh > 0) Formati.numero(euro / kwh, 3) + " €/kWh" else "…",
+                                style = Testi.Didascalia.copy(color = Colori.Testo2, fontWeight = FontWeight.SemiBold),
+                            )
+                        }
+                        else -> Text(
+                            "Usiamo ${Formati.numero(stima, 2)} €/kWh, la media nazionale tutto compreso. Potrai cambiarla quando vuoi.",
+                            style = Testi.Didascalia.copy(color = Colori.Testo2),
+                        )
+                    }
+                }
+            }
+        }
+        RigaScelta("Ho una tariffa bioraria", "Prezzi F1 e F23 nelle Impostazioni", bioraria, onBioraria)
+        RigaScelta("Ho i pannelli fotovoltaici", "Di giorno la ricarica costa quasi zero", pannelli, onPannelli)
+    }
+}
+
+@Composable
+private fun RigaScelta(titolo: String, testo: String, acceso: Boolean, onCambia: (Boolean) -> Unit) {
+    Row(
+        Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(Colori.Superficie).clickable { onCambia(!acceso) }.padding(16.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            Text(titolo, style = Testi.CorpoForte)
+            Text(testo, style = Testi.Piccolo.copy(color = Colori.Testo3))
+        }
+        Interruttore(acceso, onCambia, descrizione = titolo)
     }
 }

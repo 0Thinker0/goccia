@@ -6,6 +6,19 @@ import org.junit.Assert.assertNull
 import org.junit.Test
 
 class FormatiTest {
+
+    @Test
+    fun formatiPerLeElettriche() {
+        assertEquals("46%", Formati.percento(0.46))
+        assertEquals("150 kW", Formati.kw(150.0))
+        assertEquals("22 kW", Formati.kw(22.0))
+        assertEquals("7,4 kW", Formati.kw(7.4))
+        assertEquals("0,59 €/kWh", Formati.euroKwh(0.59))
+        assertEquals("0,263 €/kWh", Formati.euroKwh(84.20 / 320, 3))
+        assertEquals("22 min", Formati.durata(22))
+        assertEquals("4 h 20 min", Formati.durata(260))
+        assertEquals("2 h", Formati.durata(120))
+    }
     @Test
     fun prezziENumeri() {
         assertEquals("1,689", Formati.prezzo(1689))

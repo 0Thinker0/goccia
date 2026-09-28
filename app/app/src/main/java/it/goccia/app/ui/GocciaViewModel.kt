@@ -6,33 +6,43 @@ import it.goccia.app.Contenitore
 import it.goccia.app.dati.Auto
 import it.goccia.app.dati.Avviso
 import it.goccia.app.dati.Carburante
+import it.goccia.app.dati.Colonnina
 import it.goccia.app.dati.Comune
 import it.goccia.app.dati.Coordinate
 import it.goccia.app.dati.DatiUtente
 import it.goccia.app.dati.Distributore
 import it.goccia.app.dati.Impostazioni
 import it.goccia.app.dati.Indice
+import it.goccia.app.dati.IndiceColonnine
 import it.goccia.app.dati.Luogo
 import it.goccia.app.dati.PosizioneSalvata
 import it.goccia.app.dati.Preferito
+import it.goccia.app.dati.Presa
 import it.goccia.app.dati.Provincia
 import it.goccia.app.dati.Percorso
 import it.goccia.app.dati.PercorsoNonTrovato
 import it.goccia.app.dati.Rifornimento
+import it.goccia.app.dati.StimeTariffe
 import it.goccia.app.dati.StoricoDistributore
 import it.goccia.app.dati.StoricoZona
+import it.goccia.app.dati.TariffaCasa
+import it.goccia.app.dati.TariffeColonnine
 import it.goccia.app.dati.TipoLuogo
 import it.goccia.app.dati.ViaggioRecente
+import it.goccia.app.logica.ColonninaSulPercorso
 import it.goccia.app.logica.Consiglio
 import it.goccia.app.logica.Convenienza
+import it.goccia.app.logica.Elettrico
 import it.goccia.app.logica.Geo
 import it.goccia.app.logica.LungoIlPercorso
+import it.goccia.app.logica.PianoElettrico
 import it.goccia.app.logica.PianoViaggio
 import it.goccia.app.logica.PuntoPercorso
 import it.goccia.app.logica.StatoSerbatoio
 import it.goccia.app.logica.Territorio
 import it.goccia.app.logica.Tragitto
 import it.goccia.app.logica.Zona
+import it.goccia.app.logica.ZonaColonnine
 import java.io.IOException
 import java.util.UUID
 import kotlinx.coroutines.CancellationException
@@ -97,7 +107,18 @@ data class VistaZona(
 /** Partenza o arrivo di un viaggio. */
 data class Tappa(val nome: String, val coordinate: Coordinate, val posizioneAttuale: Boolean = false)
 
-data class RichiestaViaggio(val partenza: Tappa, val arrivo: Tappa, val livello: Double, val deviazioneMin: Int, val pienoCompleto: Boolean)
+data class RichiestaViaggio(
+    val partenza: Tappa,
+    val arrivo: Tappa,
+    val livello: Double,
+    val deviazioneMin: Int,
+    val pienoCompleto: Boolean,
+    /** solo elettriche: livello minimo della batteria all'arrivo */
+    val arrivoMinimo: Double = 0.2,
+)
+
+/** Lo stesso viaggio con un'auto a carburante, per confronto. */
+data class ConfrontoCarburante(val etichetta: String, val litri: Double, val unita: String, val costo: Double)
 
 sealed interface StatoViaggio {
     data object Vuoto : StatoViaggio
@@ -117,8 +138,32 @@ sealed interface StatoViaggio {
         val capienza: Double,
     ) : StatoViaggio
 
+    data class ProntoElettrico(
+        val partenza: Tappa,
+        val arrivo: Tappa,
+        val percorso: Percorso,
+        val campioni: List<PuntoPercorso>,
+        val lungo: List<ColonninaSulPercorso>,
+        val piano: PianoElettrico,
+        val auto: Auto,
+        val confronto: ConfrontoCarburante?,
+    ) : StatoViaggio
+
     data class Errore(val messaggio: String) : StatoViaggio
 }
+
+/** Le colonnine scaricate finora (per tessere di mezzo grado). */
+data class StatoColonnine(
+    val indice: IndiceColonnine? = null,
+    val perTessera: Map<String, List<Colonnina>> = emptyMap(),
+    val tutte: List<Colonnina> = emptyList(),
+    val caricamento: Boolean = false,
+    /** ne indice ne copia salvata: senza rete non possiamo mostrarle */
+    val nonDisponibili: Boolean = false,
+)
+
+/** Le colonnine attorno a un centro, filtrate secondo le prese e la potenza scelte. */
+data class VistaColonnine(val centro: Centro, val zona: ZonaColonnine)
 
 class GocciaViewModel(private val c: Contenitore) : ViewModel() {
     private val repo = c.repository
@@ -148,6 +193,93 @@ class GocciaViewModel(private val c: Contenitore) : ViewModel() {
     }
         .flowOn(Dispatchers.Default)
         .stateIn(viewModelScope, SharingStarted.Eagerly, null)
+
+    // ------------------------------------------------------------------ colonnine
+
+    private val _colonnine = MutableStateFlow(StatoColonnine())
+    val colonnine: StateFlow<StatoColonnine> = _colonnine.asStateFlow()
+    private val caricamentoTessere = Mutex()
+
+    /** Colonnine attorno al centro (Home delle elettriche). */
+    val vistaColonnine: StateFlow<VistaColonnine?> = combine(_dati, utente, _colonnine) { d, u, c ->
+        d.centro?.let { centro -> VistaColonnine(centro, zonaColonnine(c, u, centro.coordinate)) }
+    }
+        .flowOn(Dispatchers.Default)
+        .stateIn(viewModelScope, SharingStarted.Eagerly, null)
+
+    /** Colonnine attorno al centro della mappa. */
+    val vistaColonnineMappa: StateFlow<VistaColonnine?> = combine(_dati, utente, _colonnine, _centroMappa) { d, u, c, m ->
+        val centro = m?.let { Centro(it, TipoCentro.COMUNE, "Mappa") } ?: d.centro ?: return@combine null
+        VistaColonnine(centro, zonaColonnine(c, u, centro.coordinate))
+    }
+        .flowOn(Dispatchers.Default)
+        .stateIn(viewModelScope, SharingStarted.Eagerly, null)
+
+    private fun zonaColonnine(c: StatoColonnine, u: DatiUtente, punto: Coordinate): ZonaColonnine =
+        Elettrico.zona(c.tutte, punto, u.impostazioni.raggioKm, u.prese, u.impostazioni.potenzaMinima)
+
+    /** La mappa mostra le colonnine invece dei distributori: di serie per le auto elettriche. */
+    private val _sceltaMappaColonnine = MutableStateFlow<Boolean?>(null)
+    val mappaColonnine: StateFlow<Boolean> = combine(_sceltaMappaColonnine, utente) { scelta, u -> scelta ?: u.elettrica }
+        .stateIn(viewModelScope, SharingStarted.Eagerly, false)
+
+    fun mostraColonnine(si: Boolean) {
+        _sceltaMappaColonnine.value = si
+        if (si) (_centroMappa.value ?: _dati.value.centro?.coordinate)?.let { caricaColonnineAttornoA(it, 15.0) }
+    }
+
+    /** Stime delle tariffe (dalla pipeline, o quelle dell'app se non ancora scaricate). */
+    val stime: StimeTariffe get() = _colonnine.value.indice?.stime ?: StimeTariffe()
+
+    fun tariffaDi(c: Colonnina): Double = Elettrico.tariffaColonnina(c.classe, utente.value.tariffeColonnine, stime)
+
+    suspend fun indiceColonnine(): IndiceColonnine? {
+        _colonnine.value.indice?.let { return it }
+        val indice = try {
+            repo.indiceColonnine()
+        } catch (e: Exception) {
+            null
+        }
+        _colonnine.update { it.copy(indice = indice, nonDisponibili = indice == null) }
+        return indice
+    }
+
+    /** Scarica le tessere che mancano (solo quelle che esistono davvero). */
+    suspend fun caricaTessere(chiavi: Set<String>) {
+        val indice = indiceColonnine() ?: return
+        caricamentoTessere.withLock {
+            val mancanti = chiavi.filter { it in indice.tessere && it !in _colonnine.value.perTessera }
+            if (mancanti.isEmpty()) return
+            _colonnine.update { it.copy(caricamento = true) }
+            val esiti = coroutineScope {
+                mancanti.map { k ->
+                    async {
+                        k to try {
+                            repo.tessera(k, indice.generato)
+                        } catch (e: Exception) {
+                            null
+                        }
+                    }
+                }.awaitAll()
+            }
+            _colonnine.update { s ->
+                val nuove = s.perTessera.toMutableMap()
+                for ((k, lista) in esiti) if (lista != null) nuove[k] = lista
+                s.copy(perTessera = nuove, tutte = nuove.values.flatten(), caricamento = false)
+            }
+        }
+    }
+
+    suspend fun caricaColonnineAttorno(punto: Coordinate, km: Double = 20.0) {
+        val indice = indiceColonnine() ?: return
+        caricaTessere(Elettrico.tessereAttorno(punto, km, indice.passo))
+    }
+
+    fun caricaColonnineAttornoA(punto: Coordinate, km: Double = 20.0) {
+        viewModelScope.launch { caricaColonnineAttorno(punto, km) }
+    }
+
+    fun colonnina(id: String): Colonnina? = _colonnine.value.tutte.firstOrNull { it.id == id }
 
     // ------------------------------------------------------------------ calcoli
 
@@ -280,6 +412,10 @@ class GocciaViewModel(private val c: Contenitore) : ViewModel() {
             _dati.update { it.copy(caricamento = false) }
             return
         }
+        // per chi ricarica, le colonnine arrivano insieme ai prezzi (senza farli aspettare)
+        if (utente.value.autoCorrente?.alimentazione?.ricaricabile == true || mappaColonnine.value) {
+            caricaColonnineAttornoA(centro.coordinate, 20.0)
+        }
         caricaAttorno(centro.coordinate, 20.0)
         val d = _dati.value
         val provincia = d.indice?.let { Territorio.provinciaDi(it.province, d.comuni, centro.coordinate) }
@@ -398,10 +534,13 @@ class GocciaViewModel(private val c: Contenitore) : ViewModel() {
         viewModelScope.launch { caricaProvince(sigle) }
     }
 
-    /** La mappa si e fermata qui: carichiamo i distributori della zona se serve. */
+    /** La mappa si e fermata qui: carichiamo i distributori (o le colonnine) della zona se serve. */
     fun mappaSpostata(punto: Coordinate, zoom: Double) {
         _centroMappa.value = punto
-        if (zoom >= 9.0) viewModelScope.launch { caricaAttorno(punto, 15.0) }
+        if (zoom >= 9.0) {
+            viewModelScope.launch { caricaAttorno(punto, 15.0) }
+            if (mappaColonnine.value) caricaColonnineAttornoA(punto, 15.0)
+        }
     }
 
     fun distributoreCaricato(id: Long): Distributore? = _dati.value.distributori.firstOrNull { it.id == id }
@@ -540,53 +679,79 @@ class GocciaViewModel(private val c: Contenitore) : ViewModel() {
     var ultimaRichiesta: RichiestaViaggio? = null
         private set
 
-    /** Percorso, distributori lungo la strada e soste consigliate. */
-    fun calcolaViaggio(partenza: Tappa, arrivo: Tappa, livello: Double, deviazioneMin: Int, pienoCompleto: Boolean) {
+    /** Percorso, distributori (o colonnine) lungo la strada e soste consigliate. */
+    fun calcolaViaggio(partenza: Tappa, arrivo: Tappa, livello: Double, deviazioneMin: Int, pienoCompleto: Boolean, arrivoMinimo: Double = 0.2) {
         lavoroViaggio?.cancel()
-        ultimaRichiesta = RichiestaViaggio(partenza, arrivo, livello, deviazioneMin, pienoCompleto)
+        ultimaRichiesta = RichiestaViaggio(partenza, arrivo, livello, deviazioneMin, pienoCompleto, arrivoMinimo)
         lavoroViaggio = viewModelScope.launch {
             try {
                 _viaggio.value = StatoViaggio.Calcolo("Calcolo il percorso…")
                 if (_dati.value.indice == null) carica(forza = false, nuovaPosizione = false)
-                val indice = _dati.value.indice ?: throw IOException("dati non disponibili")
                 val da = if (partenza.posizioneAttuale) posizione.attuale() ?: partenza.coordinate else partenza.coordinate
                 val percorso = c.instradamento.percorso(da, arrivo.coordinate)
-
-                _viaggio.value = StatoViaggio.Calcolo("Cerco i distributori lungo la strada…")
                 val campioni = withContext(Dispatchers.Default) { Tragitto.campiona(percorso.punti, 0.5) }
-                val comuni = _dati.value.comuni
-                val sigle = withContext(Dispatchers.Default) {
-                    (campioni.filterIndexed { i, _ -> i % 20 == 0 } + campioni.last())
-                        .flatMap { Territorio.provinceAttorno(indice.province, comuni, Coordinate(it.lat, it.lon), 6.0) }
-                        .distinct()
-                }
-                caricaProvince(sigle)
-
                 val u = utente.value
-                val carburante = u.carburante
-                val auto = u.autoCorrente?.takeIf { !it.alimentazione.elettrica }
-                val capienza = auto?.capienza ?: 50.0
-                val consumo = auto?.consumo ?: 6.0
-                val distributori = _dati.value.perProvincia.filterKeys { it in sigle }.values.flatten()
-                val adesso = System.currentTimeMillis() / 1000
-                val lungo = withContext(Dispatchers.Default) {
-                    Tragitto.lungoIlPercorso(
-                        distributori, carburante, u.impostazioni.preferisciSelf, campioni, Tragitto.distanzaPerMinuti(deviazioneMin), adesso,
+                val elettrica = u.autoCorrente?.takeIf { it.alimentazione.elettrica }
+                if (elettrica != null) {
+                    _viaggio.value = StatoViaggio.Calcolo("Cerco le colonnine lungo la strada…")
+                    val indiceEv = indiceColonnine() ?: throw IOException("colonnine non disponibili")
+                    caricaTessere(Elettrico.tessereLungo(campioni, 4.0, indiceEv.passo))
+                    val tutte = _colonnine.value.tutte
+                    val lungo = withContext(Dispatchers.Default) {
+                        Elettrico.lungoIlPercorso(tutte, campioni, Tragitto.distanzaPerMinuti(deviazioneMin))
+                    }
+                    val piano = withContext(Dispatchers.Default) {
+                        Elettrico.pianifica(
+                            lungo, percorso.distanzaKm, elettrica.capienza, elettrica.consumo, elettrica.acKw, elettrica.dcKw,
+                            u.prese, livello, arrivoMinimo, ::tariffaDi,
+                        )
+                    }
+                    _viaggio.value = StatoViaggio.ProntoElettrico(
+                        partenza = partenza.copy(coordinate = da),
+                        arrivo = arrivo,
+                        percorso = percorso,
+                        campioni = campioni,
+                        lungo = lungo,
+                        piano = piano,
+                        auto = elettrica,
+                        confronto = confrontoCarburante(u, percorso.distanzaKm),
+                    )
+                } else {
+                    val indice = _dati.value.indice ?: throw IOException("dati non disponibili")
+                    _viaggio.value = StatoViaggio.Calcolo("Cerco i distributori lungo la strada…")
+                    val comuni = _dati.value.comuni
+                    val sigle = withContext(Dispatchers.Default) {
+                        (campioni.filterIndexed { i, _ -> i % 20 == 0 } + campioni.last())
+                            .flatMap { Territorio.provinceAttorno(indice.province, comuni, Coordinate(it.lat, it.lon), 6.0) }
+                            .distinct()
+                    }
+                    caricaProvince(sigle)
+
+                    val carburante = u.carburante
+                    val auto = u.autoCorrente?.takeIf { !it.alimentazione.elettrica }
+                    val capienza = auto?.capienza ?: 50.0
+                    val consumo = auto?.consumo ?: 6.0
+                    val distributori = _dati.value.perProvincia.filterKeys { it in sigle }.values.flatten()
+                    val adesso = System.currentTimeMillis() / 1000
+                    val lungo = withContext(Dispatchers.Default) {
+                        Tragitto.lungoIlPercorso(
+                            distributori, carburante, u.impostazioni.preferisciSelf, campioni, Tragitto.distanzaPerMinuti(deviazioneMin), adesso,
+                        )
+                    }
+                    val piano = Tragitto.pianifica(lungo, percorso.distanzaKm, capienza, consumo, livello, pienoCompleto)
+                    _viaggio.value = StatoViaggio.Pronto(
+                        partenza = partenza.copy(coordinate = da),
+                        arrivo = arrivo,
+                        percorso = percorso,
+                        campioni = campioni,
+                        lungo = lungo,
+                        piano = piano,
+                        carburante = carburante,
+                        livello = livello,
+                        nomeAuto = auto?.nome,
+                        capienza = capienza,
                     )
                 }
-                val piano = Tragitto.pianifica(lungo, percorso.distanzaKm, capienza, consumo, livello, pienoCompleto)
-                _viaggio.value = StatoViaggio.Pronto(
-                    partenza = partenza.copy(coordinate = da),
-                    arrivo = arrivo,
-                    percorso = percorso,
-                    campioni = campioni,
-                    lungo = lungo,
-                    piano = piano,
-                    carburante = carburante,
-                    livello = livello,
-                    nomeAuto = auto?.nome,
-                    capienza = capienza,
-                )
                 val recente = ViaggioRecente(partenza.nome, da.lat, da.lon, arrivo.nome, arrivo.coordinate.lat, arrivo.coordinate.lon, System.currentTimeMillis())
                 archivio.aggiorna { du ->
                     val altri = du.viaggiRecenti.filterNot { it.partenza == recente.partenza && it.arrivo == recente.arrivo }
@@ -612,4 +777,29 @@ class GocciaViewModel(private val c: Contenitore) : ViewModel() {
     /** Distanza dal centro attuale, per le liste (preferiti, avvisi). */
     fun distanzaDalCentro(punto: Coordinate): Double? =
         _dati.value.centro?.let { Geo.distanzaKm(it.coordinate, punto) }
+
+    /**
+     * Quanto costerebbero [km] con l'auto a carburante del garage (o con una benzina media da
+     * 6,5 l/100 km), ai prezzi medi nazionali di oggi: serve a confrontare con l'elettrica.
+     */
+    fun confrontoCarburante(u: DatiUtente, km: Double): ConfrontoCarburante? {
+        val indice = _dati.value.indice ?: return null
+        val altra = u.autoACarburante
+        val carburante = altra?.alimentazione?.carburante ?: Carburante.BENZINA
+        val consumo = altra?.consumo ?: 6.5
+        val media = indice.medieNazionali[carburante]?.let { it.self ?: it.servito } ?: return null
+        val quantita = km * consumo / 100
+        val etichetta = if (altra != null) "${carburante.etichetta} (${altra.nome})" else "${carburante.etichetta}, auto media"
+        return ConfrontoCarburante(etichetta, quantita, altra?.alimentazione?.unitaCapienza ?: "l", quantita * media / 1000.0)
+    }
+
+    // ------------------------------------------------------------------ elettriche: tariffe e filtri
+
+    fun salvaTariffaCasa(t: TariffaCasa) = modifica { it.copy(tariffaCasa = t) }
+
+    fun salvaTariffeColonnine(t: TariffeColonnine) = modifica { it.copy(tariffeColonnine = t) }
+
+    fun scegliPrese(prese: Set<Presa>) = impostazioni { it.copy(prese = prese.map { p -> p.codice }) }
+
+    fun scegliPotenzaMinima(kw: Int) = impostazioni { it.copy(potenzaMinima = kw) }
 }

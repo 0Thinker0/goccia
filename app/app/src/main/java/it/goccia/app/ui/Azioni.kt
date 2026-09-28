@@ -17,9 +17,10 @@ private fun avvia(context: Context, intent: Intent): Boolean = try {
 }
 
 /** Apre il navigatore scelto nelle impostazioni verso il distributore. */
-fun naviga(context: Context, d: Distributore, app: AppNavigazione) {
-    val lat = d.lat
-    val lon = d.lon
+fun naviga(context: Context, d: Distributore, app: AppNavigazione) = naviga(context, d.lat, d.lon, d.titolo, app)
+
+/** Apre il navigatore scelto nelle impostazioni verso un punto (distributore o colonnina). */
+fun naviga(context: Context, lat: Double, lon: Double, nome: String, app: AppNavigazione) {
     val web = Intent(Intent.ACTION_VIEW, Uri.parse("https://www.google.com/maps/dir/?api=1&destination=$lat,$lon"))
     val riuscito = when (app) {
         AppNavigazione.GOOGLE_MAPS -> avvia(
@@ -28,7 +29,7 @@ fun naviga(context: Context, d: Distributore, app: AppNavigazione) {
         )
         AppNavigazione.WAZE -> avvia(context, Intent(Intent.ACTION_VIEW, Uri.parse("https://waze.com/ul?ll=$lat,$lon&navigate=yes")))
         AppNavigazione.CHIEDI -> {
-            val geo = Intent(Intent.ACTION_VIEW, Uri.parse("geo:$lat,$lon?q=$lat,$lon(${Uri.encode(d.titolo)})"))
+            val geo = Intent(Intent.ACTION_VIEW, Uri.parse("geo:$lat,$lon?q=$lat,$lon(${Uri.encode(nome)})"))
             avvia(context, Intent.createChooser(geo, "Naviga con"))
         }
     }

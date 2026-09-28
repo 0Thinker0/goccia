@@ -50,6 +50,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import it.goccia.app.dati.Carburante
+import it.goccia.app.dati.Colonnina
 import it.goccia.app.dati.Coordinate
 import it.goccia.app.dati.DatiUtente
 import it.goccia.app.dati.Distributore
@@ -57,6 +58,7 @@ import it.goccia.app.dati.TipoLuogo
 import it.goccia.app.logica.Consiglio
 import it.goccia.app.logica.Formati
 import it.goccia.app.logica.LungoIlPercorso
+import it.goccia.app.logica.PuntoPercorso
 import it.goccia.app.ui.GocciaViewModel
 import it.goccia.app.ui.StatoViaggio
 import it.goccia.app.ui.Tappa
@@ -99,11 +101,18 @@ import org.maplibre.geojson.Point
 
 private val LIVELLI = listOf("Riserva" to 0.1, "1/4" to 0.25, "1/2" to 0.5, "3/4" to 0.75, "Pieno" to 1.0)
 private val DEVIAZIONI = listOf(3, 5, 10)
+private val LIVELLI_EV = listOf(0.2, 0.4, 0.6, 0.8, 1.0)
+private val ARRIVI_EV = listOf(0.1, 0.2, 0.3)
 
 private enum class Campo { PARTENZA, ARRIVO }
 
 @Composable
-fun SchermataViaggio(vm: GocciaViewModel, onDistributore: (Distributore) -> Unit, onAuto: () -> Unit) {
+fun SchermataViaggio(
+    vm: GocciaViewModel,
+    onDistributore: (Distributore) -> Unit,
+    onAuto: () -> Unit,
+    onColonnina: (Colonnina) -> Unit,
+) {
     LaunchedEffect(Unit) {
         vm.avvia()
         vm.caricaComuni()
@@ -113,6 +122,10 @@ fun SchermataViaggio(vm: GocciaViewModel, onDistributore: (Distributore) -> Unit
         is StatoViaggio.Pronto -> {
             BackHandler { vm.chiudiViaggio() }
             Risultato(vm, s, onDistributore)
+        }
+        is StatoViaggio.ProntoElettrico -> {
+            BackHandler { vm.chiudiViaggio() }
+            RisultatoElettrico(vm, s, onColonnina)
         }
         else -> Pianifica(vm, s, onAuto)
     }
@@ -142,6 +155,16 @@ private fun Pianifica(vm: GocciaViewModel, stato: StatoViaggio, onAuto: () -> Un
     var deviazione by remember { mutableIntStateOf(precedente?.let { DEVIAZIONI.indexOf(it.deviazioneMin) }?.takeIf { it >= 0 } ?: 1) }
     var pienoCompleto by remember { mutableStateOf(precedente?.pienoCompleto ?: true) }
 
+    // auto elettrica: batteria in partenza e livello minimo all'arrivo
+    val elettrica = utente.autoCorrente?.takeIf { it.alimentazione.elettrica }
+    var batteria by remember {
+        val dalPrecedente = precedente?.let { r -> LIVELLI_EV.indexOfFirst { abs(it - r.livello) < 0.01 } } ?: -1
+        mutableIntStateOf(if (dalPrecedente >= 0) dalPrecedente else LIVELLI_EV.indexOf(0.8))
+    }
+    var arrivoMinimo by remember {
+        mutableIntStateOf(precedente?.let { r -> ARRIVI_EV.indexOfFirst { abs(it - r.arrivoMinimo) < 0.01 } }?.takeIf { it >= 0 } ?: 1)
+    }
+
     if (cercaPer != null) {
         BackHandler { cercaPer = null }
         Scelta(vm, utente, cercaPer == Campo.PARTENZA, posizione, onScelta = { t ->
@@ -161,7 +184,11 @@ private fun Pianifica(vm: GocciaViewModel, stato: StatoViaggio, onAuto: () -> Un
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Text("Viaggio", style = Testi.TitoloSchermata)
-            Text("Ti diciamo dove e quando fare il pieno lungo il percorso.", style = Testi.Testo14.copy(color = Colori.Testo2))
+            Text(
+                if (elettrica != null) "Ti diciamo dove e quanto ricaricare lungo il percorso."
+                else "Ti diciamo dove e quando fare il pieno lungo il percorso.",
+                style = Testi.Testo14.copy(color = Colori.Testo2),
+            )
         }
 
         // partenza e arrivo
@@ -182,7 +209,44 @@ private fun Pianifica(vm: GocciaViewModel, stato: StatoViaggio, onAuto: () -> Un
         }
 
         // auto e livello
-        Scheda(Modifier.fillMaxWidth()) {
+        if (elettrica != null) {
+            Scheda(Modifier.fillMaxWidth()) {
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Box(Modifier.size(40.dp).clip(RoundedCornerShape(12.dp)).background(Colori.PetrolioChiaro), contentAlignment = Alignment.Center) {
+                        Icon(Icone.Fulmine, null, tint = Colori.Petrolio, modifier = Modifier.size(20.dp))
+                    }
+                    Column(Modifier.weight(1f)) {
+                        Text(elettrica.nome, style = Testi.CorpoForte.copy(fontWeight = FontWeight.ExtraBold))
+                        Text(
+                            "Elettrica · ${Formati.numero(elettrica.capienza, 0)} kWh · ${Formati.numero(elettrica.consumo, 1)} kWh/100 km",
+                            style = Testi.Piccolo.copy(color = Colori.Testo2),
+                        )
+                    }
+                    Text("Cambia", style = Testi.DidascaliaForte.copy(color = Colori.Petrolio), modifier = Modifier.clip(RoundedCornerShape(8.dp)).clickable(onClick = onAuto).padding(8.dp))
+                }
+                Text("Batteria in partenza", style = Testi.DidascaliaForte.copy(color = Colori.TestoChip))
+                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    LIVELLI_EV.forEachIndexed { i, v ->
+                        Opzione(Formati.percento(v), batteria == i, { batteria = i }, Modifier.weight(1f), altezza = 38.dp)
+                    }
+                }
+                Text("Arrivo con almeno", style = Testi.DidascaliaForte.copy(color = Colori.TestoChip))
+                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    ARRIVI_EV.forEachIndexed { i, v ->
+                        Opzione(Formati.percento(v), arrivoMinimo == i, { arrivoMinimo = i }, Modifier.weight(1f), altezza = 38.dp)
+                    }
+                }
+                val kwh = elettrica.capienza * LIVELLI_EV[batteria]
+                val autonomia = ((kwh / elettrica.consumo * 100) / 10).roundToInt() * 10
+                Text(
+                    buildAnnotatedString {
+                        withStyle(SpanStyle(fontWeight = FontWeight.ExtraBold)) { append("Circa ${Formati.numero(kwh, 0)} kWh · autonomia ~$autonomia km.") }
+                        if (stimato != null) append(" Dalla Home stimiamo il ${Formati.percento(stimato)}.")
+                    },
+                    style = Testi.Didascalia.copy(color = Colori.TestoChip),
+                )
+            }
+        } else Scheda(Modifier.fillMaxWidth()) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 Box(Modifier.size(40.dp).clip(RoundedCornerShape(12.dp)).background(Colori.PetrolioChiaro), contentAlignment = Alignment.Center) {
                     Icon(Icone.Auto, null, tint = Colori.Petrolio, modifier = Modifier.size(20.dp))
@@ -219,7 +283,9 @@ private fun Pianifica(vm: GocciaViewModel, stato: StatoViaggio, onAuto: () -> Un
         // opzioni
         Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             ChipScelta("Deviazione max ${DEVIAZIONI[deviazione]} min", false, onClick = { deviazione = (deviazione + 1) % DEVIAZIONI.size }, icona = Icone.Orologio)
-            ChipScelta(if (pienoCompleto) "Pieno completo" else "Solo quanto basta", false, onClick = { pienoCompleto = !pienoCompleto }, icona = Icone.Pompa)
+            if (elettrica == null) {
+                ChipScelta(if (pienoCompleto) "Pieno completo" else "Solo quanto basta", false, onClick = { pienoCompleto = !pienoCompleto }, icona = Icone.Pompa)
+            }
         }
 
         if (stato is StatoViaggio.Errore) {
@@ -239,7 +305,11 @@ private fun Pianifica(vm: GocciaViewModel, stato: StatoViaggio, onAuto: () -> Un
                 onClick = {
                     val da = partenzaEffettiva ?: return@BottonePrimario
                     val a = arrivo ?: return@BottonePrimario
-                    vm.calcolaViaggio(da, a, LIVELLI[livello].second, DEVIAZIONI[deviazione], pienoCompleto)
+                    if (elettrica != null) {
+                        vm.calcolaViaggio(da, a, LIVELLI_EV[batteria], DEVIAZIONI[deviazione], pienoCompleto, ARRIVI_EV[arrivoMinimo])
+                    } else {
+                        vm.calcolaViaggio(da, a, LIVELLI[livello].second, DEVIAZIONI[deviazione], pienoCompleto)
+                    }
                 },
                 modifier = Modifier.fillMaxWidth(),
                 icona = Icone.Percorso,
@@ -263,7 +333,8 @@ private fun Pianifica(vm: GocciaViewModel, stato: StatoViaggio, onAuto: () -> Un
             }
         }
         Text(
-            "Percorsi calcolati con OSRM sul servizio di FOSSGIS, con i dati di OpenStreetMap. I prezzi sono quelli comunicati al Ministero.",
+            if (elettrica != null) "Percorsi calcolati con OSRM sul servizio di FOSSGIS; percorso e colonnine da OpenStreetMap (ODbL)."
+            else "Percorsi calcolati con OSRM sul servizio di FOSSGIS, con i dati di OpenStreetMap. I prezzi sono quelli comunicati al Ministero.",
             style = Testi.Piccolo.copy(color = Colori.Testo3, fontWeight = FontWeight.Medium),
         )
     }
@@ -347,7 +418,7 @@ private fun Risultato(vm: GocciaViewModel, s: StatoViaggio.Pronto, onDistributor
 
     Column(Modifier.fillMaxSize()) {
         Box(Modifier.fillMaxWidth().weight(0.42f)) {
-            MappaViaggio(s)
+            MappaViaggio(s.campioni, pinCarburante(s))
             BottoneIcona(
                 Icone.Indietro, "Indietro", { vm.chiudiViaggio() },
                 Modifier.statusBarsPadding().padding(12.dp).ombra(CircleShape, 4.dp),
@@ -536,11 +607,33 @@ private fun RigaAlternativa(a: LungoIlPercorso, riferimento: Int?, onClick: () -
     }
 }
 
+/** Un segnaposto sulla mappa del viaggio: prezzo di un distributore o potenza di una colonnina. */
+data class PinViaggio(
+    val lat: Double,
+    val lon: Double,
+    val testo: String,
+    val colore: Int,
+    val scelto: Boolean,
+    val ordine: Double,
+    val coloreTesto: Int = android.graphics.Color.WHITE,
+    val coloreBordo: Int = android.graphics.Color.WHITE,
+)
+
+private fun pinCarburante(s: StatoViaggio.Pronto): List<PinViaggio> {
+    val sosteId = s.piano.soste.map { it.punto.distributore.id }.toSet()
+    val mostrati = (s.piano.soste.map { it.punto } + s.piano.alternative + listOfNotNull(s.piano.migliore)).distinctBy { it.distributore.id }
+    return mostrati.map { p ->
+        val scelto = p.distributore.id in sosteId || (s.piano.senzaSoste && p == s.piano.migliore)
+        val colore = if (scelto) Colori.Inchiostro else if (p.distributore.autostradale) Colori.Rosso else Colori.VerdeTesto
+        PinViaggio(p.distributore.lat, p.distributore.lon, Formati.prezzo(p.prezzo.millesimi), colore.toArgb(), scelto, if (scelto) -1.0 else p.prezzo.millesimi.toDouble())
+    }
+}
+
 @Composable
-private fun MappaViaggio(s: StatoViaggio.Pronto) {
+internal fun MappaViaggio(campioni: List<PuntoPercorso>, pin: List<PinViaggio>) {
     val context = LocalContext.current
     val densita = LocalDensity.current
-    val pin = remember { PinPrezzo(context) }
+    val disegnatore = remember { PinPrezzo(context) }
     val vistaMappa = rememberVistaMappa { v ->
         v.getMapAsync { m ->
             m.uiSettings.isRotateGesturesEnabled = false
@@ -548,7 +641,7 @@ private fun MappaViaggio(s: StatoViaggio.Pronto) {
             m.uiSettings.isCompassEnabled = false
             m.uiSettings.isLogoEnabled = false
             m.setStyle(Style.Builder().fromUri(STILE_MAPPA)) { stile ->
-                val linea = LineString.fromLngLats(s.campioni.map { Point.fromLngLat(it.lon, it.lat) })
+                val linea = LineString.fromLngLats(campioni.map { Point.fromLngLat(it.lon, it.lat) })
                 stile.addSource(GeoJsonSource("goccia-percorso", FeatureCollection.fromFeatures(listOf(Feature.fromGeometry(linea)))))
                 stile.addLayer(
                     LineLayer("goccia-percorso", "goccia-percorso").withProperties(
@@ -558,17 +651,12 @@ private fun MappaViaggio(s: StatoViaggio.Pronto) {
                         PropertyFactory.lineJoin(Property.LINE_JOIN_ROUND),
                     ),
                 )
-                val sosteId = s.piano.soste.map { it.punto.distributore.id }.toSet()
-                val mostrati = (s.piano.soste.map { it.punto } + s.piano.alternative + listOfNotNull(s.piano.migliore)).distinctBy { it.distributore.id }
-                val elementi = mostrati.map { p ->
-                    val scelto = p.distributore.id in sosteId || (s.piano.senzaSoste && p == s.piano.migliore)
-                    val prezzo = Formati.prezzo(p.prezzo.millesimi)
-                    val colore = if (scelto) Colori.Inchiostro else if (p.distributore.autostradale) Colori.Rosso else Colori.VerdeTesto
-                    val chiave = "v-$prezzo-${colore.toArgb()}-$scelto"
-                    stile.addImage(chiave, pin.disegna(prezzo, colore.toArgb(), scelto))
-                    Feature.fromGeometry(Point.fromLngLat(p.distributore.lon, p.distributore.lat)).apply {
+                val elementi = pin.map { p ->
+                    val chiave = "v-${p.testo}-${p.colore}-${p.coloreTesto}-${p.scelto}"
+                    stile.addImage(chiave, disegnatore.disegna(p.testo, p.colore, p.scelto, p.coloreTesto, p.coloreBordo))
+                    Feature.fromGeometry(Point.fromLngLat(p.lon, p.lat)).apply {
                         addStringProperty("icona", chiave)
-                        addNumberProperty("ordine", if (scelto) -1 else p.prezzo.millesimi)
+                        addNumberProperty("ordine", p.ordine)
                     }
                 }
                 stile.addSource(GeoJsonSource("goccia-soste", FeatureCollection.fromFeatures(elementi)))
@@ -580,13 +668,14 @@ private fun MappaViaggio(s: StatoViaggio.Pronto) {
                         PropertyFactory.symbolSortKey(Expression.get("ordine")),
                     ),
                 )
-                val lat = s.campioni.map { it.lat }
-                val lon = s.campioni.map { it.lon }
+                val lat = campioni.map { it.lat }
+                val lon = campioni.map { it.lon }
                 if (lat.isNotEmpty()) {
                     try {
                         val bordi = LatLngBounds.from(lat.max(), lon.max(), lat.min(), lon.min())
-                        val margine = with(densita) { 48.dp.roundToPx() }
-                        m.moveCamera(CameraUpdateFactory.newLatLngBounds(bordi, margine))
+                        fun px(valore: Int) = with(densita) { valore.dp.roundToPx() }
+                        // in alto c'e la barra di stato con il pulsante indietro
+                        m.moveCamera(CameraUpdateFactory.newLatLngBounds(bordi, px(48), px(96), px(48), px(28)))
                     } catch (e: Exception) {
                         // mappa non ancora misurata: resta sulla vista iniziale
                     }

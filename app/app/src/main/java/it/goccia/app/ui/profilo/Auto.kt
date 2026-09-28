@@ -43,6 +43,9 @@ import it.goccia.app.ui.componenti.Suggerimento
 import it.goccia.app.ui.tema.Colori
 import it.goccia.app.ui.tema.Testi
 
+/** Potenze tipiche dei caricatori di bordo in corrente alternata (kW). */
+private val SCALINI_AC = listOf(3.7, 7.4, 11.0, 22.0)
+
 /** Passo del selettore di capienza per unita. */
 private fun passo(a: Alimentazione): Double = if (a.unitaCapienza == "kg") 1.0 else 5.0
 
@@ -117,6 +120,8 @@ fun SchermataAuto(vm: GocciaViewModel, id: String?, onChiudi: () -> Unit) {
     var alimentazione by rememberSaveable { mutableStateOf(esistente?.alimentazione ?: Alimentazione.BENZINA) }
     var capienza by rememberSaveable { mutableDoubleStateOf(esistente?.capienza ?: Alimentazione.BENZINA.capienzaTipica) }
     var consumo by rememberSaveable { mutableStateOf(Formati.numero(esistente?.consumo ?: Alimentazione.BENZINA.consumoTipico, 1)) }
+    var acKw by rememberSaveable { mutableDoubleStateOf(esistente?.acKw ?: 11.0) }
+    var dcKw by rememberSaveable { mutableDoubleStateOf(esistente?.dcKw ?: 100.0) }
     var conferma by remember { mutableStateOf(false) }
 
     Column(Modifier.fillMaxSize().background(Colori.Superficie).statusBarsPadding().imePadding()) {
@@ -141,6 +146,31 @@ fun SchermataAuto(vm: GocciaViewModel, id: String?, onChiudi: () -> Unit) {
                 consumo = consumo,
                 onConsumo = { consumo = it },
             )
+            if (alimentazione.elettrica) {
+                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text("Ricarica in alternata", style = Testi.DidascaliaForte.copy(color = Colori.TestoChip))
+                        Stepper(
+                            Formati.kw(acKw),
+                            onMeno = { acKw = SCALINI_AC.lastOrNull { it < acKw - 0.01 } ?: acKw },
+                            onPiu = { acKw = SCALINI_AC.firstOrNull { it > acKw + 0.01 } ?: acKw },
+                            descrizioneMeno = "Diminuisci la potenza in alternata",
+                            descrizionePiu = "Aumenta la potenza in alternata",
+                        )
+                    }
+                    Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text("Ricarica rapida (DC)", style = Testi.DidascaliaForte.copy(color = Colori.TestoChip))
+                        Stepper(
+                            Formati.kw(dcKw),
+                            onMeno = { dcKw = (dcKw - 25).coerceAtLeast(25.0) },
+                            onPiu = { dcKw = (dcKw + 25).coerceAtMost(350.0) },
+                            descrizioneMeno = "Diminuisci la potenza di ricarica rapida",
+                            descrizionePiu = "Aumenta la potenza di ricarica rapida",
+                        )
+                    }
+                }
+                Suggerimento("Le trovi nella scheda tecnica dell'auto: servono per stimare i tempi di ricarica alle colonnine e nei viaggi.")
+            }
             if (esistente != null) {
                 BottoneTesto("Elimina auto", { conferma = true }, colore = Colori.Rosso)
             }
@@ -150,7 +180,7 @@ fun SchermataAuto(vm: GocciaViewModel, id: String?, onChiudi: () -> Unit) {
             onClick = {
                 val valore = Formati.leggiNumero(consumo)?.takeIf { it > 0 && it < 100 } ?: alimentazione.consumoTipico
                 val auto = (esistente ?: Auto(id = vm.nuovoId(), nome = "", alimentazione = alimentazione, capienza = capienza, consumo = valore))
-                    .copy(nome = nome.trim().ifBlank { "La mia auto" }, alimentazione = alimentazione, capienza = capienza, consumo = valore)
+                    .copy(nome = nome.trim().ifBlank { "La mia auto" }, alimentazione = alimentazione, capienza = capienza, consumo = valore, acKw = acKw, dcKw = dcKw)
                 vm.salvaAuto(auto, attiva = esistente == null)
                 onChiudi()
             },
