@@ -40,7 +40,7 @@ fun titoloColonnina(c: Colonnina): String = listOfNotNull(c.titolo, c.indirizzo?
 
 /** "150 kW", "~22 kW" se la potenza e dedotta dalle prese, "kW non indicati" se manca. */
 fun potenzaColonnina(c: Colonnina): String = when {
-    c.kw == null -> "kW non indicati"
+    c.kw == null -> "— kW"
     c.potenzaStimata -> "~" + Formati.kw(c.kw)
     else -> Formati.kw(c.kw)
 }

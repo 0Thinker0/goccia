@@ -197,7 +197,7 @@ adb logcat -d -b crash > "$USCITA/crash.txt" 2>&1
 adb logcat -d -v time > "$USCITA/logcat-completo.txt" 2>&1
 # senza il rumore di uiautomator, che parte a ogni tocco
 grep -vE "uiautomator|RuntimeInit uid 2000|Using default boot image|Leaving lock profiling|Calling main entry|Shutting down VM" "$USCITA/logcat-completo.txt" \
-  | grep -E "Goccia|goccia|AndroidRuntime|FATAL|MapLibre|mbgl|System.err|LocationManager|GnssLocation|FusedLocation|gms.location" \
+  | grep -iE "goccia|AndroidRuntime|FATAL|maplibre|mbgl|System.err|glance|appwidget" \
   | tail -n 600 > "$USCITA/logcat.txt"
 rm -f "$USCITA/logcat-completo.txt"
 

@@ -158,6 +158,8 @@ fun GocciaRadice(vm: GocciaViewModel, distributoreDaAprire: Pair<String, Long>?,
                     onMappaColonnine = {
                         vm.mostraColonnine(true)
                         nav.vaiAScheda(Rotte.MAPPA)
+                        // se nella scheda Mappa era rimasta aperta la lista, torniamo alla mappa
+                        nav.popBackStack(Rotte.MAPPA, inclusive = false)
                     },
                     onTariffa = { nav.navigate(Rotte.TARIFFA) },
                 )

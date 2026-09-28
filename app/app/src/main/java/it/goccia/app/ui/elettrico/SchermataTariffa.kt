@@ -1,6 +1,7 @@
 package it.goccia.app.ui.elettrico
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -138,9 +139,9 @@ fun SchermataTariffa(vm: GocciaViewModel, onIndietro: () -> Unit) {
             // abitudini
             Scheda(Modifier.fillMaxWidth()) {
                 Text("Quando ricarichi di solito?", style = Testi.Voce)
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     Abitudine.entries.forEach { ab ->
-                        Opzione(ab.etichetta, t.abitudine == ab, { t = t.copy(abitudine = ab) }, Modifier.weight(1f))
+                        Opzione(ab.etichetta, t.abitudine == ab, { t = t.copy(abitudine = ab) })
                     }
                 }
                 if (t.abitudine == Abitudine.FOTOVOLTAICO) {
