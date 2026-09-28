@@ -6,6 +6,7 @@ import it.goccia.app.avvisi.Notifiche
 import it.goccia.app.avvisi.Sorveglianza
 import it.goccia.app.dati.ArchivioUtente
 import it.goccia.app.dati.DatiRepository
+import it.goccia.app.dati.Instradamento
 import it.goccia.app.dati.ServizioPosizione
 import java.io.File
 import java.util.concurrent.TimeUnit
@@ -20,7 +21,7 @@ class Contenitore(context: Context) {
         .addInterceptor { catena ->
             catena.proceed(
                 catena.request().newBuilder()
-                    .header("User-Agent", "Goccia/${BuildConfig.VERSION_NAME} (Android)")
+                    .header("User-Agent", "Goccia/${BuildConfig.VERSION_NAME} (Android; +https://github.com/${BuildConfig.REPO})")
                     .build(),
             )
         }
@@ -29,6 +30,7 @@ class Contenitore(context: Context) {
     val repository = DatiRepository(File(context.filesDir, "dati"), http, BuildConfig.DATI_URL)
     val archivio = ArchivioUtente(File(context.filesDir, "utente.json"))
     val posizione = ServizioPosizione(context.applicationContext)
+    val instradamento = Instradamento(http)
 }
 
 class GocciaApp : Application() {

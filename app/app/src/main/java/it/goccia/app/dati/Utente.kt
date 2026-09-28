@@ -173,6 +173,18 @@ data class Impostazioni(
     val navigazione: AppNavigazione = AppNavigazione.CHIEDI,
 )
 
+/** Un viaggio calcolato di recente, per ripeterlo con un tocco. */
+@Serializable
+data class ViaggioRecente(
+    val partenza: String,
+    val partenzaLat: Double,
+    val partenzaLon: Double,
+    val arrivo: String,
+    val arrivoLat: Double,
+    val arrivoLon: Double,
+    val quando: Long,
+)
+
 @Serializable
 data class PosizioneSalvata(val lat: Double, val lon: Double, val quando: Long) {
     val coordinate: Coordinate get() = Coordinate(lat, lon)
@@ -189,6 +201,7 @@ data class DatiUtente(
     val rifornimenti: List<Rifornimento> = emptyList(),
     val impostazioni: Impostazioni = Impostazioni(),
     val ultimaPosizione: PosizioneSalvata? = null,
+    val viaggiRecenti: List<ViaggioRecente> = emptyList(),
     /** quando l'utente ha chiuso l'invito a sostenere il progetto */
     val donazioneChiusaIl: Long = 0,
 ) {

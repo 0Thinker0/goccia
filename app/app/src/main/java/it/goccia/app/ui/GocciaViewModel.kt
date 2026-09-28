@@ -16,17 +16,26 @@ import it.goccia.app.dati.Luogo
 import it.goccia.app.dati.PosizioneSalvata
 import it.goccia.app.dati.Preferito
 import it.goccia.app.dati.Provincia
+import it.goccia.app.dati.Percorso
+import it.goccia.app.dati.PercorsoNonTrovato
 import it.goccia.app.dati.Rifornimento
 import it.goccia.app.dati.StoricoDistributore
 import it.goccia.app.dati.StoricoZona
 import it.goccia.app.dati.TipoLuogo
+import it.goccia.app.dati.ViaggioRecente
 import it.goccia.app.logica.Consiglio
 import it.goccia.app.logica.Convenienza
 import it.goccia.app.logica.Geo
+import it.goccia.app.logica.LungoIlPercorso
+import it.goccia.app.logica.PianoViaggio
+import it.goccia.app.logica.PuntoPercorso
 import it.goccia.app.logica.StatoSerbatoio
 import it.goccia.app.logica.Territorio
+import it.goccia.app.logica.Tragitto
 import it.goccia.app.logica.Zona
+import java.io.IOException
 import java.util.UUID
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
@@ -43,6 +52,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withContext
 
 enum class TipoCentro { POSIZIONE, LUOGO, COMUNE, ULTIMA }
 
@@ -83,6 +93,32 @@ data class VistaZona(
     val centro: Centro,
     val adessoMillis: Long,
 )
+
+/** Partenza o arrivo di un viaggio. */
+data class Tappa(val nome: String, val coordinate: Coordinate, val posizioneAttuale: Boolean = false)
+
+data class RichiestaViaggio(val partenza: Tappa, val arrivo: Tappa, val livello: Double, val deviazioneMin: Int, val pienoCompleto: Boolean)
+
+sealed interface StatoViaggio {
+    data object Vuoto : StatoViaggio
+
+    data class Calcolo(val fase: String) : StatoViaggio
+
+    data class Pronto(
+        val partenza: Tappa,
+        val arrivo: Tappa,
+        val percorso: Percorso,
+        val campioni: List<PuntoPercorso>,
+        val lungo: List<LungoIlPercorso>,
+        val piano: PianoViaggio,
+        val carburante: Carburante,
+        val livello: Double,
+        val nomeAuto: String?,
+        val capienza: Double,
+    ) : StatoViaggio
+
+    data class Errore(val messaggio: String) : StatoViaggio
+}
 
 class GocciaViewModel(private val c: Contenitore) : ViewModel() {
     private val repo = c.repository
@@ -490,6 +526,85 @@ class GocciaViewModel(private val c: Contenitore) : ViewModel() {
         true
     } catch (e: Exception) {
         false
+    }
+
+    // ------------------------------------------------------------------ viaggio
+
+    private val _viaggio = MutableStateFlow<StatoViaggio>(StatoViaggio.Vuoto)
+    val viaggio: StateFlow<StatoViaggio> = _viaggio.asStateFlow()
+    private var lavoroViaggio: Job? = null
+
+    /** L'ultimo viaggio chiesto: il modulo lo ripropone tornando indietro dal risultato. */
+    var ultimaRichiesta: RichiestaViaggio? = null
+        private set
+
+    /** Percorso, distributori lungo la strada e soste consigliate. */
+    fun calcolaViaggio(partenza: Tappa, arrivo: Tappa, livello: Double, deviazioneMin: Int, pienoCompleto: Boolean) {
+        lavoroViaggio?.cancel()
+        ultimaRichiesta = RichiestaViaggio(partenza, arrivo, livello, deviazioneMin, pienoCompleto)
+        lavoroViaggio = viewModelScope.launch {
+            try {
+                _viaggio.value = StatoViaggio.Calcolo("Calcolo il percorso…")
+                if (_dati.value.indice == null) carica(forza = false, nuovaPosizione = false)
+                val indice = _dati.value.indice ?: throw IOException("dati non disponibili")
+                val da = if (partenza.posizioneAttuale) posizione.attuale() ?: partenza.coordinate else partenza.coordinate
+                val percorso = c.instradamento.percorso(da, arrivo.coordinate)
+
+                _viaggio.value = StatoViaggio.Calcolo("Cerco i distributori lungo la strada…")
+                val campioni = withContext(Dispatchers.Default) { Tragitto.campiona(percorso.punti, 0.5) }
+                val comuni = _dati.value.comuni
+                val sigle = withContext(Dispatchers.Default) {
+                    (campioni.filterIndexed { i, _ -> i % 20 == 0 } + campioni.last())
+                        .flatMap { Territorio.provinceAttorno(indice.province, comuni, Coordinate(it.lat, it.lon), 6.0) }
+                        .distinct()
+                }
+                caricaProvince(sigle)
+
+                val u = utente.value
+                val carburante = u.carburante
+                val auto = u.autoCorrente?.takeIf { !it.alimentazione.elettrica }
+                val capienza = auto?.capienza ?: 50.0
+                val consumo = auto?.consumo ?: 6.0
+                val distributori = _dati.value.perProvincia.filterKeys { it in sigle }.values.flatten()
+                val adesso = System.currentTimeMillis() / 1000
+                val lungo = withContext(Dispatchers.Default) {
+                    Tragitto.lungoIlPercorso(
+                        distributori, carburante, u.impostazioni.preferisciSelf, campioni, Tragitto.distanzaPerMinuti(deviazioneMin), adesso,
+                    )
+                }
+                val piano = Tragitto.pianifica(lungo, percorso.distanzaKm, capienza, consumo, livello, pienoCompleto)
+                _viaggio.value = StatoViaggio.Pronto(
+                    partenza = partenza.copy(coordinate = da),
+                    arrivo = arrivo,
+                    percorso = percorso,
+                    campioni = campioni,
+                    lungo = lungo,
+                    piano = piano,
+                    carburante = carburante,
+                    livello = livello,
+                    nomeAuto = auto?.nome,
+                    capienza = capienza,
+                )
+                val recente = ViaggioRecente(partenza.nome, da.lat, da.lon, arrivo.nome, arrivo.coordinate.lat, arrivo.coordinate.lon, System.currentTimeMillis())
+                archivio.aggiorna { du ->
+                    val altri = du.viaggiRecenti.filterNot { it.partenza == recente.partenza && it.arrivo == recente.arrivo }
+                    du.copy(viaggiRecenti = (listOf(recente) + altri).take(5))
+                }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: PercorsoNonTrovato) {
+                _viaggio.value = StatoViaggio.Errore("Non trovo un percorso stradale tra questi due punti.")
+            } catch (e: IOException) {
+                _viaggio.value = StatoViaggio.Errore("Non riesco a calcolare il viaggio: controlla la connessione e riprova.")
+            } catch (e: Exception) {
+                _viaggio.value = StatoViaggio.Errore("Qualcosa è andato storto nel calcolo del viaggio. Riprova tra poco.")
+            }
+        }
+    }
+
+    fun chiudiViaggio() {
+        lavoroViaggio?.cancel()
+        _viaggio.value = StatoViaggio.Vuoto
     }
 
     /** Distanza dal centro attuale, per le liste (preferiti, avvisi). */
