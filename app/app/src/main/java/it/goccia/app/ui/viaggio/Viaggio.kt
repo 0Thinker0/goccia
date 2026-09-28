@@ -34,6 +34,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
@@ -300,6 +301,9 @@ private fun Scelta(
     onChiudi: () -> Unit,
 ) {
     var testo by remember { mutableStateOf("") }
+    // si apre gia pronto per scrivere
+    val focus = remember { FocusRequester() }
+    LaunchedEffect(Unit) { runCatching { focus.requestFocus() } }
     Column(
         Modifier.fillMaxSize().statusBarsPadding().padding(start = 20.dp, end = 20.dp, top = 8.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp),
@@ -308,7 +312,7 @@ private fun Scelta(
             BottoneIcona(Icone.Indietro, "Indietro", onChiudi)
             Text(if (perPartenza) "Da dove parti?" else "Dove vai?", style = Testi.Titolo)
         }
-        CampoRicerca(testo, { testo = it }, Modifier.fillMaxWidth(), segnaposto = "Cerca un comune")
+        CampoRicerca(testo, { testo = it }, Modifier.fillMaxWidth(), segnaposto = "Cerca un comune", focus = focus)
         if (testo.isBlank()) {
             if (perPartenza && posizione != null) {
                 ChipScelta("La tua posizione", false, onClick = { onScelta(posizione) }, icona = Icone.Mirino, altezza = 44.dp)

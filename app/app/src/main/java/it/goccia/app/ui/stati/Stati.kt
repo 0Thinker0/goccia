@@ -34,6 +34,8 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import it.goccia.app.dati.Comune
 import it.goccia.app.dati.TipoLuogo
@@ -165,6 +167,18 @@ fun PannelloPosizione(vm: GocciaViewModel, dati: StatoDati, onLuogo: () -> Unit,
     val richiesta = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { esito ->
         if (esito.values.any { it }) vm.usaPosizione() else negato = true
     }
+    // tornando dalle impostazioni del telefono: se ora la posizione e accesa o permessa, riproviamo
+    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
+        val sistemato = when (dati.problemaPosizione) {
+            ProblemaPosizione.GPS_SPENTO -> vm.localizzazioneAttiva()
+            ProblemaPosizione.PERMESSO_MANCANTE -> vm.haPermessoPosizione()
+            else -> negato && vm.haPermessoPosizione()
+        }
+        if (sistemato) {
+            negato = false
+            vm.usaPosizione()
+        }
+    }
     var testo by remember { mutableStateOf("") }
     Column(modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(14.dp)) {
         Box(Modifier.align(Alignment.CenterHorizontally).size(140.dp).clip(CircleShape).background(Colori.PetrolioChiaro), contentAlignment = Alignment.Center) {
@@ -179,6 +193,8 @@ fun PannelloPosizione(vm: GocciaViewModel, dati: StatoDati, onLuogo: () -> Unit,
         val spiegazione = when {
             dati.problemaPosizione == ProblemaPosizione.GPS_SPENTO -> "La localizzazione del telefono è spenta. Accendila per vedere i distributori vicini."
             negato -> "Senza il permesso puoi cercare un comune qui sotto, oppure concederlo dalle impostazioni del telefono."
+            dati.problemaPosizione == ProblemaPosizione.NON_TROVATA ->
+                "Il telefono non ci ha dato la posizione in tempo. Riprova tra poco, magari vicino a una finestra, oppure cerca un comune."
             else -> "Attiva la posizione per vedere i distributori vicini. La usiamo solo mentre l'app è aperta."
         }
         Text(spiegazione, style = Testi.Corpo.copy(color = Colori.Testo2), textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth())
@@ -186,6 +202,7 @@ fun PannelloPosizione(vm: GocciaViewModel, dati: StatoDati, onLuogo: () -> Unit,
             when {
                 dati.problemaPosizione == ProblemaPosizione.GPS_SPENTO -> "Accendi la localizzazione"
                 negato -> "Apri le impostazioni"
+                dati.problemaPosizione == ProblemaPosizione.NON_TROVATA -> "Riprova"
                 else -> "Attiva la posizione"
             },
             onClick = {

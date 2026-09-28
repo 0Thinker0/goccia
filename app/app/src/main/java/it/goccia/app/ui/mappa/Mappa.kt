@@ -22,6 +22,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableDoubleStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -98,6 +99,8 @@ fun SchermataMappa(vm: GocciaViewModel, onDistributore: (Distributore) -> Unit, 
     var testo by rememberSaveable { mutableStateOf("") }
     var mappa by remember { mutableStateOf<MapLibreMap?>(null) }
     var stile by remember { mutableStateOf<Style?>(null) }
+    // da lontano (tutta Italia) non carichiamo i prezzi: chiediamo di avvicinarsi
+    var zoom by remember { mutableDoubleStateOf(if (vm.dati.value.centro != null) 13.0 else 5.0) }
     val pin = remember { PinPrezzo(context) }
     val immaginiCaricate = remember { HashSet<String>() }
 
@@ -150,6 +153,7 @@ fun SchermataMappa(vm: GocciaViewModel, onDistributore: (Distributore) -> Unit, 
             }
             m.addOnCameraIdleListener {
                 val bersaglio = m.cameraPosition.target ?: return@addOnCameraIdleListener
+                zoom = m.cameraPosition.zoom
                 vm.mappaSpostata(Coordinate(bersaglio.latitude, bersaglio.longitude), m.cameraPosition.zoom)
             }
             m.addOnMapClickListener { punto ->
@@ -259,16 +263,20 @@ fun SchermataMappa(vm: GocciaViewModel, onDistributore: (Distributore) -> Unit, 
                     colore = Colori.Petrolio, sfondo = Colori.Superficie,
                 )
             }
-            SchedaSelezione(vm, vista, selezionato, onDistributore, onLista)
+            SchedaSelezione(vm, vista, selezionato, zoom < ZOOM_PREZZI, onDistributore, onLista)
         }
     }
 }
+
+/** Sotto questo zoom la mappa mostra troppa Italia per caricare i prezzi (vedi GocciaViewModel.mappaSpostata). */
+private const val ZOOM_PREZZI = 9.0
 
 @Composable
 private fun SchedaSelezione(
     vm: GocciaViewModel,
     vista: VistaZona?,
     selezionato: Long?,
+    lontano: Boolean,
     onDistributore: (Distributore) -> Unit,
     onLista: () -> Unit,
 ) {
@@ -284,6 +292,11 @@ private fun SchedaSelezione(
         verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
         Box(Modifier.align(Alignment.CenterHorizontally).size(width = 40.dp, height = 4.dp).clip(RoundedCornerShape(2.dp)).background(Colori.InterruttoreSpento))
+        if (lontano && selezionato == null) {
+            Text("Avvicina la mappa per vedere i prezzi", style = Testi.CorpoForte)
+            Text("Oppure cerca un comune qui sopra, o tocca il mirino per andare dove sei.", style = Testi.Didascalia.copy(color = Colori.Testo3))
+            return@Column
+        }
         if (vista == null) {
             Text("Carico i distributori…", style = Testi.Didascalia.copy(color = Colori.Testo3))
             return@Column

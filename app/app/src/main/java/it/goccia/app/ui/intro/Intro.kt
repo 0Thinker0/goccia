@@ -64,11 +64,13 @@ import it.goccia.app.ui.componenti.BottonePrimario
 import it.goccia.app.ui.componenti.BottoneIcona
 import it.goccia.app.ui.componenti.BottoneSecondario
 import it.goccia.app.ui.componenti.BottoneTesto
+import it.goccia.app.ui.componenti.CampoRicerca
 import it.goccia.app.ui.componenti.IndicatorePassi
 import it.goccia.app.ui.componenti.LogoApp
 import it.goccia.app.ui.componenti.Riquadro
 import it.goccia.app.ui.icone.Icone
 import it.goccia.app.ui.profilo.ModuloAuto
+import it.goccia.app.ui.stati.SuggerimentiComuni
 import it.goccia.app.ui.tema.Colori
 import it.goccia.app.ui.tema.Testi
 import it.goccia.app.ui.tema.ombra
@@ -353,6 +355,7 @@ private fun Luoghi(vm: GocciaViewModel) {
     val scope = rememberCoroutineScope()
     var cerco by remember { mutableStateOf(false) }
     var errore by remember { mutableStateOf(false) }
+    var testoComune by remember { mutableStateOf("") }
     LaunchedEffect(Unit) { vm.caricaComuni() }
     Column(
         Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(start = 20.dp, end = 20.dp, top = 12.dp),
@@ -406,12 +409,19 @@ private fun Luoghi(vm: GocciaViewModel) {
                 altezza = 56.dp,
             )
         }
-        if (errore) {
+        if (errore && utente.casa == null) {
             Riquadro(Modifier.fillMaxWidth(), sfondo = Colori.AmbraChiaro, icona = Icone.Info, coloreIcona = Colori.AmbraScuro) {
                 Text(
-                    "Non riesco a trovare la posizione adesso. Potrai salvare Casa e altri luoghi quando vuoi da Impostazioni › Luoghi salvati.",
+                    "Non riesco a trovare la posizione adesso. Scrivi il tuo comune e salviamo Casa lì: potrai spostarla quando vuoi da Impostazioni › Luoghi salvati.",
                     style = Testi.Didascalia.copy(color = Colori.AmbraTesto),
                 )
+            }
+            CampoRicerca(testoComune, { testoComune = it }, Modifier.fillMaxWidth(), segnaposto = "Il tuo comune")
+            if (testoComune.isNotBlank()) {
+                SuggerimentiComuni(vm.cercaComuni(testoComune), onScelto = { comune ->
+                    testoComune = ""
+                    vm.salvaLuogo(Luogo(vm.nuovoId(), "Casa", TipoLuogo.CASA, comune.lat, comune.lon, "centro di ${comune.etichetta}"))
+                })
             }
         }
         Riquadro(Modifier.fillMaxWidth(), icona = Icone.Scudo) {

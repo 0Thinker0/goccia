@@ -4,26 +4,57 @@
     python3 tocca.py "Iniziamo"            testo esatto, altrimenti contenuto
     python3 tocca.py --descrizione "Mappa"  solo content-desc
     python3 tocca.py --esiste "Roma"        esce con 0 se c'e, 1 se no (non tocca)
+    python3 tocca.py --solo-dialoghi        chiude solo gli eventuali dialoghi di sistema
+
+Se l'elemento non si trova, salva la schermata letta (xml e testi visibili) nella cartella
+indicata da PROVA_USCITA, per capire cosa c'era al suo posto.
 """
+import os
 import re
 import subprocess
 import sys
 import time
 import xml.etree.ElementTree as ET
 
+ultimo_errore = ""
+
+
+def adb(*argomenti, timeout=30):
+    return subprocess.run(["adb", *argomenti], capture_output=True, text=True, timeout=timeout)
+
 
 def leggi():
+    """Legge la gerarchia della schermata. None se uiautomator non ci riesce."""
+    global ultimo_errore
     try:
-        subprocess.run(["adb", "shell", "uiautomator", "dump", "/sdcard/ui.xml"], capture_output=True, timeout=60)
-        xml = subprocess.run(["adb", "shell", "cat", "/sdcard/ui.xml"], capture_output=True, text=True, timeout=30).stdout
-    except subprocess.TimeoutExpired:
-        return None
-    if xml.strip().startswith("<?xml"):
-        try:
-            return ET.fromstring(xml)
-        except ET.ParseError:
+        # senza il file vecchio non rischiamo di leggere la schermata precedente
+        adb("shell", "rm", "-f", "/sdcard/ui.xml")
+        esito = adb("shell", "uiautomator", "dump", "/sdcard/ui.xml", timeout=60)
+        messaggio = (esito.stdout + esito.stderr).strip()
+        if "dumped" not in messaggio:
+            ultimo_errore = messaggio or "uiautomator non ha risposto"
             return None
-    return None
+        xml = adb("shell", "cat", "/sdcard/ui.xml").stdout
+    except subprocess.TimeoutExpired:
+        ultimo_errore = "tempo scaduto"
+        return None
+    if not xml.strip().startswith("<?xml"):
+        ultimo_errore = "file vuoto"
+        return None
+    try:
+        return ET.fromstring(xml)
+    except ET.ParseError as e:
+        ultimo_errore = f"xml non valido: {e}"
+        return None
+
+
+def centro(nodo):
+    b = [int(v) for v in re.findall(r"-?\d+", nodo.get("bounds", "[0,0][0,0]"))]
+    return (b[0] + b[2]) // 2, (b[1] + b[3]) // 2
+
+
+def tap(x, y):
+    subprocess.run(["adb", "shell", "input", "tap", str(x), str(y)], timeout=30)
 
 
 def chiudi_dialoghi_di_sistema(radice):
@@ -34,7 +65,7 @@ def chiudi_dialoghi_di_sistema(radice):
     for nodo in radice.iter("node"):
         if nodo.get("text", "") in ("Wait", "Attendi", "Close app", "Chiudi app"):
             x, y = centro(nodo)
-            subprocess.run(["adb", "shell", "input", "tap", str(x), str(y)], timeout=30)
+            tap(x, y)
             print("chiuso un dialogo di sistema")
             time.sleep(1.5)
             return True
@@ -53,16 +84,16 @@ def schermo():
     return None
 
 
-def centro(nodo):
-    b = [int(v) for v in re.findall(r"-?\d+", nodo.get("bounds", "[0,0][0,0]"))]
-    return (b[0] + b[2]) // 2, (b[1] + b[3]) // 2
+def valori(nodo, solo_descrizione):
+    if solo_descrizione:
+        return [nodo.get("content-desc", "")]
+    return [nodo.get("text", ""), nodo.get("content-desc", ""), nodo.get("hint", "")]
 
 
 def cerca(radice, testo, solo_descrizione=False):
     candidati = []
     for nodo in radice.iter("node"):
-        valori = [nodo.get("content-desc", "")] if solo_descrizione else [nodo.get("text", ""), nodo.get("content-desc", "")]
-        for v in valori:
+        for v in valori(nodo, solo_descrizione):
             if not v:
                 continue
             if v == testo:
@@ -70,6 +101,31 @@ def cerca(radice, testo, solo_descrizione=False):
             if testo.lower() in v.lower():
                 candidati.append(nodo)
     return candidati[0] if candidati else None
+
+
+def testi_visibili(radice):
+    visti = []
+    for nodo in radice.iter("node"):
+        for v in (nodo.get("text", ""), nodo.get("content-desc", "")):
+            v = " ".join(v.split())
+            if v and v not in visti:
+                visti.append(v)
+    return visti
+
+
+def salva_diagnosi(testo, radice):
+    cartella = os.environ.get("PROVA_USCITA")
+    if not cartella:
+        return
+    nome = re.sub(r"[^a-z0-9]+", "-", testo.lower()).strip("-")[:40] or "vuoto"
+    percorso = os.path.join(cartella, f"nontrovato-{nome}")
+    with open(percorso + ".txt", "w", encoding="utf-8") as f:
+        if radice is None:
+            f.write(f"schermata non leggibile: {ultimo_errore}\n")
+        else:
+            f.write("\n".join(testi_visibili(radice)) + "\n")
+    if radice is not None:
+        ET.ElementTree(radice).write(percorso + ".xml", encoding="utf-8")
 
 
 def main():
@@ -84,6 +140,7 @@ def main():
     args = [a for a in args if not a.startswith("--")]
     testo = args[0]
     tentativi = 12
+    radice = None
     for _ in range(tentativi):
         radice = schermo()
         nodo = cerca(radice, testo, solo_descrizione) if radice is not None else None
@@ -91,11 +148,14 @@ def main():
             if verifica:
                 return 0
             x, y = centro(nodo)
-            subprocess.run(["adb", "shell", "input", "tap", str(x), str(y)], timeout=30)
+            tap(x, y)
             print(f"toccato '{testo}' in {x},{y}")
             return 0
         time.sleep(1.5)
-    print(f"NON TROVATO: '{testo}'")
+    if verifica:
+        return 1
+    print(f"NON TROVATO: '{testo}'" + (f" (schermata non leggibile: {ultimo_errore})" if radice is None else ""))
+    salva_diagnosi(testo, radice)
     return 1
 
 
