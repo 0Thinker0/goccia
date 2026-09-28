@@ -1,0 +1,31 @@
+== geo fix: OK 
+== rendering: emulation  GLES: Google (Google Inc. (Google)), Android Emulator OpenGL ES Translator (ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver-5.0.0)), OpenGL ES 3.1 (OpenGL ES 3.1.0 (ANGLE 2.1.17841 git hash: 5fa2e61da947))
+Performing Streamed Install
+Success
+Starting: Intent { cmp=it.goccia.app/.MainActivity }
+== introduzione
+toccato 'Iniziamo' in 506,2189
+toccato 'Continua' in 506,2189
+toccato 'Gasolio' in 649,979
+toccato 'Continua' in 506,2189
+toccato 'Salva la posizione attuale come Casa' in 574,688
+toccato 'Fatto, andiamo!' in 506,2189
+== mappa dei prezzi
+toccato 'Mappa' in 327,2273
+foto 01-mappa
+foto 02-mappa-spostata
+foto 03-mappa-dopo
+== viaggio
+toccato 'Viaggio' in 539,2273
+toccato 'Dove vai?' in 251,610
+toccato 'Cerca un comune' in 339,381
+toccato 'Roma (RM)' in 447,543
+toccato 'Calcola soste' in 574,1517
+foto 04-viaggio
+foto 05-viaggio-spostata
+== colonnine
+toccato 'Mappa' in 327,2273
+toccato 'Colonnine' in 223,357
+foto 06-colonnine
+foto 07-colonnine-spostata
+fine
