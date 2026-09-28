@@ -59,7 +59,10 @@ jobs:
           ARGS=(--uscita ../public --sito ../site --precedente-url "${SITO}/")
           if [ -n "$ARCHIVIO" ]; then ARGS+=(--archivio-giorni "$ARCHIVIO"); fi
           if [ "$FORZA" = "true" ]; then ARGS+=(--forza); fi
-          node src/index.js "${ARGS[@]}"
+          set -o pipefail
+          node src/index.js "${ARGS[@]}" 2>&1 | tee pipeline.log
+          # riassunto visibile anche dalle API (annotazioni)
+          grep -E "^Estrazione|impianti in anagrafica|province |comuni |dimensioni|Errore" pipeline.log | while IFS= read -r riga; do echo "::notice::${riga}"; done || true
 
       - name: Inserisci il nome del repository nelle pagine
         if: steps.pipeline.outputs.nuovo == 'true'

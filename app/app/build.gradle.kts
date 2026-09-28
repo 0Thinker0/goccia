@@ -28,6 +28,8 @@ android {
         versionName = "0.1.$numeroBuild"
         buildConfigField("String", "DATI_URL", "\"$datiUrl\"")
         buildConfigField("String", "REPO", "\"$repository\"")
+        // i telefoni Android sono ARM: niente librerie x86 (solo emulatori) e APK piu leggero
+        ndk { abiFilters += listOf("arm64-v8a", "armeabi-v7a") }
     }
 
     signingConfigs {
@@ -44,8 +46,11 @@ android {
         debug {
             signingConfig = signingConfigs.getByName("debug")
         }
+        // La versione che si installa sul telefono: non "debuggable", quindi molto piu fluida,
+        // firmata con la stessa chiave fissa cosi ogni nuova build si installa sopra la precedente.
         release {
             isMinifyEnabled = false
+            signingConfig = signingConfigs.getByName("debug")
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
         }
     }
@@ -63,6 +68,10 @@ android {
     packaging {
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
+        }
+        // librerie native compresse: download molto piu piccolo per l'installazione manuale
+        jniLibs {
+            useLegacyPackaging = true
         }
     }
 }
