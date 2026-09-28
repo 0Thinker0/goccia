@@ -165,7 +165,11 @@ fun GocciaRadice(vm: GocciaViewModel, distributoreDaAprire: Pair<String, Long>?,
                 )
             }
             composable(Rotte.VIAGGIO) {
-                SchermataViaggio(vm = vm, onLista = { nav.navigate(Rotte.LISTA) })
+                SchermataViaggio(
+                    vm = vm,
+                    onDistributore = { nav.navigate(Rotte.dettaglio(it.provincia, it.id)) },
+                    onAuto = { nav.navigate(Rotte.auto(vm.utente.value.autoCorrente?.id)) },
+                )
             }
             composable(Rotte.PREFERITI) {
                 SchermataPreferiti(
