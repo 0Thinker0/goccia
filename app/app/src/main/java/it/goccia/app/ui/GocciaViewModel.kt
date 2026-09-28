@@ -115,10 +115,23 @@ data class RichiestaViaggio(
     val pienoCompleto: Boolean,
     /** solo elettriche: livello minimo della batteria all'arrivo */
     val arrivoMinimo: Double = 0.2,
+    /** calcolato per un'auto elettrica: [livello] e la batteria, non il serbatoio */
+    val elettrica: Boolean = false,
 )
 
 /** Lo stesso viaggio con un'auto a carburante, per confronto. */
-data class ConfrontoCarburante(val etichetta: String, val litri: Double, val unita: String, val costo: Double)
+/**
+ * Lo stesso tragitto con un'auto a carburante: la tua, se ne hai una, altrimenti un'auto media
+ * a benzina ([media]). [consumo] e per 100 km, [litri] per il tragitto.
+ */
+data class ConfrontoCarburante(
+    val etichetta: String,
+    val litri: Double,
+    val unita: String,
+    val costo: Double,
+    val consumo: Double,
+    val media: Boolean,
+)
 
 sealed interface StatoViaggio {
     data object Vuoto : StatoViaggio
@@ -683,7 +696,10 @@ class GocciaViewModel(private val c: Contenitore) : ViewModel() {
     /** Percorso, distributori (o colonnine) lungo la strada e soste consigliate. */
     fun calcolaViaggio(partenza: Tappa, arrivo: Tappa, livello: Double, deviazioneMin: Int, pienoCompleto: Boolean, arrivoMinimo: Double = 0.2) {
         lavoroViaggio?.cancel()
-        ultimaRichiesta = RichiestaViaggio(partenza, arrivo, livello, deviazioneMin, pienoCompleto, arrivoMinimo)
+        ultimaRichiesta = RichiestaViaggio(
+            partenza, arrivo, livello, deviazioneMin, pienoCompleto, arrivoMinimo,
+            elettrica = utente.value.autoCorrente?.alimentazione?.elettrica == true,
+        )
         lavoroViaggio = viewModelScope.launch {
             try {
                 _viaggio.value = StatoViaggio.Calcolo("Calcolo il percorso…")
@@ -790,8 +806,8 @@ class GocciaViewModel(private val c: Contenitore) : ViewModel() {
         val consumo = altra?.consumo ?: 6.5
         val media = indice.medieNazionali[carburante]?.let { it.self ?: it.servito } ?: return null
         val quantita = km * consumo / 100
-        val etichetta = if (altra != null) "${carburante.etichetta} (${altra.nome})" else "${carburante.etichetta}, auto media"
-        return ConfrontoCarburante(etichetta, quantita, altra?.alimentazione?.unitaCapienza ?: "l", quantita * media / 1000.0)
+        val etichetta = if (altra != null) carburante.etichetta else "${carburante.etichetta}, auto media"
+        return ConfrontoCarburante(etichetta, quantita, altra?.alimentazione?.unitaCapienza ?: "l", quantita * media / 1000.0, consumo, altra == null)
     }
 
     // ------------------------------------------------------------------ elettriche: tariffe e filtri

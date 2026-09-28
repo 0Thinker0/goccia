@@ -149,7 +149,7 @@ private fun Pianifica(vm: GocciaViewModel, stato: StatoViaggio, onAuto: () -> Un
     val auto = utente.autoCorrente?.takeIf { !it.alimentazione.elettrica }
     val stimato = vm.serbatoio(utente)?.livello
     var livello by remember {
-        val dalPrecedente = precedente?.let { r -> LIVELLI.indexOfFirst { abs(it.second - r.livello) < 0.01 } } ?: -1
+        val dalPrecedente = precedente?.takeIf { !it.elettrica }?.let { r -> LIVELLI.indexOfFirst { abs(it.second - r.livello) < 0.01 } } ?: -1
         val dallaStima = LIVELLI.indexOfFirst { stimato != null && it.second >= stimato - 0.125 }
         mutableIntStateOf(if (dalPrecedente >= 0) dalPrecedente else if (dallaStima >= 0) dallaStima else 1)
     }
@@ -158,12 +158,21 @@ private fun Pianifica(vm: GocciaViewModel, stato: StatoViaggio, onAuto: () -> Un
 
     // auto elettrica: batteria in partenza e livello minimo all'arrivo
     val elettrica = utente.autoCorrente?.takeIf { it.alimentazione.elettrica }
+    // si riparte dall'ultimo viaggio elettrico, altrimenti dal livello stimato in Home
+    val precedenteEv = precedente?.takeIf { it.elettrica }
     var batteria by remember {
-        val dalPrecedente = precedente?.let { r -> LIVELLI_EV.indexOfFirst { abs(it - r.livello) < 0.01 } } ?: -1
-        mutableIntStateOf(if (dalPrecedente >= 0) dalPrecedente else LIVELLI_EV.indexOf(0.8))
+        val dalPrecedente = precedenteEv?.let { r -> LIVELLI_EV.indexOfFirst { abs(it - r.livello) < 0.01 } } ?: -1
+        val dallaStima = stimato?.let { st -> LIVELLI_EV.indices.minByOrNull { abs(LIVELLI_EV[it] - st - 0.001) } } ?: -1
+        mutableIntStateOf(
+            when {
+                dalPrecedente >= 0 -> dalPrecedente
+                dallaStima >= 0 -> dallaStima
+                else -> LIVELLI_EV.indexOf(0.8)
+            },
+        )
     }
     var arrivoMinimo by remember {
-        mutableIntStateOf(precedente?.let { r -> ARRIVI_EV.indexOfFirst { abs(it - r.arrivoMinimo) < 0.01 } }?.takeIf { it >= 0 } ?: 1)
+        mutableIntStateOf(precedenteEv?.let { r -> ARRIVI_EV.indexOfFirst { abs(it - r.arrivoMinimo) < 0.01 } }?.takeIf { it >= 0 } ?: 1)
     }
 
     if (cercaPer != null) {
@@ -228,7 +237,7 @@ private fun Pianifica(vm: GocciaViewModel, stato: StatoViaggio, onAuto: () -> Un
                 Text("Batteria in partenza", style = Testi.DidascaliaForte.copy(color = Colori.TestoChip))
                 Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                     LIVELLI_EV.forEachIndexed { i, v ->
-                        Opzione(Formati.percento(v), batteria == i, { batteria = i }, Modifier.weight(1f), altezza = 38.dp)
+                        Opzione(Formati.percento(v), batteria == i, { batteria = i }, Modifier.weight(1f), altezza = 38.dp, margine = 2.dp)
                     }
                 }
                 Text("Arrivo con almeno", style = Testi.DidascaliaForte.copy(color = Colori.TestoChip))

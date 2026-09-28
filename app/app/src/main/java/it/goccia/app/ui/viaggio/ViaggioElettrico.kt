@@ -179,37 +179,45 @@ internal fun RisultatoElettrico(vm: GocciaViewModel, s: StatoViaggio.ProntoElett
                 )
             }
 
-            // costi
+            // costi: tutta l'energia del viaggio, sia quella caricata a casa prima di partire sia quella
+            // delle soste, cosi il confronto con il carburante e alla pari
+            val kwhCasa = Elettrico.costoKwhCasa(utente.tariffaCasa, vm.stime.casa)
+            val costi = Elettrico.costoViaggio(s.percorso.distanzaKm, auto.consumo, piano, kwhCasa)
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                val tariffe = piano.soste.map { it.tariffa }.distinct()
                 Costo(
-                    "Costo ricarica",
-                    "~${Formati.euro(piano.soste.sumOf { if (it.punto.colonnina.gratuita) 0.0 else it.costo })}",
-                    when {
-                        piano.soste.isEmpty() -> "ricarichi a casa"
-                        tariffe.size == 1 -> Formati.euroKwh(tariffe.single())
-                        else -> "tariffe diverse per potenza"
-                    },
+                    "Costo del viaggio",
+                    "~${Formati.euro(costi.totale)}",
+                    if (piano.soste.isEmpty()) "energia caricata a casa"
+                    else "${Formati.euro(costi.soste)} in viaggio + ${Formati.euro(costi.casa)} a casa",
                     Modifier.weight(1f),
                     evidenziato = true,
                 )
                 s.confronto?.let { c ->
                     Costo(
-                        "Stesso viaggio a carburante",
+                        "A carburante",
                         "~${Formati.euro(c.costo)}",
                         "${c.etichetta} · ${Formati.numero(c.litri, 1)} ${c.unita}",
                         Modifier.weight(1f),
                     )
                 }
             }
-            if (piano.soste.isEmpty()) {
-                val casa = Elettrico.costoKwhCasa(utente.tariffaCasa, vm.stime.casa)
-                val consumati = s.percorso.distanzaKm * auto.consumo / 100
-                Text(
-                    "Ricaricare a casa i ${Formati.numero(consumati, 0)} kWh del viaggio costa circa ${Formati.euro(consumati * casa)}.",
-                    style = Testi.Didascalia.copy(color = Colori.Testo2),
-                )
-            }
+            Text(
+                buildString {
+                    append("Il viaggio consuma circa ${Formati.numero(costi.kwhViaggio, 0)} kWh: ")
+                    append("${Formati.numero(costi.kwhCasa, 0)} caricati a casa a ${Formati.euroKwh(kwhCasa)}")
+                    if (piano.soste.isNotEmpty()) {
+                        val tariffe = piano.soste.map { it.tariffa }.distinct()
+                        append(" e ${Formati.numero(costi.kwhSoste, 0)} alle colonnine")
+                        if (tariffe.size == 1) append(" a ${Formati.euroKwh(tariffe.single())}")
+                    }
+                    append(".")
+                    s.confronto?.let { c ->
+                        val risparmio = c.costo - costi.totale
+                        if (risparmio > 0.5) append(" Rispetto al carburante risparmi circa ${Formati.euro(risparmio)}.")
+                    }
+                },
+                style = Testi.Didascalia.copy(color = Colori.Testo2),
+            )
 
             if (piano.alternative.isNotEmpty()) {
                 Text("Altre colonnine veloci sul percorso", style = Testi.DidascaliaForte.copy(color = Colori.Testo3))

@@ -180,7 +180,10 @@ fun SchermataAuto(vm: GocciaViewModel, id: String?, onChiudi: () -> Unit) {
             onClick = {
                 val valore = Formati.leggiNumero(consumo)?.takeIf { it > 0 && it < 100 } ?: alimentazione.consumoTipico
                 val auto = (esistente ?: Auto(id = vm.nuovoId(), nome = "", alimentazione = alimentazione, capienza = capienza, consumo = valore))
-                    .copy(nome = nome.trim().ifBlank { "La mia auto" }, alimentazione = alimentazione, capienza = capienza, consumo = valore, acKw = acKw, dcKw = dcKw)
+                    .copy(
+                        nome = nome.trim().ifBlank { nomePredefinito(alimentazione, utente.auto.filter { it.id != esistente?.id }.map { it.nome }) },
+                        alimentazione = alimentazione, capienza = capienza, consumo = valore, acKw = acKw, dcKw = dcKw,
+                    )
                 vm.salvaAuto(auto, attiva = esistente == null)
                 onChiudi()
             },
@@ -207,4 +210,24 @@ fun SchermataAuto(vm: GocciaViewModel, id: String?, onChiudi: () -> Unit) {
             },
         )
     }
+}
+
+/**
+ * Il nome di un'auto lasciato vuoto: "La mia auto" se e la prima, altrimenti un nome che dice
+ * l'alimentazione, cosi due auto senza nome si distinguono.
+ */
+internal fun nomePredefinito(alimentazione: Alimentazione, altri: List<String>): String {
+    if ("La mia auto" !in altri) return "La mia auto"
+    val nome = when (alimentazione) {
+        Alimentazione.BENZINA -> "Auto a benzina"
+        Alimentazione.GASOLIO -> "Auto a gasolio"
+        Alimentazione.GPL -> "Auto a GPL"
+        Alimentazione.METANO -> "Auto a metano"
+        Alimentazione.BENZINA_GPL -> "Auto benzina e GPL"
+        Alimentazione.BENZINA_METANO -> "Auto benzina e metano"
+        Alimentazione.ELETTRICA -> "Auto elettrica"
+        Alimentazione.IBRIDA_PLUGIN -> "Ibrida plug-in"
+    }
+    if (nome !in altri) return nome
+    return (2..99).map { "$nome $it" }.firstOrNull { it !in altri } ?: nome
 }

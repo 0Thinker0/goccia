@@ -246,8 +246,14 @@ private fun CalcoloRicarica(
                 append("${Formati.numero(kwh, 0)} kWh in batteria")
                 if (a > Elettrico.SOGLIA_LENTA) append(", oltre l'80% la ricarica rallenta")
                 append(". ")
-                erogazione?.let { append(if (it.continua) "In corrente continua a ${Formati.kw(it.kw)} con la tua auto. " else "In alternata a ${Formati.kw(it.kw)} (caricatore di bordo). ") }
-                    ?: append("Nessuna presa compatibile con i filtri scelti. ")
+                when {
+                    erogazione != null -> append(
+                        if (erogazione.continua) "In corrente continua a ${Formati.kw(erogazione.kw)} con la tua auto. "
+                        else "In alternata a ${Formati.kw(erogazione.kw)} (caricatore di bordo). ",
+                    )
+                    c.kw == null && c.connettori.isEmpty() -> append("Potenza e prese non sono indicate, quindi il tempo non si può stimare. ")
+                    else -> append("Nessuna presa compatibile con i filtri scelti. ")
+                }
                 append(
                     when (prezzoCasa.fonte) {
                         FonteTariffa.STIMA -> "A casa: tariffa stimata ${Formati.euroKwh(prezzoCasa.euroKwh)}"

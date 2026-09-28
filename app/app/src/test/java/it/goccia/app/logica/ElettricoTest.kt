@@ -165,6 +165,20 @@ class ElettricoTest {
         assertTrue(p.completo)
         assertTrue(p.soste.isEmpty())
         assertEquals(0.8 - 100 * 0.16 / 60, p.arrivo, 1e-9)
+        // senza soste tutta l'energia arriva da casa
+        val costi = Elettrico.costoViaggio(100.0, 16.0, p, 0.25)
+        assertEquals(16.0, costi.kwhCasa, 1e-9)
+        assertEquals(4.0, costi.totale, 1e-9)
+    }
+
+    @Test
+    fun costoDelViaggioContaAncheLaCaricaDiCasa() {
+        val p = piano(378.0, sulRettilineo(60.0, 120.0, 180.0, 214.0, 260.0, 330.0), partenza = 0.8)
+        val costi = Elettrico.costoViaggio(378.0, 16.0, p, 0.25)
+        assertEquals(378 * 0.16, costi.kwhViaggio, 1e-9)
+        assertEquals(p.kwhRicaricati, costi.kwhSoste, 1e-9)
+        assertEquals(costi.kwhViaggio - costi.kwhSoste, costi.kwhCasa, 1e-9)
+        assertEquals(p.costo + costi.kwhCasa * 0.25, costi.totale, 1e-9)
     }
 
     @Test
