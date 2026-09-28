@@ -6,7 +6,10 @@ import java.util.concurrent.ConcurrentHashMap
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.double
+import kotlinx.serialization.json.doubleOrNull
 import kotlinx.serialization.json.intOrNull
 import kotlinx.serialization.json.jsonPrimitive
 import okhttp3.OkHttpClient
@@ -188,8 +191,85 @@ class DatiRepository(
             cronologia?.perDistributore(id)
         }
 
+    // ------------------------------------------------------------------ colonnine
+
+    @Volatile
+    private var indiceColonnineInMemoria: Pair<Long, IndiceColonnine>? = null
+    private val tessereInMemoria = ConcurrentHashMap<String, Pair<String, List<Colonnina>>>()
+
+    /** Indice delle colonnine: cambia una volta a settimana, lo ricontrolliamo una volta al giorno. */
+    suspend fun indiceColonnine(): IndiceColonnine? = withContext(Dispatchers.IO) {
+        indiceColonnineInMemoria?.let { (quando, indice) ->
+            if (System.currentTimeMillis() - quando in 0 until UN_GIORNO) return@withContext indice
+        }
+        val file = File(cartella, "ev_indice.json")
+        val eta = System.currentTimeMillis() - file.lastModified()
+        val inCache = leggi<IndiceColonnineDto>(file)
+        val dto = if (inCache != null && eta in 0 until UN_GIORNO) {
+            inCache
+        } else {
+            try {
+                val testo = scarica("dati/v1/ev/indice.json")
+                val nuovo = json.decodeFromString<IndiceColonnineDto>(testo)
+                salva(file, testo)
+                nuovo
+            } catch (e: Exception) {
+                inCache
+            }
+        }
+        dto?.inDominio()?.also { indiceColonnineInMemoria = System.currentTimeMillis() to it }
+    }
+
+    /** Le colonnine di una tessera di mezzo grado, per la versione indicata dall'indice. */
+    suspend fun tessera(chiave: String, generato: String): List<Colonnina> = withContext(Dispatchers.IO) {
+        tessereInMemoria[chiave]?.let { (versione, lista) -> if (versione == generato) return@withContext lista }
+        val cartellaEv = File(cartella, "ev").apply { mkdirs() }
+        val file = File(cartellaEv, "$chiave.json")
+        val marca = File(cartellaEv, "$chiave.versione")
+        val aggiornata = file.exists() && marca.exists() && marca.readText() == generato
+        val dto = (if (aggiornata) leggi<TesseraColonnineDto>(file) else null) ?: try {
+            val testo = scarica("dati/v1/ev/t/$chiave.json")
+            val nuovo = json.decodeFromString<TesseraColonnineDto>(testo)
+            salva(file, testo)
+            marca.writeText(generato)
+            nuovo
+        } catch (e: Exception) {
+            // senza rete va bene anche la settimana prima
+            leggi<TesseraColonnineDto>(file) ?: throw e
+        }
+        val lista = dto.c.mapNotNull { colonnina(it) }
+        tessereInMemoria[chiave] = generato to lista
+        lista
+    }
+
+    private fun colonnina(riga: JsonArray): Colonnina? = try {
+        val bit = riga.getOrNull(7)?.jsonPrimitive?.intOrNull ?: 0
+        Colonnina(
+            id = riga[0].jsonPrimitive.content,
+            lat = riga[1].jsonPrimitive.double,
+            lon = riga[2].jsonPrimitive.double,
+            nome = riga.getOrNull(3)?.jsonPrimitive?.contentOrNull,
+            operatore = riga.getOrNull(4)?.jsonPrimitive?.contentOrNull,
+            kw = riga.getOrNull(5)?.jsonPrimitive?.doubleOrNull,
+            connettori = (riga.getOrNull(6) as? JsonArray)?.mapNotNull { elemento ->
+                val c = elemento as? JsonArray ?: return@mapNotNull null
+                val presa = Presa.daCodice(c.getOrNull(0)?.jsonPrimitive?.contentOrNull) ?: return@mapNotNull null
+                Connettore(presa, c.getOrNull(1)?.jsonPrimitive?.intOrNull ?: 1, c.getOrNull(2)?.jsonPrimitive?.doubleOrNull ?: 0.0)
+            } ?: emptyList(),
+            h24 = bit and 1 != 0,
+            soloClienti = bit and 2 != 0,
+            gratuita = bit and 4 != 0,
+            potenzaStimata = bit and 8 != 0,
+            indirizzo = riga.getOrNull(8)?.jsonPrimitive?.contentOrNull,
+            orari = riga.getOrNull(9)?.jsonPrimitive?.contentOrNull,
+        )
+    } catch (e: Exception) {
+        null
+    }
+
     private companion object {
         const val DUE_ORE = 2 * 60 * 60 * 1000L
+        const val UN_GIORNO = 24 * 60 * 60 * 1000L
         const val SETTE_GIORNI = 7 * 24 * 60 * 60 * 1000L
     }
 }

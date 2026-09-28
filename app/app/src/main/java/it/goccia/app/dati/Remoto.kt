@@ -100,3 +100,46 @@ data class CronoImpiantoDto(
     val g: Map<String, List<Int?>> = emptyMap(),
     val m: Map<String, List<Int?>> = emptyMap(),
 )
+
+// --- colonnine di ricarica (cartella ev/, aggiornata ogni settimana) ---
+
+@Serializable
+data class IndiceColonnineDto(
+    val v: Int = 1,
+    val generato: String = "",
+    val conteggio: Int = 0,
+    val passo: Double = 0.5,
+    val tessere: Map<String, Int> = emptyMap(),
+    val tariffe: StimeDto? = null,
+)
+
+@Serializable
+data class StimeDto(val casa: StimaCasaDto? = null, val colonnine: StimeColonnineDto? = null)
+
+@Serializable
+data class StimaCasaDto(val p: Double, val nota: String = "")
+
+@Serializable
+data class StimeColonnineDto(val ac: Double, val dc: Double, val hpc: Double, val nota: String = "")
+
+/** Righe [id, lat, lon, nome, operatore, kW, [[presa, quante, kW]], bit, indirizzo, orari]. */
+@Serializable
+data class TesseraColonnineDto(val v: Int = 1, val c: List<JsonArray> = emptyList())
+
+fun IndiceColonnineDto.inDominio(): IndiceColonnine {
+    val base = StimeTariffe()
+    return IndiceColonnine(
+        generato = generato,
+        conteggio = conteggio,
+        passo = passo,
+        tessere = tessere,
+        stime = StimeTariffe(
+            casa = tariffe?.casa?.p ?: base.casa,
+            notaCasa = tariffe?.casa?.nota?.ifBlank { null } ?: base.notaCasa,
+            ac = tariffe?.colonnine?.ac ?: base.ac,
+            dc = tariffe?.colonnine?.dc ?: base.dc,
+            hpc = tariffe?.colonnine?.hpc ?: base.hpc,
+            notaColonnine = tariffe?.colonnine?.nota?.ifBlank { null } ?: base.notaColonnine,
+        ),
+    )
+}

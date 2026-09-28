@@ -68,7 +68,7 @@ jobs:
           set -o pipefail
           node src/index.js "${ARGS[@]}" 2>&1 | tee pipeline.log
           # riassunto visibile anche dalle API (annotazioni)
-          grep -E "^Estrazione|impianti in anagrafica|righe prezzi|province |comuni |colonnine|dimensioni|Errore" pipeline.log | while IFS= read -r riga; do echo "::notice::${riga}"; done || true
+          grep -E "^Estrazione|impianti in anagrafica|righe prezzi|province |comuni |[Cc]olonnine|dimensioni|Errore" pipeline.log | while IFS= read -r riga; do echo "::notice::${riga}"; done || true
 
       - name: Inserisci il nome del repository nelle pagine
         if: steps.pipeline.outputs.nuovo == 'true'

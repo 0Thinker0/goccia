@@ -17,10 +17,11 @@ export const MINIMO_COLONNINE = 5000;
 
 export const SERVER_OVERPASS = ['https://overpass-api.de/api/interpreter', 'https://overpass.kumi.systems/api/interpreter'];
 
+// "out center" stampa le coordinate dei nodi e il centro delle aree ("out tags" le toglierebbe)
 export const QUERY = `[out:json][timeout:300];
 area["ISO3166-1"="IT"]["admin_level"="2"]->.italia;
 nwr["amenity"="charging_station"](area.italia);
-out center tags qt;`;
+out center qt;`;
 
 /**
  * Stime iniziali delle tariffe, mostrate finche l'utente non inserisce le sue.
@@ -252,7 +253,10 @@ export async function aggiornaColonnine({ uscita, url, cartella, forza = false, 
     try {
       const grezzo = await scarica();
       const nuovo = elaboraColonnine(grezzo.elements, adesso);
-      if (nuovo.indice.conteggio < MINIMO_COLONNINE) throw new Error(`solo ${nuovo.indice.conteggio} colonnine, risposta incompleta`);
+      console.log(`Colonnine da Overpass: ${grezzo.elements.length} elementi, ${nuovo.indice.conteggio} tenute, ${nuovo.scartate} scartate`);
+      if (nuovo.indice.conteggio < MINIMO_COLONNINE) {
+        throw new Error(`solo ${nuovo.indice.conteggio} colonnine su ${grezzo.elements.length} elementi, risposta incompleta`);
+      }
       risultato = nuovo;
       origine = 'overpass';
     } catch (errore) {
