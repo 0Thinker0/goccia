@@ -1,0 +1,598 @@
+09-28 16:45:23.410 V/GraphicsEnvironment( 2704):   angle_gl_driver_selection_pkgs=[]
+09-28 16:45:23.410 V/GraphicsEnvironment( 2704):   angle_gl_driver_selection_values=[]
+09-28 16:45:23.411 V/GraphicsEnvironment( 2704): ANGLE GameManagerService for com.google.android.gm: false
+09-28 16:45:23.460 V/GraphicsEnvironment( 2782):   angle_gl_driver_selection_pkgs=[]
+09-28 16:45:23.460 V/GraphicsEnvironment( 2782):   angle_gl_driver_selection_values=[]
+09-28 16:45:23.460 V/GraphicsEnvironment( 2782): ANGLE GameManagerService for com.android.externalstorage: false
+09-28 16:45:23.807 W/SnapshotHandler( 1593): Caused by: android.system.ErrnoException: open failed: ENOENT (No such file or directory)
+09-28 16:45:23.848 D/nativeloader( 2888): InitLlndkLibrariesProduct: libEGL.so:libGLESv1_CM.so:libGLESv2.so:libGLESv3.so:libRS.so:libandroid_net.so:libbinder_ndk.so:libc.so:libcgrouprc.so:libclang_rt.asan-x86_64-android.so:libcom.android.tethering.connectivity_native.so:libdl.so:libft2.so:liblog.so:libm.so:libmediandk.so:libnativewindow.so:libneuralnetworks.so:libselinux.so:libsync.so:libvndksupport.so:libvulkan.so
+09-28 16:45:23.965 V/GraphicsEnvironment( 2888):   angle_gl_driver_selection_pkgs=[]
+09-28 16:45:23.965 V/GraphicsEnvironment( 2888):   angle_gl_driver_selection_values=[]
+09-28 16:45:23.972 V/GraphicsEnvironment( 2888): ANGLE GameManagerService for com.google.android.tts: false
+09-28 16:45:24.327 D/nativeloader( 2955): InitLlndkLibrariesProduct: libEGL.so:libGLESv1_CM.so:libGLESv2.so:libGLESv3.so:libRS.so:libandroid_net.so:libbinder_ndk.so:libc.so:libcgrouprc.so:libclang_rt.asan-x86_64-android.so:libcom.android.tethering.connectivity_native.so:libdl.so:libft2.so:liblog.so:libm.so:libmediandk.so:libnativewindow.so:libneuralnetworks.so:libselinux.so:libsync.so:libvndksupport.so:libvulkan.so
+09-28 16:45:24.368 V/GraphicsEnvironment( 2955):   angle_gl_driver_selection_pkgs=[]
+09-28 16:45:24.368 V/GraphicsEnvironment( 2955):   angle_gl_driver_selection_values=[]
+09-28 16:45:24.368 V/GraphicsEnvironment( 2955): ANGLE GameManagerService for com.google.android.dialer: false
+09-28 16:45:24.436 W/AppSearchIcing(  523): icing-search-engine.cc:283: Error: 5, Message: Document (com.google.android.googlequicksearchbox$OneSearchZeroStateGoogleSuggestions/default, zp) not found.
+09-28 16:45:24.439 W/AppSearchIcing(  523): icing-search-engine.cc:283: Error: 5, Message: Document (com.google.android.googlequicksearchbox$OneSearchZeroStateGoogleSuggestions/default, zp) not found.
+09-28 16:45:24.442 W/AppSearchIcing(  523): icing-search-engine.cc:283: Error: 5, Message: Document (com.google.android.googlequicksearchbox$OneSearchZeroStateGoogleSuggestions/default, zp) not found.
+09-28 16:45:24.668 I/Role    (  835): com.google.android.googlesdksetup not qualified for android.app.role.HOME due to missing RequiredComponent{mIntentFilterData=IntentFilterData{mAction='android.intent.action.MAIN', mCategories='[android.intent.category.HOME]', mDataScheme='null', mDataType='null'}, mMinTargetSdkVersion=1, mFlags='0', mPermission='null', mQueryFlags=0, mMetaData=[]}
+09-28 16:45:24.669 I/RoleControllerServiceImpl(  835): Removing package that no longer qualifies for the role, package: com.google.android.googlesdksetup, role: android.app.role.HOME
+09-28 16:45:24.769 V/GraphicsEnvironment( 3048):   angle_gl_driver_selection_pkgs=[]
+09-28 16:45:24.769 V/GraphicsEnvironment( 3048):   angle_gl_driver_selection_values=[]
+09-28 16:45:24.777 V/GraphicsEnvironment( 3048): ANGLE GameManagerService for com.google.android.documentsui: false
+09-28 16:45:25.136 D/EGL_emulation( 1089): app_time_stats: avg=520.50ms min=77.00ms max=1226.91ms count=4
+09-28 16:45:25.351 D/EGL_emulation(  834): app_time_stats: avg=5288.12ms min=5288.12ms max=5288.12ms count=1
+09-28 16:45:26.114 D/nativeloader( 3087): InitLlndkLibrariesProduct: libEGL.so:libGLESv1_CM.so:libGLESv2.so:libGLESv3.so:libRS.so:libandroid_net.so:libbinder_ndk.so:libc.so:libcgrouprc.so:libclang_rt.asan-x86_64-android.so:libcom.android.tethering.connectivity_native.so:libdl.so:libft2.so:liblog.so:libm.so:libmediandk.so:libnativewindow.so:libneuralnetworks.so:libselinux.so:libsync.so:libvndksupport.so:libvulkan.so
+09-28 16:45:26.311 D/EGL_emulation( 1089): app_time_stats: avg=1174.67ms min=1174.67ms max=1174.67ms count=1
+09-28 16:45:26.441 D/EGL_emulation( 1647): app_time_stats: avg=1313.26ms min=233.86ms max=2733.02ms count=3
+09-28 16:45:26.470 V/GraphicsEnvironment( 3087):   angle_gl_driver_selection_pkgs=[]
+09-28 16:45:26.470 V/GraphicsEnvironment( 3087):   angle_gl_driver_selection_values=[]
+09-28 16:45:26.471 V/GraphicsEnvironment( 3087): ANGLE GameManagerService for com.google.android.gms: false
+09-28 16:45:26.821 D/ActivityManager(  523): freezing 1654 com.google.android.googlesdksetup
+09-28 16:45:27.236 D/EGL_emulation(  834): app_time_stats: avg=1885.57ms min=1885.57ms max=1885.57ms count=1
+09-28 16:45:27.432 D/AppWidgetServiceImpl(  523): Provider info from ComponentInfo{com.google.android.googlequicksearchbox/com.google.android.apps.gsa.staticplugins.searchwidget.GoogleSearchWidgetProvider} won't be persisted.
+09-28 16:45:27.687 D/CarrierSvcBindHelper( 1042): onPackageModified: com.google.android.googlesdksetup
+09-28 16:45:27.698 D/ImsResolver( 1042): maybeAddedImsService, packageName: com.google.android.googlesdksetup
+09-28 16:45:28.068 V/GraphicsEnvironment( 3300):   angle_gl_driver_selection_pkgs=[]
+09-28 16:45:28.068 V/GraphicsEnvironment( 3300):   angle_gl_driver_selection_values=[]
+09-28 16:45:28.069 V/GraphicsEnvironment( 3300): ANGLE GameManagerService for com.android.traceur: false
+09-28 16:45:28.084 D/EGL_emulation(  834): app_time_stats: avg=848.14ms min=277.35ms max=1684.96ms count=3
+09-28 16:45:28.518 D/nativeloader( 3409): InitLlndkLibrariesProduct: libEGL.so:libGLESv1_CM.so:libGLESv2.so:libGLESv3.so:libRS.so:libandroid_net.so:libbinder_ndk.so:libc.so:libcgrouprc.so:libclang_rt.asan-x86_64-android.so:libcom.android.tethering.connectivity_native.so:libdl.so:libft2.so:liblog.so:libm.so:libmediandk.so:libnativewindow.so:libneuralnetworks.so:libselinux.so:libsync.so:libvndksupport.so:libvulkan.so
+09-28 16:45:28.528 V/GraphicsEnvironment( 3409):   angle_gl_driver_selection_pkgs=[]
+09-28 16:45:28.528 V/GraphicsEnvironment( 3409):   angle_gl_driver_selection_values=[]
+09-28 16:45:28.543 V/GraphicsEnvironment( 3409): ANGLE GameManagerService for com.google.android.onetimeinitializer: false
+09-28 16:45:29.401 D/nativeloader( 3489): InitLlndkLibrariesProduct: libEGL.so:libGLESv1_CM.so:libGLESv2.so:libGLESv3.so:libRS.so:libandroid_net.so:libbinder_ndk.so:libc.so:libcgrouprc.so:libclang_rt.asan-x86_64-android.so:libcom.android.tethering.connectivity_native.so:libdl.so:libft2.so:liblog.so:libm.so:libmediandk.so:libnativewindow.so:libneuralnetworks.so:libselinux.so:libsync.so:libvndksupport.so:libvulkan.so
+09-28 16:45:29.455 V/GraphicsEnvironment( 3489):   angle_gl_driver_selection_pkgs=[]
+09-28 16:45:29.455 V/GraphicsEnvironment( 3489):   angle_gl_driver_selection_values=[]
+09-28 16:45:29.456 V/GraphicsEnvironment( 3489): ANGLE GameManagerService for com.android.camera2: false
+09-28 16:45:29.763 V/GraphicsEnvironment( 3512):   angle_gl_driver_selection_pkgs=[]
+09-28 16:45:29.764 V/GraphicsEnvironment( 3512):   angle_gl_driver_selection_values=[]
+09-28 16:45:29.766 V/GraphicsEnvironment( 3512): ANGLE GameManagerService for com.android.carrierdefaultapp: false
+09-28 16:45:30.136 D/EGL_emulation(  834): app_time_stats: avg=676.03ms min=7.59ms max=1591.76ms count=3
+09-28 16:45:30.301 D/AppWidgetServiceImpl(  523): Provider info from ComponentInfo{com.google.android.googlequicksearchbox/com.google.android.apps.gsa.staticplugins.searchwidget.GoogleSearchWidgetProvider} won't be persisted.
+09-28 16:45:30.344 D/AppWidgetServiceImpl(  523): Provider info from ComponentInfo{com.google.android.googlequicksearchbox/com.google.android.apps.gsa.staticplugins.searchwidget.GoogleSearchWidgetProvider} won't be persisted.
+09-28 16:45:30.552 D/EGL_emulation( 1089): app_time_stats: avg=2119.05ms min=710.56ms max=3527.54ms count=2
+09-28 16:45:30.684 V/GraphicsEnvironment( 3562):   angle_gl_driver_selection_pkgs=[]
+09-28 16:45:30.684 V/GraphicsEnvironment( 3562):   angle_gl_driver_selection_values=[]
+09-28 16:45:30.684 V/GraphicsEnvironment( 3562): ANGLE GameManagerService for com.android.dynsystem: false
+09-28 16:45:30.919 I/AiAiEcho( 1560): AppFetcherImpl onPackageChanged com.google.android.googlesdksetup.
+09-28 16:45:30.919 I/AiAiEcho( 1560): AppIndexer Package:[com.google.android.googlesdksetup] UserProfile:[0] Enabled:[true].
+09-28 16:45:30.919 I/AiAiEcho( 1560): AppFetcherImplV2 updateApps package:[com.google.android.googlesdksetup], userId:[0], reason:[package is updated.].
+09-28 16:45:31.040 V/GraphicsEnvironment( 3606):   angle_gl_driver_selection_pkgs=[]
+09-28 16:45:31.041 V/GraphicsEnvironment( 3606):   angle_gl_driver_selection_values=[]
+09-28 16:45:31.042 V/GraphicsEnvironment( 3606): ANGLE GameManagerService for com.android.dynsystem: false
+09-28 16:45:31.082 D/libEGL  ( 1434): loaded /vendor/lib64/egl/libEGL_emulation.so
+09-28 16:45:31.097 D/libEGL  ( 1434): loaded /vendor/lib64/egl/libGLESv1_CM_emulation.so
+09-28 16:45:31.140 D/libEGL  ( 1434): loaded /vendor/lib64/egl/libGLESv2_emulation.so
+09-28 16:45:31.296 V/GraphicsEnvironment( 3620):   angle_gl_driver_selection_pkgs=[]
+09-28 16:45:31.296 V/GraphicsEnvironment( 3620):   angle_gl_driver_selection_values=[]
+09-28 16:45:31.296 V/GraphicsEnvironment( 3620): ANGLE GameManagerService for com.android.intentresolver: false
+09-28 16:45:31.469 V/GraphicsEnvironment( 3699):   angle_gl_driver_selection_pkgs=[]
+09-28 16:45:31.469 V/GraphicsEnvironment( 3699):   angle_gl_driver_selection_values=[]
+09-28 16:45:31.472 V/GraphicsEnvironment( 3699): ANGLE GameManagerService for com.android.nfc: false
+09-28 16:45:31.651 D/EGL_emulation( 1089): app_time_stats: avg=366.31ms min=101.03ms max=566.88ms count=3
+09-28 16:45:32.388 D/EGL_emulation(  834): app_time_stats: avg=1126.39ms min=160.13ms max=2092.65ms count=2
+09-28 16:45:32.489 V/GraphicsEnvironment( 3741):   angle_gl_driver_selection_pkgs=[]
+09-28 16:45:32.489 V/GraphicsEnvironment( 3741):   angle_gl_driver_selection_values=[]
+09-28 16:45:32.489 V/GraphicsEnvironment( 3741): ANGLE GameManagerService for com.android.shell: false
+09-28 16:45:32.704 D/nativeloader( 3762): InitLlndkLibrariesProduct: libEGL.so:libGLESv1_CM.so:libGLESv2.so:libGLESv3.so:libRS.so:libandroid_net.so:libbinder_ndk.so:libc.so:libcgrouprc.so:libclang_rt.asan-x86_64-android.so:libcom.android.tethering.connectivity_native.so:libdl.so:libft2.so:liblog.so:libm.so:libmediandk.so:libnativewindow.so:libneuralnetworks.so:libselinux.so:libsync.so:libvndksupport.so:libvulkan.so
+09-28 16:45:32.718 V/GraphicsEnvironment( 3762):   angle_gl_driver_selection_pkgs=[]
+09-28 16:45:32.718 V/GraphicsEnvironment( 3762):   angle_gl_driver_selection_values=[]
+09-28 16:45:32.718 V/GraphicsEnvironment( 3762): ANGLE GameManagerService for com.google.android.configupdater: false
+09-28 16:45:33.117 I/NnApiDriverManager( 1434): Registering application with GPU 'Android Emulator OpenGL ES Translator (Google SwiftShader)' by 'Google (Google Inc.)' [CONTEXT service_id=301 ]
+09-28 16:45:33.341 V/GraphicsEnvironment( 3838):   angle_gl_driver_selection_pkgs=[]
+09-28 16:45:33.341 V/GraphicsEnvironment( 3838):   angle_gl_driver_selection_values=[]
+09-28 16:45:33.342 V/GraphicsEnvironment( 3838): ANGLE GameManagerService for com.google.android.rkpdapp: false
+09-28 16:45:33.441 V/GraphicsEnvironment( 3845):   angle_gl_driver_selection_pkgs=[]
+09-28 16:45:33.441 V/GraphicsEnvironment( 3845):   angle_gl_driver_selection_values=[]
+09-28 16:45:33.443 V/GraphicsEnvironment( 3845): ANGLE GameManagerService for com.google.android.packageinstaller: false
+09-28 16:45:33.940 D/EGL_emulation( 1089): app_time_stats: avg=2289.32ms min=2289.32ms max=2289.32ms count=1
+09-28 16:45:34.252 D/nativeloader( 3891): InitLlndkLibrariesProduct: libEGL.so:libGLESv1_CM.so:libGLESv2.so:libGLESv3.so:libRS.so:libandroid_net.so:libbinder_ndk.so:libc.so:libcgrouprc.so:libclang_rt.asan-x86_64-android.so:libcom.android.tethering.connectivity_native.so:libdl.so:libft2.so:liblog.so:libm.so:libmediandk.so:libnativewindow.so:libneuralnetworks.so:libselinux.so:libsync.so:libvndksupport.so:libvulkan.so
+09-28 16:45:34.276 D/EGL_emulation(  834): app_time_stats: avg=1887.19ms min=1887.19ms max=1887.19ms count=1
+09-28 16:45:34.321 V/GraphicsEnvironment( 3891):   angle_gl_driver_selection_pkgs=[]
+09-28 16:45:34.321 V/GraphicsEnvironment( 3891):   angle_gl_driver_selection_values=[]
+09-28 16:45:34.325 V/GraphicsEnvironment( 3891): ANGLE GameManagerService for com.google.android.projection.gearhead: false
+09-28 16:45:34.875 D/libEGL  ( 3087): loaded /vendor/lib64/egl/libEGL_emulation.so
+09-28 16:45:34.918 D/libEGL  ( 3087): loaded /vendor/lib64/egl/libGLESv1_CM_emulation.so
+09-28 16:45:34.918 D/libEGL  ( 3087): loaded /vendor/lib64/egl/libGLESv2_emulation.so
+09-28 16:45:35.343 D/nativeloader( 3943): InitLlndkLibrariesProduct: libEGL.so:libGLESv1_CM.so:libGLESv2.so:libGLESv3.so:libRS.so:libandroid_net.so:libbinder_ndk.so:libc.so:libcgrouprc.so:libclang_rt.asan-x86_64-android.so:libcom.android.tethering.connectivity_native.so:libdl.so:libft2.so:liblog.so:libm.so:libmediandk.so:libnativewindow.so:libneuralnetworks.so:libselinux.so:libsync.so:libvndksupport.so:libvulkan.so
+09-28 16:45:35.371 V/GraphicsEnvironment( 3943):   angle_gl_driver_selection_pkgs=[]
+09-28 16:45:35.371 V/GraphicsEnvironment( 3943):   angle_gl_driver_selection_values=[]
+09-28 16:45:35.372 V/GraphicsEnvironment( 3943): ANGLE GameManagerService for com.google.android.gm: false
+09-28 16:45:35.465 W/SnapshotHandler( 1647): Caused by: android.system.ErrnoException: open failed: ENOENT (No such file or directory)
+09-28 16:45:35.504 W/SnapshotHandler( 1647): Caused by: android.system.ErrnoException: open failed: ENOENT (No such file or directory)
+09-28 16:45:35.873 D/EGL_emulation( 1089): app_time_stats: avg=1932.49ms min=1932.49ms max=1932.49ms count=1
+09-28 16:45:36.006 D/nativeloader( 4071): InitLlndkLibrariesProduct: libEGL.so:libGLESv1_CM.so:libGLESv2.so:libGLESv3.so:libRS.so:libandroid_net.so:libbinder_ndk.so:libc.so:libcgrouprc.so:libclang_rt.asan-x86_64-android.so:libcom.android.tethering.connectivity_native.so:libdl.so:libft2.so:liblog.so:libm.so:libmediandk.so:libnativewindow.so:libneuralnetworks.so:libselinux.so:libsync.so:libvndksupport.so:libvulkan.so
+09-28 16:45:36.013 V/GraphicsEnvironment( 4071):   angle_gl_driver_selection_pkgs=[]
+09-28 16:45:36.013 V/GraphicsEnvironment( 4071):   angle_gl_driver_selection_values=[]
+09-28 16:45:36.013 V/GraphicsEnvironment( 4071): ANGLE GameManagerService for com.google.android.settings.intelligence: false
+09-28 16:45:36.289 D/EGL_emulation(  834): app_time_stats: avg=400.18ms min=10.52ms max=1231.16ms count=5
+09-28 16:45:36.444 D/nativeloader( 4143): InitLlndkLibrariesProduct: libEGL.so:libGLESv1_CM.so:libGLESv2.so:libGLESv3.so:libRS.so:libandroid_net.so:libbinder_ndk.so:libc.so:libcgrouprc.so:libclang_rt.asan-x86_64-android.so:libcom.android.tethering.connectivity_native.so:libdl.so:libft2.so:liblog.so:libm.so:libmediandk.so:libnativewindow.so:libneuralnetworks.so:libselinux.so:libsync.so:libvndksupport.so:libvulkan.so
+09-28 16:45:36.455 V/GraphicsEnvironment( 4143):   angle_gl_driver_selection_pkgs=[]
+09-28 16:45:36.455 V/GraphicsEnvironment( 4143):   angle_gl_driver_selection_values=[]
+09-28 16:45:36.455 V/GraphicsEnvironment( 4143): ANGLE GameManagerService for com.google.android.settings.intelligence: false
+09-28 16:45:37.086 D/EGL_emulation( 1089): app_time_stats: avg=404.34ms min=23.99ms max=729.83ms count=3
+09-28 16:45:37.411 W/FileUtils(  523): android.system.ErrnoException: chmod failed: ENOENT (No such file or directory)
+09-28 16:45:37.904 D/EGL_emulation(  834): app_time_stats: avg=1614.53ms min=1614.53ms max=1614.53ms count=1
+09-28 16:45:38.382 V/GraphicsEnvironment( 4254):   angle_gl_driver_selection_pkgs=[]
+09-28 16:45:38.382 V/GraphicsEnvironment( 4254):   angle_gl_driver_selection_values=[]
+09-28 16:45:38.384 V/GraphicsEnvironment( 4254): ANGLE GameManagerService for com.android.emergency: false
+09-28 16:45:38.435 D/nativeloader( 4263): InitLlndkLibrariesProduct: libEGL.so:libGLESv1_CM.so:libGLESv2.so:libGLESv3.so:libRS.so:libandroid_net.so:libbinder_ndk.so:libc.so:libcgrouprc.so:libclang_rt.asan-x86_64-android.so:libcom.android.tethering.connectivity_native.so:libdl.so:libft2.so:liblog.so:libm.so:libmediandk.so:libnativewindow.so:libneuralnetworks.so:libselinux.so:libsync.so:libvndksupport.so:libvulkan.so
+09-28 16:45:38.448 D/nativeloader( 4272): InitLlndkLibrariesProduct: libEGL.so:libGLESv1_CM.so:libGLESv2.so:libGLESv3.so:libRS.so:libandroid_net.so:libbinder_ndk.so:libc.so:libcgrouprc.so:libclang_rt.asan-x86_64-android.so:libcom.android.tethering.connectivity_native.so:libdl.so:libft2.so:liblog.so:libm.so:libmediandk.so:libnativewindow.so:libneuralnetworks.so:libselinux.so:libsync.so:libvndksupport.so:libvulkan.so
+09-28 16:45:38.479 D/nativeloader( 4264): InitLlndkLibrariesProduct: libEGL.so:libGLESv1_CM.so:libGLESv2.so:libGLESv3.so:libRS.so:libandroid_net.so:libbinder_ndk.so:libc.so:libcgrouprc.so:libclang_rt.asan-x86_64-android.so:libcom.android.tethering.connectivity_native.so:libdl.so:libft2.so:liblog.so:libm.so:libmediandk.so:libnativewindow.so:libneuralnetworks.so:libselinux.so:libsync.so:libvndksupport.so:libvulkan.so
+09-28 16:45:38.493 V/GraphicsEnvironment( 4264):   angle_gl_driver_selection_pkgs=[]
+09-28 16:45:38.493 V/GraphicsEnvironment( 4264):   angle_gl_driver_selection_values=[]
+09-28 16:45:38.518 V/GraphicsEnvironment( 4264): ANGLE GameManagerService for com.google.android.gms: false
+09-28 16:45:38.539 V/GraphicsEnvironment( 4272):   angle_gl_driver_selection_pkgs=[]
+09-28 16:45:38.539 V/GraphicsEnvironment( 4272):   angle_gl_driver_selection_values=[]
+09-28 16:45:38.540 V/GraphicsEnvironment( 4272): ANGLE GameManagerService for com.google.android.marvin.talkback: false
+09-28 16:45:38.545 V/GraphicsEnvironment( 4263):   angle_gl_driver_selection_pkgs=[]
+09-28 16:45:38.545 V/GraphicsEnvironment( 4263):   angle_gl_driver_selection_values=[]
+09-28 16:45:38.546 V/GraphicsEnvironment( 4263): ANGLE GameManagerService for com.google.android.apps.messaging: false
+09-28 16:45:38.558 V/GraphicsEnvironment( 4274):   angle_gl_driver_selection_pkgs=[]
+09-28 16:45:38.558 V/GraphicsEnvironment( 4274):   angle_gl_driver_selection_values=[]
+09-28 16:45:38.559 V/GraphicsEnvironment( 4274): ANGLE GameManagerService for com.google.android.healthconnect.controller: false
+09-28 16:45:38.623 I/SemanticLocation( 1389): Caused by: android.system.ErrnoException: open failed: ENOENT (No such file or directory)
+09-28 16:45:38.652 I/SemanticLocation( 1389): Caused by: android.system.ErrnoException: open failed: ENOENT (No such file or directory)
+09-28 16:45:38.952 I/SemanticLocation( 1389): Caused by: android.system.ErrnoException: open failed: ENOENT (No such file or directory)
+09-28 16:45:39.154 D/AndroidRuntime( 4348): >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
+09-28 16:45:39.173 I/AndroidRuntime( 4348): Using default boot image
+09-28 16:45:39.173 I/AndroidRuntime( 4348): Leaving lock profiling enabled
+09-28 16:45:39.321 D/nativeloader( 4348): InitDefaultPublicLibraries for_preload=1: libandroid.so:libaaudio.so:libamidi.so:libbinder_ndk.so:libc.so:libcamera2ndk.so:libdl.so:libEGL.so:libGLESv1_CM.so:libGLESv2.so:libGLESv3.so:libicu.so:libicui18n.so:libicuuc.so:libjnigraphics.so:liblog.so:libmediandk.so:libm.so:libnativehelper.so:libnativewindow.so:libOpenMAXAL.so:libOpenSLES.so:libRS.so:libstdc++.so:libsync.so:libvulkan.so:libwebviewchromium_plat_support.so:libz.so
+09-28 16:45:39.811 I/GoogleSettingsUtils( 1434): Updated ID in checkin_id_token file [CONTEXT service_id=130 ]
+09-28 16:45:40.105 I/BugleSearch( 4263): Queues icing index rebuild work item. [CONTEXT class_name="IcingSyncManagerListener" ]
+09-28 16:45:40.775 D/AndroidRuntime( 4348): Shutting down VM
+09-28 16:45:40.954 D/EGL_emulation(  834): app_time_stats: avg=3049.50ms min=3049.50ms max=3049.50ms count=1
+09-28 16:45:41.702 E/RecoverySnapshotStorage(  523): Caused by: android.system.ErrnoException: open failed: ENOENT (No such file or directory)
+09-28 16:45:42.103 E/RecoverySnapshotStorage(  523): Caused by: android.system.ErrnoException: open failed: ENOENT (No such file or directory)
+09-28 16:45:42.108 E/keystore2(  156):     3: Error::Rc(r#SYSTEM_ERROR)
+09-28 16:45:42.296 E/RecoverySnapshotStorage(  523): Caused by: android.system.ErrnoException: open failed: ENOENT (No such file or directory)
+09-28 16:45:42.301 E/keystore2(  156):     3: Error::Rc(r#SYSTEM_ERROR)
+09-28 16:45:43.096 I/NnApiDriverManager( 1434): Registering application with GPU 'Android Emulator OpenGL ES Translator (Google SwiftShader)' by 'Google (Google Inc.)' [CONTEXT service_id=301 ]
+09-28 16:45:43.385 D/AndroidRuntime( 4546): >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
+09-28 16:45:43.403 I/AndroidRuntime( 4546): Using default boot image
+09-28 16:45:43.403 I/AndroidRuntime( 4546): Leaving lock profiling enabled
+09-28 16:45:43.530 D/nativeloader( 4546): InitDefaultPublicLibraries for_preload=1: libandroid.so:libaaudio.so:libamidi.so:libbinder_ndk.so:libc.so:libcamera2ndk.so:libdl.so:libEGL.so:libGLESv1_CM.so:libGLESv2.so:libGLESv3.so:libicu.so:libicui18n.so:libicuuc.so:libjnigraphics.so:liblog.so:libmediandk.so:libm.so:libnativehelper.so:libnativewindow.so:libOpenMAXAL.so:libOpenSLES.so:libRS.so:libstdc++.so:libsync.so:libvulkan.so:libwebviewchromium_plat_support.so:libz.so
+09-28 16:45:43.723 E/RecoverySnapshotStorage(  523): Caused by: android.system.ErrnoException: open failed: ENOENT (No such file or directory)
+09-28 16:45:43.726 E/keystore2(  156):     3: Error::Rc(r#SYSTEM_ERROR)
+09-28 16:45:43.988 D/EGL_emulation(  834): app_time_stats: avg=3034.50ms min=3034.50ms max=3034.50ms count=1
+09-28 16:45:44.344 I/SemanticLocation( 1389): Caused by: android.system.ErrnoException: open failed: ENOENT (No such file or directory)
+09-28 16:45:44.368 I/SemanticLocation( 1389): Caused by: android.system.ErrnoException: open failed: ENOENT (No such file or directory)
+09-28 16:45:44.643 D/AndroidRuntime( 4546): Shutting down VM
+09-28 16:45:46.030 D/EGL_emulation( 1089): app_time_stats: avg=4472.10ms min=79.93ms max=8864.27ms count=2
+09-28 16:45:47.086 D/AndroidRuntime( 4633): >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
+09-28 16:45:47.089 I/AndroidRuntime( 4633): Using default boot image
+09-28 16:45:47.089 I/AndroidRuntime( 4633): Leaving lock profiling enabled
+09-28 16:45:47.186 D/nativeloader( 4633): InitDefaultPublicLibraries for_preload=1: libandroid.so:libaaudio.so:libamidi.so:libbinder_ndk.so:libc.so:libcamera2ndk.so:libdl.so:libEGL.so:libGLESv1_CM.so:libGLESv2.so:libGLESv3.so:libicu.so:libicui18n.so:libicuuc.so:libjnigraphics.so:liblog.so:libmediandk.so:libm.so:libnativehelper.so:libnativewindow.so:libOpenMAXAL.so:libOpenSLES.so:libRS.so:libstdc++.so:libsync.so:libvulkan.so:libwebviewchromium_plat_support.so:libz.so
+09-28 16:45:48.263 D/AndroidRuntime( 4633): Shutting down VM
+09-28 16:45:48.575 V/GraphicsEnvironment( 4663):   angle_gl_driver_selection_pkgs=[]
+09-28 16:45:48.575 V/GraphicsEnvironment( 4663):   angle_gl_driver_selection_values=[]
+09-28 16:45:48.576 V/GraphicsEnvironment( 4663): ANGLE GameManagerService for com.google.android.webview: false
+09-28 16:45:49.267 D/EGL_emulation(  834): app_time_stats: avg=5278.92ms min=5278.92ms max=5278.92ms count=1
+09-28 16:45:50.790 D/AndroidRuntime( 4720): >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
+09-28 16:45:50.792 I/AndroidRuntime( 4720): Using default boot image
+09-28 16:45:50.792 I/AndroidRuntime( 4720): Leaving lock profiling enabled
+09-28 16:45:50.893 D/nativeloader( 4720): InitDefaultPublicLibraries for_preload=1: libandroid.so:libaaudio.so:libamidi.so:libbinder_ndk.so:libc.so:libcamera2ndk.so:libdl.so:libEGL.so:libGLESv1_CM.so:libGLESv2.so:libGLESv3.so:libicu.so:libicui18n.so:libicuuc.so:libjnigraphics.so:liblog.so:libmediandk.so:libm.so:libnativehelper.so:libnativewindow.so:libOpenMAXAL.so:libOpenSLES.so:libRS.so:libstdc++.so:libsync.so:libvulkan.so:libwebviewchromium_plat_support.so:libz.so
+09-28 16:45:51.459 I/BugleRcsProvisioning( 4263): BugleSystemBindingManager: onBuglePhenotypeFlagChanged
+09-28 16:45:51.480 W/BugleAction( 4263): Null config in BugleSharedPrefs
+09-28 16:45:51.487 I/BugleBackup( 4263): Registering preference change listener for "buglesub_-1".
+09-28 16:45:51.500 I/BugleBackup( 4263): Registering preference change listener for "buglesub_1".
+09-28 16:45:51.506 I/BugleRcsProvisioning( 4263): BugleSystemBindingManager: onBuglePhenotypeFlagChanged
+09-28 16:45:51.509 W/BugleAction( 4263): Null config in BugleSharedPrefs
+09-28 16:45:51.902 D/nativeloader( 4764): InitLlndkLibrariesProduct: libEGL.so:libGLESv1_CM.so:libGLESv2.so:libGLESv3.so:libRS.so:libandroid_net.so:libbinder_ndk.so:libc.so:libcgrouprc.so:libclang_rt.asan-x86_64-android.so:libcom.android.tethering.connectivity_native.so:libdl.so:libft2.so:liblog.so:libm.so:libmediandk.so:libnativewindow.so:libneuralnetworks.so:libselinux.so:libsync.so:libvndksupport.so:libvulkan.so
+09-28 16:45:51.922 V/GraphicsEnvironment( 4764):   angle_gl_driver_selection_pkgs=[]
+09-28 16:45:51.922 V/GraphicsEnvironment( 4764):   angle_gl_driver_selection_values=[]
+09-28 16:45:51.922 V/GraphicsEnvironment( 4764): ANGLE GameManagerService for com.google.android.apps.messaging: false
+09-28 16:45:52.014 D/AndroidRuntime( 4720): Shutting down VM
+09-28 16:45:52.681 D/nativeloader( 4807): InitLlndkLibrariesProduct: libEGL.so:libGLESv1_CM.so:libGLESv2.so:libGLESv3.so:libRS.so:libandroid_net.so:libbinder_ndk.so:libc.so:libcgrouprc.so:libclang_rt.asan-x86_64-android.so:libcom.android.tethering.connectivity_native.so:libdl.so:libft2.so:liblog.so:libm.so:libmediandk.so:libnativewindow.so:libneuralnetworks.so:libselinux.so:libsync.so:libvndksupport.so:libvulkan.so
+09-28 16:45:52.699 V/GraphicsEnvironment( 4807):   angle_gl_driver_selection_pkgs=[]
+09-28 16:45:52.699 V/GraphicsEnvironment( 4807):   angle_gl_driver_selection_values=[]
+09-28 16:45:52.699 V/GraphicsEnvironment( 4807): ANGLE GameManagerService for com.google.android.googlequicksearchbox: false
+09-28 16:45:53.542 I/BugleRcsProvisioning( 4263): BugleSystemBindingManager: onBuglePhenotypeFlagChanged
+09-28 16:45:53.553 W/BugleAction( 4263): Null config in BugleSharedPrefs
+09-28 16:45:53.643 D/nativeloader( 4892): InitLlndkLibrariesProduct: libEGL.so:libGLESv1_CM.so:libGLESv2.so:libGLESv3.so:libRS.so:libandroid_net.so:libbinder_ndk.so:libc.so:libcgrouprc.so:libclang_rt.asan-x86_64-android.so:libcom.android.tethering.connectivity_native.so:libdl.so:libft2.so:liblog.so:libm.so:libmediandk.so:libnativewindow.so:libneuralnetworks.so:libselinux.so:libsync.so:libvndksupport.so:libvulkan.so
+09-28 16:45:53.674 V/GraphicsEnvironment( 4892):   angle_gl_driver_selection_pkgs=[]
+09-28 16:45:53.674 V/GraphicsEnvironment( 4892):   angle_gl_driver_selection_values=[]
+09-28 16:45:53.674 V/GraphicsEnvironment( 4892): ANGLE GameManagerService for com.google.android.settings.intelligence: false
+09-28 16:45:54.053 I/Bugle   ( 4263): BugleStartup: Registering SIM change receiver...
+09-28 16:45:54.053 I/Bugle   ( 4263): BugleStartup: Updating app config...
+09-28 16:45:54.057 I/Bugle   ( 4263): BugleStartup: Done with SIM change receiver & app config.
+09-28 16:45:54.057 I/Bugle   ( 4263): BugleStartup: Handling shared prefs upgrade & Load MMS Configuration...
+09-28 16:45:54.219 I/Bugle   ( 4263): BugleStartup: Initializing RCS availability...
+09-28 16:45:54.224 I/Bugle   ( 4263): BugleStartup: Done with RCS availability.
+09-28 16:45:54.224 I/Bugle   ( 4263): BugleStartup: Done initializing with enabled individual init failures.
+09-28 16:45:54.410 W/BugleAction( 4263): Null config in BugleSharedPrefs
+09-28 16:45:54.488 D/AndroidRuntime( 4957): >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
+09-28 16:45:54.491 I/AndroidRuntime( 4957): Using default boot image
+09-28 16:45:54.491 I/AndroidRuntime( 4957): Leaving lock profiling enabled
+09-28 16:45:54.616 D/nativeloader( 4957): InitDefaultPublicLibraries for_preload=1: libandroid.so:libaaudio.so:libamidi.so:libbinder_ndk.so:libc.so:libcamera2ndk.so:libdl.so:libEGL.so:libGLESv1_CM.so:libGLESv2.so:libGLESv3.so:libicu.so:libicui18n.so:libicuuc.so:libjnigraphics.so:liblog.so:libmediandk.so:libm.so:libnativehelper.so:libnativewindow.so:libOpenMAXAL.so:libOpenSLES.so:libRS.so:libstdc++.so:libsync.so:libvulkan.so:libwebviewchromium_plat_support.so:libz.so
+09-28 16:45:54.663 I/BugleRcsProvisioning( 4263): BugleSystemBindingManager: onBuglePhenotypeFlagChanged
+09-28 16:45:54.681 W/BugleAction( 4263): Null config in BugleSharedPrefs
+09-28 16:45:54.972 I/BugleRcsProvisioning( 4263): BugleSystemBindingManager: onBuglePhenotypeFlagChanged
+09-28 16:45:54.983 W/BugleAction( 4263): Null config in BugleSharedPrefs
+09-28 16:45:55.877 D/AndroidRuntime( 4957): Shutting down VM
+09-28 16:45:56.328 D/EGL_emulation( 1089): app_time_stats: avg=1467.21ms min=4.86ms max=9828.54ms count=7
+09-28 16:45:56.429 D/EGL_emulation(  834): app_time_stats: avg=3580.73ms min=56.37ms max=7105.09ms count=2
+09-28 16:45:57.192 I/BugleRcsProvisioning( 4263): BugleSystemBindingManager: onBuglePhenotypeFlagChanged
+09-28 16:45:57.201 W/BugleAction( 4263): Null config in BugleSharedPrefs
+09-28 16:45:57.794 W/BugleAction( 4263): Null config in BugleSharedPrefs
+09-28 16:45:58.699 D/AndroidRuntime( 5100): >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
+09-28 16:45:58.716 I/AndroidRuntime( 5100): Using default boot image
+09-28 16:45:58.717 I/AndroidRuntime( 5100): Leaving lock profiling enabled
+09-28 16:45:58.985 D/nativeloader( 5100): InitDefaultPublicLibraries for_preload=1: libandroid.so:libaaudio.so:libamidi.so:libbinder_ndk.so:libc.so:libcamera2ndk.so:libdl.so:libEGL.so:libGLESv1_CM.so:libGLESv2.so:libGLESv3.so:libicu.so:libicui18n.so:libicuuc.so:libjnigraphics.so:liblog.so:libmediandk.so:libm.so:libnativehelper.so:libnativewindow.so:libOpenMAXAL.so:libOpenSLES.so:libRS.so:libstdc++.so:libsync.so:libvulkan.so:libwebviewchromium_plat_support.so:libz.so
+09-28 16:46:00.178 D/EGL_emulation(  834): app_time_stats: avg=3749.23ms min=3749.23ms max=3749.23ms count=1
+09-28 16:46:00.239 D/AndroidRuntime( 5100): Shutting down VM
+09-28 16:46:01.773 W/BugleAction( 4263): Null config in BugleSharedPrefs
+09-28 16:46:01.932 I/BugleRcsProvisioning( 4263): BugleSystemBindingManager: onBuglePhenotypeFlagChanged
+09-28 16:46:01.967 W/BugleAction( 4263): Null config in BugleSharedPrefs
+09-28 16:46:02.792 D/AndroidRuntime( 5218): >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
+09-28 16:46:02.800 I/AndroidRuntime( 5218): Using default boot image
+09-28 16:46:02.800 I/AndroidRuntime( 5218): Leaving lock profiling enabled
+09-28 16:46:02.855 D/nativeloader( 5218): InitDefaultPublicLibraries for_preload=1: libandroid.so:libaaudio.so:libamidi.so:libbinder_ndk.so:libc.so:libcamera2ndk.so:libdl.so:libEGL.so:libGLESv1_CM.so:libGLESv2.so:libGLESv3.so:libicu.so:libicui18n.so:libicuuc.so:libjnigraphics.so:liblog.so:libmediandk.so:libm.so:libnativehelper.so:libnativewindow.so:libOpenMAXAL.so:libOpenSLES.so:libRS.so:libstdc++.so:libsync.so:libvulkan.so:libwebviewchromium_plat_support.so:libz.so
+09-28 16:46:03.233 D/EGL_emulation(  834): app_time_stats: avg=3054.94ms min=3054.94ms max=3054.94ms count=1
+09-28 16:46:03.825 D/nativeloader( 5268): InitLlndkLibrariesProduct: libEGL.so:libGLESv1_CM.so:libGLESv2.so:libGLESv3.so:libRS.so:libandroid_net.so:libbinder_ndk.so:libc.so:libcgrouprc.so:libclang_rt.asan-x86_64-android.so:libcom.android.tethering.connectivity_native.so:libdl.so:libft2.so:liblog.so:libm.so:libmediandk.so:libnativewindow.so:libneuralnetworks.so:libselinux.so:libsync.so:libvndksupport.so:libvulkan.so
+09-28 16:46:03.834 V/GraphicsEnvironment( 5268):   angle_gl_driver_selection_pkgs=[]
+09-28 16:46:03.834 V/GraphicsEnvironment( 5268):   angle_gl_driver_selection_values=[]
+09-28 16:46:03.834 V/GraphicsEnvironment( 5268): ANGLE GameManagerService for com.google.android.gms: false
+09-28 16:46:03.979 D/AndroidRuntime( 5218): Shutting down VM
+09-28 16:46:04.794 D/nativeloader( 5347): InitLlndkLibrariesProduct: libEGL.so:libGLESv1_CM.so:libGLESv2.so:libGLESv3.so:libRS.so:libandroid_net.so:libbinder_ndk.so:libc.so:libcgrouprc.so:libclang_rt.asan-x86_64-android.so:libcom.android.tethering.connectivity_native.so:libdl.so:libft2.so:liblog.so:libm.so:libmediandk.so:libnativewindow.so:libneuralnetworks.so:libselinux.so:libsync.so:libvndksupport.so:libvulkan.so
+09-28 16:46:04.797 V/GraphicsEnvironment( 5347):   angle_gl_driver_selection_pkgs=[]
+09-28 16:46:04.797 V/GraphicsEnvironment( 5347):   angle_gl_driver_selection_values=[]
+09-28 16:46:04.797 V/GraphicsEnvironment( 5347): ANGLE GameManagerService for com.google.android.gms: false
+09-28 16:46:05.474 I/SemanticLocation( 5268): Caused by: android.system.ErrnoException: open failed: ENOENT (No such file or directory)
+09-28 16:46:05.822 D/libEGL  ( 5347): loaded /vendor/lib64/egl/libEGL_emulation.so
+09-28 16:46:05.837 D/libEGL  ( 5347): loaded /vendor/lib64/egl/libGLESv1_CM_emulation.so
+09-28 16:46:05.841 D/libEGL  ( 5347): loaded /vendor/lib64/egl/libGLESv2_emulation.so
+09-28 16:46:05.903 I/NnApiDriverManager( 5347): Registering application with GPU 'Android Emulator OpenGL ES Translator (Google SwiftShader)' by 'Google (Google Inc.)' [CONTEXT service_id=301 ]
+09-28 16:46:06.068 I/SemanticLocation( 5268): Caused by: android.system.ErrnoException: open failed: ENOENT (No such file or directory)
+09-28 16:46:06.229 D/nativeloader( 5526): InitLlndkLibrariesProduct: libEGL.so:libGLESv1_CM.so:libGLESv2.so:libGLESv3.so:libRS.so:libandroid_net.so:libbinder_ndk.so:libc.so:libcgrouprc.so:libclang_rt.asan-x86_64-android.so:libcom.android.tethering.connectivity_native.so:libdl.so:libft2.so:liblog.so:libm.so:libmediandk.so:libnativewindow.so:libneuralnetworks.so:libselinux.so:libsync.so:libvndksupport.so:libvulkan.so
+09-28 16:46:06.239 V/GraphicsEnvironment( 5526):   angle_gl_driver_selection_pkgs=[]
+09-28 16:46:06.239 V/GraphicsEnvironment( 5526):   angle_gl_driver_selection_values=[]
+09-28 16:46:06.240 V/GraphicsEnvironment( 5526): ANGLE GameManagerService for com.google.android.gms: false
+09-28 16:46:06.338 D/EGL_emulation( 1089): app_time_stats: avg=3336.10ms min=155.28ms max=9594.62ms count=3
+09-28 16:46:06.598 D/AndroidRuntime( 5573): >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
+09-28 16:46:06.604 I/AndroidRuntime( 5573): Using default boot image
+09-28 16:46:06.604 I/AndroidRuntime( 5573): Leaving lock profiling enabled
+09-28 16:46:06.707 D/nativeloader( 5573): InitDefaultPublicLibraries for_preload=1: libandroid.so:libaaudio.so:libamidi.so:libbinder_ndk.so:libc.so:libcamera2ndk.so:libdl.so:libEGL.so:libGLESv1_CM.so:libGLESv2.so:libGLESv3.so:libicu.so:libicui18n.so:libicuuc.so:libjnigraphics.so:liblog.so:libmediandk.so:libm.so:libnativehelper.so:libnativewindow.so:libOpenMAXAL.so:libOpenSLES.so:libRS.so:libstdc++.so:libsync.so:libvulkan.so:libwebviewchromium_plat_support.so:libz.so
+09-28 16:46:07.793 D/AndroidRuntime( 5573): Shutting down VM
+09-28 16:46:08.948 E/RecoverySnapshotStorage(  523): Caused by: android.system.ErrnoException: open failed: ENOENT (No such file or directory)
+09-28 16:46:08.953 E/keystore2(  156):     3: Error::Rc(r#SYSTEM_ERROR)
+09-28 16:46:09.815 I/NnApiDriverManager( 5347): Registering application with GPU 'Android Emulator OpenGL ES Translator (Google SwiftShader)' by 'Google (Google Inc.)' [CONTEXT service_id=301 ]
+09-28 16:46:10.349 D/AndroidRuntime( 5700): >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
+09-28 16:46:10.354 I/AndroidRuntime( 5700): Using default boot image
+09-28 16:46:10.356 I/AndroidRuntime( 5700): Leaving lock profiling enabled
+09-28 16:46:10.454 D/nativeloader( 5700): InitDefaultPublicLibraries for_preload=1: libandroid.so:libaaudio.so:libamidi.so:libbinder_ndk.so:libc.so:libcamera2ndk.so:libdl.so:libEGL.so:libGLESv1_CM.so:libGLESv2.so:libGLESv3.so:libicu.so:libicui18n.so:libicuuc.so:libjnigraphics.so:liblog.so:libmediandk.so:libm.so:libnativehelper.so:libnativewindow.so:libOpenMAXAL.so:libOpenSLES.so:libRS.so:libstdc++.so:libsync.so:libvulkan.so:libwebviewchromium_plat_support.so:libz.so
+09-28 16:46:10.746 I/SemanticLocation( 5268): Caused by: android.system.ErrnoException: open failed: ENOENT (No such file or directory)
+09-28 16:46:10.762 I/SemanticLocation( 5268): Caused by: android.system.ErrnoException: open failed: ENOENT (No such file or directory)
+09-28 16:46:11.598 D/AndroidRuntime( 5700): Shutting down VM
+09-28 16:46:13.240 D/EGL_emulation( 1089): app_time_stats: avg=2300.74ms min=81.99ms max=6707.19ms count=3
+09-28 16:46:14.057 D/AndroidRuntime( 5763): >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
+09-28 16:46:14.064 I/AndroidRuntime( 5763): Using default boot image
+09-28 16:46:14.064 I/AndroidRuntime( 5763): Leaving lock profiling enabled
+09-28 16:46:14.121 D/nativeloader( 5763): InitDefaultPublicLibraries for_preload=1: libandroid.so:libaaudio.so:libamidi.so:libbinder_ndk.so:libc.so:libcamera2ndk.so:libdl.so:libEGL.so:libGLESv1_CM.so:libGLESv2.so:libGLESv3.so:libicu.so:libicui18n.so:libicuuc.so:libjnigraphics.so:liblog.so:libmediandk.so:libm.so:libnativehelper.so:libnativewindow.so:libOpenMAXAL.so:libOpenSLES.so:libRS.so:libstdc++.so:libsync.so:libvulkan.so:libwebviewchromium_plat_support.so:libz.so
+09-28 16:46:15.211 D/AndroidRuntime( 5763): Shutting down VM
+09-28 16:46:17.023 I/BugleRcsProvisioning( 4263): BugleSystemBindingManager: onBuglePhenotypeFlagChanged
+09-28 16:46:17.124 W/BugleAction( 4263): Null config in BugleSharedPrefs
+09-28 16:46:17.552 D/EGL_emulation(  834): app_time_stats: avg=7159.61ms min=691.09ms max=13628.12ms count=2
+09-28 16:46:17.804 D/AndroidRuntime( 5810): >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
+09-28 16:46:17.811 I/AndroidRuntime( 5810): Using default boot image
+09-28 16:46:17.812 I/AndroidRuntime( 5810): Leaving lock profiling enabled
+09-28 16:46:17.888 D/nativeloader( 5810): InitDefaultPublicLibraries for_preload=1: libandroid.so:libaaudio.so:libamidi.so:libbinder_ndk.so:libc.so:libcamera2ndk.so:libdl.so:libEGL.so:libGLESv1_CM.so:libGLESv2.so:libGLESv3.so:libicu.so:libicui18n.so:libicuuc.so:libjnigraphics.so:liblog.so:libmediandk.so:libm.so:libnativehelper.so:libnativewindow.so:libOpenMAXAL.so:libOpenSLES.so:libRS.so:libstdc++.so:libsync.so:libvulkan.so:libwebviewchromium_plat_support.so:libz.so
+09-28 16:46:19.003 D/AndroidRuntime( 5810): Shutting down VM
+09-28 16:46:19.971 D/EGL_emulation( 1089): app_time_stats: avg=6730.49ms min=6730.49ms max=6730.49ms count=1
+09-28 16:46:21.204 D/EGL_emulation(  834): app_time_stats: avg=3651.48ms min=3651.48ms max=3651.48ms count=1
+09-28 16:46:21.471 D/AndroidRuntime( 5897): >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
+09-28 16:46:21.474 I/AndroidRuntime( 5897): Using default boot image
+09-28 16:46:21.474 I/AndroidRuntime( 5897): Leaving lock profiling enabled
+09-28 16:46:21.527 D/nativeloader( 5897): InitDefaultPublicLibraries for_preload=1: libandroid.so:libaaudio.so:libamidi.so:libbinder_ndk.so:libc.so:libcamera2ndk.so:libdl.so:libEGL.so:libGLESv1_CM.so:libGLESv2.so:libGLESv3.so:libicu.so:libicui18n.so:libicuuc.so:libjnigraphics.so:liblog.so:libmediandk.so:libm.so:libnativehelper.so:libnativewindow.so:libOpenMAXAL.so:libOpenSLES.so:libRS.so:libstdc++.so:libsync.so:libvulkan.so:libwebviewchromium_plat_support.so:libz.so
+09-28 16:46:22.620 D/AndroidRuntime( 5897): Shutting down VM
+09-28 16:46:23.904 I/BugleRcsProvisioning( 4263): BugleSystemBindingManager: onBuglePhenotypeFlagChanged
+09-28 16:46:23.997 W/BugleAction( 4263): Null config in BugleSharedPrefs
+09-28 16:46:25.652 W/ziparchive( 5971): Unable to open '/data/app/~~Srd1Nm0tkyZNMLEIS8zdRw==/it.goccia.app-wvPp_KCT6EDCFXZIlP-png==/base.dm': No such file or directory
+09-28 16:46:25.652 W/ziparchive( 5971): Unable to open '/data/app/~~Srd1Nm0tkyZNMLEIS8zdRw==/it.goccia.app-wvPp_KCT6EDCFXZIlP-png==/base.dm': No such file or directory
+09-28 16:46:25.658 I/artd    ( 5971): Running dex2oat: /apex/com.android.art/bin/art_exec --drop-capabilities --set-task-profile=Dex2OatBootComplete --set-priority=background --keep-fds=7:8:9:10 -- /apex/com.android.art/bin/dex2oat64 --zip-fd=7 --zip-location=/data/app/~~Srd1Nm0tkyZNMLEIS8zdRw==/it.goccia.app-wvPp_KCT6EDCFXZIlP-png==/base.apk --oat-fd=8 --oat-location=/data/app/~~Srd1Nm0tkyZNMLEIS8zdRw==/it.goccia.app-wvPp_KCT6EDCFXZIlP-png==/oat/x86_64/base.odex --output-vdex-fd=9 --swap-fd=10 --class-loader-context=PCL[] --classpath-dir=/data/app/~~Srd1Nm0tkyZNMLEIS8zdRw==/it.goccia.app-wvPp_KCT6EDCFXZIlP-png== --instruction-set=x86_64 --instruction-set-features=default --instruction-set-variant=x86_64 --compiler-filter=verify --compilation-reason=install --compact-dex-level=none --max-image-block-size=524288 --resolve-startup-const-strings=true --generate-mini-debug-info --runtime-arg -Xtarget-sdk-version:36 --runtime-arg -Xhidden-api-policy:enabled --runtime-arg -Xms64m --runtime-arg -Xmx512m --comments=app-version-name:0.1.11,app-version-code:11,art-version:340818082
+09-28 16:46:25.658 I/artd    ( 5971): Opened FDs: 7:/data/app/~~Srd1Nm0tkyZNMLEIS8zdRw==/it.goccia.app-wvPp_KCT6EDCFXZIlP-png==/base.apk 8:/data/app/~~Srd1Nm0tkyZNMLEIS8zdRw==/it.goccia.app-wvPp_KCT6EDCFXZIlP-png==/oat/x86_64/base.odex.BbokbE.tmp 9:/data/app/~~Srd1Nm0tkyZNMLEIS8zdRw==/it.goccia.app-wvPp_KCT6EDCFXZIlP-png==/oat/x86_64/base.vdex.ilP1nw.tmp 10:/data/app/~~Srd1Nm0tkyZNMLEIS8zdRw==/it.goccia.app-wvPp_KCT6EDCFXZIlP-png==/oat/x86_64/base.odex.swap.4XPtYs.tmp 
+09-28 16:46:25.707 W/dex2oat64( 5973): /apex/com.android.art/bin/dex2oat64 --zip-fd=7 --zip-location=/data/app/~~Srd1Nm0tkyZNMLEIS8zdRw==/it.goccia.app-wvPp_KCT6EDCFXZIlP-png==/base.apk --oat-fd=8 --oat-location=/data/app/~~Srd1Nm0tkyZNMLEIS8zdRw==/it.goccia.app-wvPp_KCT6EDCFXZIlP-png==/oat/x86_64/base.odex --output-vdex-fd=9 --swap-fd=10 --class-loader-context=PCL[] --classpath-dir=/data/app/~~Srd1Nm0tkyZNMLEIS8zdRw==/it.goccia.app-wvPp_KCT6EDCFXZIlP-png== --instruction-set=x86_64 --instruction-set-features=default --instruction-set-variant=x86_64 --compiler-filter=verify --compilation-reason=install --compact-dex-level=none --max-image-block-size=524288 --resolve-startup-const-strings=true --generate-mini-debug-info --runtime-arg -Xtarget-sdk-version:36 --runtime-arg -Xhidden-api-policy:enabled --runtime-arg -Xms64m --runtime-arg -Xmx512m --comments=app-version-name:0.1.11,app-version-code:11,art-version:340818082
+09-28 16:46:25.707 I/dex2oat64( 5973): /apex/com.android.art/bin/dex2oat64 --output-vdex-fd=9 --class-loader-context=PCL[] --classpath-dir=/data/app/~~Srd1Nm0tkyZNMLEIS8zdRw==/it.goccia.app-wvPp_KCT6EDCFXZIlP-png== --compiler-filter=verify --compilation-reason=install --compact-dex-level=none --max-image-block-size=524288 --resolve-startup-const-strings=true --generate-mini-debug-info --comments=app-version-name:0.1.11,app-version-code:11,art-version:340818082
+09-28 16:46:26.992 I/ArtService(  523): Dexopt result: [packageName = it.goccia.app] DexContainerFileDexoptResult{dexContainerFile=/data/app/~~Srd1Nm0tkyZNMLEIS8zdRw==/it.goccia.app-wvPp_KCT6EDCFXZIlP-png==/base.apk, primaryAbi=true, abi=x86_64, actualCompilerFilter=verify, status=PERFORMED, dex2oatWallTimeMillis=1341, dex2oatCpuTimeMillis=980, sizeBytes=30649892, sizeBeforeBytes=0}
+09-28 16:46:26.994 V/BackupManagerService(  523): [UserID:0] restoreAtInstall pkg=it.goccia.app token=1 restoreSet=0
+09-28 16:46:27.023 I/SdkSandboxManager(  523): No SDKs used. Skipping SDK data reconcilation for CallingInfo{mUid=10192, mPackageName='it.goccia.app, mAppProcessToken='null'}
+09-28 16:46:27.028 D/CarrierSvcBindHelper( 1042): onPackageAdded: it.goccia.app
+09-28 16:46:27.045 D/ImsResolver( 1042): maybeAddedImsService, packageName: it.goccia.app
+09-28 16:46:27.069 E/BackupHelper(  835): Caused by: android.system.ErrnoException: open failed: ENOENT (No such file or directory)
+09-28 16:46:27.096 I/ActivityTaskManager(  523): START u0 {flg=0x10000000 cmp=it.goccia.app/.MainActivity} with LAUNCH_SINGLE_TOP from uid 2000 (BAL_ALLOW_PERMISSION) result code=0
+09-28 16:46:27.107 V/WindowManagerShell(  834): Transition requested: android.os.BinderProxy@ce0010d TransitionRequestInfo { type = OPEN, triggerTask = TaskInfo{userId=0 taskId=8 displayId=0 isRunning=true baseIntent=Intent { flg=0x10000000 cmp=it.goccia.app/.MainActivity } baseActivity=ComponentInfo{it.goccia.app/it.goccia.app.MainActivity} topActivity=ComponentInfo{it.goccia.app/it.goccia.app.MainActivity} origActivity=null realActivity=ComponentInfo{it.goccia.app/it.goccia.app.MainActivity} numActivities=1 lastActiveTime=100089 supportsMultiWindow=true resizeMode=1 isResizeable=true minWidth=-1 minHeight=-1 defaultMinSize=220 token=WCT{android.window.IWindowContainerToken$Stub$Proxy@8c098c2} topActivityType=1 pictureInPictureParams=null shouldDockBigOverlays=false launchIntoPipHostTaskId=-1 lastParentTaskIdBeforePip=-1 displayCutoutSafeInsets=Rect(0, 128 - 0, 0) topActivityInfo=ActivityInfo{9856d3 it.goccia.app.MainActivity} launchCookies=[] positionInParent=Point(0, 0) parentTaskId=-1 isFocused=false isVisible=false isVisibleRequested=false isSleeping=false topActivityInSizeCompat=false topActivityEligibleForLetterboxEducation= false topActivityLetterboxed= false isFromDoubleTap= false topActivityLetterboxVerticalPosition= -1 topActivityLetterboxHorizontalPosition= -1 topActivityLetterboxWidth=-1 topActivityLetterboxHeight=-1 locusId=null displayAreaFeatureId=1 cameraCompatControlState=hidden}, remoteTransition = null, displayChange = null }
+09-28 16:46:27.126 I/ActivityManager(  523): Start proc 5986:it.goccia.app/u0a192 for next-top-activity {it.goccia.app/it.goccia.app.MainActivity}
+09-28 16:46:27.281 D/EGL_emulation( 1089): app_time_stats: avg=7309.91ms min=7309.91ms max=7309.91ms count=1
+09-28 16:46:27.283 I/it.goccia.app( 5986): Using CollectorTypeCC GC.
+09-28 16:46:27.284 W/it.goccia.app( 5986): Unexpected CPU variant for x86: x86_64.
+09-28 16:46:27.284 W/it.goccia.app( 5986): Known variants: atom, sandybridge, silvermont, goldmont, goldmont-plus, tremont, kabylake, default
+09-28 16:46:27.306 E/it.goccia.app( 5986): Not starting debugger since process cannot load the jdwp agent.
+09-28 16:46:27.319 I/SafetyLabelChangedBroadcastReceiver(  835): received broadcast packageName: it.goccia.app, current user: UserHandle{0}, packageChangeEvent: NEW_INSTALL, intent user: UserHandle{0}
+09-28 16:46:27.326 D/CarrierSvcBindHelper( 1042): onPackageModified: it.goccia.app
+09-28 16:46:27.379 D/CoreBackPreview(  523): Window{8523421 u0 Splash Screen it.goccia.app}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@5e21753, mPriority=0, mIsAnimationCallback=false}
+09-28 16:46:27.387 D/ImsResolver( 1042): maybeAddedImsService, packageName: it.goccia.app
+09-28 16:46:27.399 D/AppWidgetServiceImpl(  523): Provider info from ComponentInfo{it.goccia.app/it.goccia.app.widget.WidgetPrezziReceiver} won't be persisted.
+09-28 16:46:27.402 D/AppWidgetServiceImpl(  523): Provider info from ComponentInfo{it.goccia.app/it.goccia.app.widget.WidgetAutoReceiver} won't be persisted.
+09-28 16:46:27.524 D/nativeloader( 5986): Configuring clns-6 for other apk /data/app/~~Srd1Nm0tkyZNMLEIS8zdRw==/it.goccia.app-wvPp_KCT6EDCFXZIlP-png==/base.apk. target_sdk_version=36, uses_libraries=, library_path=/data/app/~~Srd1Nm0tkyZNMLEIS8zdRw==/it.goccia.app-wvPp_KCT6EDCFXZIlP-png==/lib/x86_64:/data/app/~~Srd1Nm0tkyZNMLEIS8zdRw==/it.goccia.app-wvPp_KCT6EDCFXZIlP-png==/base.apk!/lib/x86_64, permitted_path=/data:/mnt/expand:/data/user/0/it.goccia.app
+09-28 16:46:27.536 V/WindowManager(  523): Sent Transition #8 createdAt=09-28 16:46:27.059 via request=TransitionRequestInfo { type = OPEN, triggerTask = TaskInfo{userId=0 taskId=8 displayId=0 isRunning=true baseIntent=Intent { flg=0x10000000 cmp=it.goccia.app/.MainActivity } baseActivity=ComponentInfo{it.goccia.app/it.goccia.app.MainActivity} topActivity=ComponentInfo{it.goccia.app/it.goccia.app.MainActivity} origActivity=null realActivity=ComponentInfo{it.goccia.app/it.goccia.app.MainActivity} numActivities=1 lastActiveTime=100089 supportsMultiWindow=true resizeMode=1 isResizeable=true minWidth=-1 minHeight=-1 defaultMinSize=220 token=WCT{RemoteToken{f977162 Task{4a02f10 #8 type=standard A=10192:it.goccia.app}}} topActivityType=1 pictureInPictureParams=null shouldDockBigOverlays=false launchIntoPipHostTaskId=-1 lastParentTaskIdBeforePip=-1 displayCutoutSafeInsets=Rect(0, 128 - 0, 0) topActivityInfo=ActivityInfo{bd352f3 it.goccia.app.MainActivity} launchCookies=[] positionInParent=Point(0, 0) parentTaskId=-1 isFocused=false isVisible=false isVisibleRequested=false isSleeping=false topActivityInSizeCompat=false topActivityEligibleForLetterboxEducation= false topActivityLetterboxed= false isFromDoubleTap= false topActivityLetterboxVerticalPosition= -1 topActivityLetterboxHorizontalPosition= -1 topActivityLetterboxWidth=-1 topActivityLetterboxHeight=-1 locusId=null displayAreaFeatureId=1 cameraCompatControlState=hidden}, remoteTransition = null, displayChange = null }
+09-28 16:46:27.536 V/WindowManager(  523):     info={id=8 t=OPEN f=0x0 trk=0 r=[0@Point(0, 0)] c=[{WCT{RemoteToken{f977162 Task{4a02f10 #8 type=standard A=10192:it.goccia.app}}} m=OPEN f=NONE leash=Surface(name=Task=8)/@0x5e6bf44 sb=Rect(0, 0 - 1080, 2400) eb=Rect(0, 0 - 1080, 2400) d=0},{WCT{RemoteToken{7328bb0 Task{c25ee71 #1 type=home}}} m=TO_BACK f=SHOW_WALLPAPER leash=Surface(name=Task=1)/@0x99f2f1e sb=Rect(0, 0 - 1080, 2400) eb=Rect(0, 0 - 1080, 2400) d=0}]}
+09-28 16:46:27.567 V/GraphicsEnvironment( 5986):   angle_gl_driver_selection_pkgs=[]
+09-28 16:46:27.567 V/GraphicsEnvironment( 5986):   angle_gl_driver_selection_values=[]
+09-28 16:46:27.567 V/GraphicsEnvironment( 5986): ANGLE GameManagerService for it.goccia.app: false
+09-28 16:46:27.568 V/GraphicsEnvironment( 5986): it.goccia.app is not listed in per-application setting
+09-28 16:46:27.742 I/AiAiEcho( 1560): AppFetcherImplV2 updateApps package:[it.goccia.app], userId:[0], reason:[package is added.].
+09-28 16:46:27.761 D/EGL_emulation(  834): app_time_stats: avg=60524.43ms min=60524.43ms max=60524.43ms count=1
+09-28 16:46:27.847 D/libEGL  ( 5986): loaded /vendor/lib64/egl/libEGL_emulation.so
+09-28 16:46:27.867 D/libEGL  ( 5986): loaded /vendor/lib64/egl/libGLESv1_CM_emulation.so
+09-28 16:46:27.870 D/libEGL  ( 5986): loaded /vendor/lib64/egl/libGLESv2_emulation.so
+09-28 16:46:27.888 E/JobScheduler.JobStatus(  523): App it.goccia.app became active but still in NEVER bucket
+09-28 16:46:27.921 D/EGL_emulation(  834): app_time_stats: avg=6717.11ms min=6717.11ms max=6717.11ms count=1
+09-28 16:46:27.958 D/ConnectivityService(  523): requestNetwork for uid/pid:10192/5986 activeRequest: null callbackRequest: 145 [NetworkRequest [ REQUEST id=146, [ Capabilities: INTERNET&NOT_RESTRICTED&TRUSTED&NOT_VCN_MANAGED Uid: 10192 RequestorUid: 10192 RequestorPkg: it.goccia.app UnderlyingNetworks: Null] ]] callback flags: 0 order: 2147483647
+09-28 16:46:27.974 D/WifiNetworkFactory(  523): got request NetworkRequest [ REQUEST id=146, [ Capabilities: INTERNET&NOT_RESTRICTED&TRUSTED&NOT_VCN_MANAGED Uid: 10192 RequestorUid: 10192 RequestorPkg: it.goccia.app UnderlyingNetworks: Null] ]
+09-28 16:46:27.975 D/UntrustedWifiNetworkFactory(  523): got request NetworkRequest [ REQUEST id=146, [ Capabilities: INTERNET&NOT_RESTRICTED&TRUSTED&NOT_VCN_MANAGED Uid: 10192 RequestorUid: 10192 RequestorPkg: it.goccia.app UnderlyingNetworks: Null] ]
+09-28 16:46:28.028 D/OemPaidWifiNetworkFactory(  523): got request NetworkRequest [ REQUEST id=146, [ Capabilities: INTERNET&NOT_RESTRICTED&TRUSTED&NOT_VCN_MANAGED Uid: 10192 RequestorUid: 10192 RequestorPkg: it.goccia.app UnderlyingNetworks: Null] ]
+09-28 16:46:28.028 D/MultiInternetWifiNetworkFactory(  523): got request NetworkRequest [ REQUEST id=146, [ Capabilities: INTERNET&NOT_RESTRICTED&TRUSTED&NOT_VCN_MANAGED Uid: 10192 RequestorUid: 10192 RequestorPkg: it.goccia.app UnderlyingNetworks: Null] ]
+09-28 16:46:28.035 I/AiAiEcho( 1560): AppFetcherImpl onPackageChanged it.goccia.app.
+09-28 16:46:28.039 I/AiAiEcho( 1560): AppIndexer Package:[it.goccia.app] UserProfile:[0] Enabled:[true].
+09-28 16:46:28.040 I/AiAiEcho( 1560): AppFetcherImplV2 updateApps package:[it.goccia.app], userId:[0], reason:[package is updated.].
+09-28 16:46:28.070 I/BlockstoreStorage( 5347): Clearing Blockstore Data for package it.goccia.app [CONTEXT service_id=258 ]
+09-28 16:46:28.084 I/ProximityAuth( 5268): [RecentAppsMediator] Package added: (user=UserHandle{0}) it.goccia.app
+09-28 16:46:28.106 D/CoreBackPreview(  523): Window{9a6cfd9 u0 it.goccia.app/it.goccia.app.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@2cd843, mPriority=0, mIsAnimationCallback=false}
+09-28 16:46:28.141 W/OpenGLRenderer( 5986): Failed to initialize 101010-2 format, error = EGL_SUCCESS
+09-28 16:46:28.612 D/CarrierSvcBindHelper( 1042): onPackageModified: it.goccia.app
+09-28 16:46:28.646 D/ImsResolver( 1042): maybeAddedImsService, packageName: it.goccia.app
+09-28 16:46:28.651 D/AppWidgetServiceImpl(  523): Provider info from ComponentInfo{it.goccia.app/it.goccia.app.widget.WidgetPrezziReceiver} won't be persisted.
+09-28 16:46:28.656 D/AppWidgetServiceImpl(  523): Provider info from ComponentInfo{it.goccia.app/it.goccia.app.widget.WidgetAutoReceiver} won't be persisted.
+09-28 16:46:28.677 I/AiAiEcho( 1560): AppFetcherImpl onPackageChanged it.goccia.app.
+09-28 16:46:28.679 I/AiAiEcho( 1560): AppIndexer Package:[it.goccia.app] UserProfile:[0] Enabled:[true].
+09-28 16:46:28.679 I/AiAiEcho( 1560): AppFetcherImplV2 updateApps package:[it.goccia.app], userId:[0], reason:[package is updated.].
+09-28 16:46:29.090 D/EGL_emulation(  834): app_time_stats: avg=575.05ms min=4.02ms max=1146.08ms count=2
+09-28 16:46:29.213 I/ActivityTaskManager(  523): Displayed it.goccia.app/.MainActivity for user 0: +2s165ms
+09-28 16:46:29.341 D/WM-WorkerWrapper( 5986): Starting work for it.goccia.app.avvisi.ControlloPrezziWorker
+09-28 16:46:29.378 D/CoreBackPreview(  523): Window{8523421 u0 Splash Screen it.goccia.app EXITING}: Setting back callback null
+09-28 16:46:29.382 W/InputManager-JNI(  523): Input channel object '8523421 Splash Screen it.goccia.app (client)' was disposed without first being removed with the input manager!
+09-28 16:46:29.404 I/ImeTracker(  523): it.goccia.app:88173798: onRequestHide at ORIGIN_SERVER_HIDE_INPUT reason HIDE_UNSPECIFIED_WINDOW
+09-28 16:46:29.405 I/ImeTracker(  523): it.goccia.app:88173798: onCancelled at PHASE_SERVER_SHOULD_HIDE
+09-28 16:46:29.428 I/GoogleInputMethodService( 1499): GoogleInputMethodService.onStartInput():1877 onStartInput(EditorInfo{inputType=0x0(NULL) imeOptions=0x0 privateImeOptions=null actionName=UNSPECIFIED actionLabel=null actionId=0 initialSelStart=-1 initialSelEnd=-1 initialCapsMode=0x0 hintText=null label=null packageName=it.goccia.app fieldId=0 fieldName=null extras=null}, false)
+09-28 16:46:29.477 I/WM-WorkerWrapper( 5986): Worker result SUCCESS for Work [ id=95f0cff7-ffe8-40c7-9cfa-e2f97a3a454a, tags={ it.goccia.app.avvisi.ControlloPrezziWorker } ]
+09-28 16:46:30.287 D/AndroidRuntime( 6066): >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
+09-28 16:46:30.290 I/AndroidRuntime( 6066): Using default boot image
+09-28 16:46:30.290 I/AndroidRuntime( 6066): Leaving lock profiling enabled
+09-28 16:46:30.383 D/nativeloader( 6066): InitDefaultPublicLibraries for_preload=1: libandroid.so:libaaudio.so:libamidi.so:libbinder_ndk.so:libc.so:libcamera2ndk.so:libdl.so:libEGL.so:libGLESv1_CM.so:libGLESv2.so:libGLESv3.so:libicu.so:libicui18n.so:libicuuc.so:libjnigraphics.so:liblog.so:libmediandk.so:libm.so:libnativehelper.so:libnativewindow.so:libOpenMAXAL.so:libOpenSLES.so:libRS.so:libstdc++.so:libsync.so:libvulkan.so:libwebviewchromium_plat_support.so:libz.so
+09-28 16:46:31.491 D/AndroidRuntime( 6066): Shutting down VM
+09-28 16:46:31.527 D/EGL_emulation( 5986): app_time_stats: avg=732.58ms min=38.51ms max=1901.56ms count=3
+09-28 16:46:32.494 D/AndroidRuntime( 6109): >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
+09-28 16:46:32.497 I/AndroidRuntime( 6109): Using default boot image
+09-28 16:46:32.497 I/AndroidRuntime( 6109): Leaving lock profiling enabled
+09-28 16:46:32.541 D/EGL_emulation( 5986): app_time_stats: avg=507.22ms min=47.84ms max=966.60ms count=2
+09-28 16:46:32.572 D/nativeloader( 6109): InitDefaultPublicLibraries for_preload=1: libandroid.so:libaaudio.so:libamidi.so:libbinder_ndk.so:libc.so:libcamera2ndk.so:libdl.so:libEGL.so:libGLESv1_CM.so:libGLESv2.so:libGLESv3.so:libicu.so:libicui18n.so:libicuuc.so:libjnigraphics.so:liblog.so:libmediandk.so:libm.so:libnativehelper.so:libnativewindow.so:libOpenMAXAL.so:libOpenSLES.so:libRS.so:libstdc++.so:libsync.so:libvulkan.so:libwebviewchromium_plat_support.so:libz.so
+09-28 16:46:33.232 D/EGL_emulation(  834): app_time_stats: avg=4142.18ms min=4142.18ms max=4142.18ms count=1
+09-28 16:46:33.387 D/ProfileInstaller( 5986): Installing profile for it.goccia.app
+09-28 16:46:33.738 D/AndroidRuntime( 6109): Shutting down VM
+09-28 16:46:34.656 D/EGL_emulation( 5986): app_time_stats: avg=419.60ms min=31.67ms max=1931.45ms count=5
+09-28 16:46:34.744 D/AndroidRuntime( 6138): >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
+09-28 16:46:34.747 I/AndroidRuntime( 6138): Using default boot image
+09-28 16:46:34.747 I/AndroidRuntime( 6138): Leaving lock profiling enabled
+09-28 16:46:34.842 D/nativeloader( 6138): InitDefaultPublicLibraries for_preload=1: libandroid.so:libaaudio.so:libamidi.so:libbinder_ndk.so:libc.so:libcamera2ndk.so:libdl.so:libEGL.so:libGLESv1_CM.so:libGLESv2.so:libGLESv3.so:libicu.so:libicui18n.so:libicuuc.so:libjnigraphics.so:liblog.so:libmediandk.so:libm.so:libnativehelper.so:libnativewindow.so:libOpenMAXAL.so:libOpenSLES.so:libRS.so:libstdc++.so:libsync.so:libvulkan.so:libwebviewchromium_plat_support.so:libz.so
+09-28 16:46:35.940 D/AndroidRuntime( 6138): Shutting down VM
+09-28 16:46:36.819 D/EGL_emulation( 5986): app_time_stats: avg=429.51ms min=27.02ms max=1940.48ms count=5
+09-28 16:46:36.999 D/AndroidRuntime( 6172): >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
+09-28 16:46:37.001 I/AndroidRuntime( 6172): Using default boot image
+09-28 16:46:37.001 I/AndroidRuntime( 6172): Leaving lock profiling enabled
+09-28 16:46:37.038 D/nativeloader( 6172): InitDefaultPublicLibraries for_preload=1: libandroid.so:libaaudio.so:libamidi.so:libbinder_ndk.so:libc.so:libcamera2ndk.so:libdl.so:libEGL.so:libGLESv1_CM.so:libGLESv2.so:libGLESv3.so:libicu.so:libicui18n.so:libicuuc.so:libjnigraphics.so:liblog.so:libmediandk.so:libm.so:libnativehelper.so:libnativewindow.so:libOpenMAXAL.so:libOpenSLES.so:libRS.so:libstdc++.so:libsync.so:libvulkan.so:libwebviewchromium_plat_support.so:libz.so
+09-28 16:46:38.132 D/AndroidRuntime( 6172): Shutting down VM
+09-28 16:46:39.141 D/EGL_emulation( 5986): app_time_stats: avg=577.37ms min=22.14ms max=2217.04ms count=4
+09-28 16:46:39.398 D/AndroidRuntime( 6251): >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
+09-28 16:46:39.406 I/AndroidRuntime( 6251): Using default boot image
+09-28 16:46:39.406 I/AndroidRuntime( 6251): Leaving lock profiling enabled
+09-28 16:46:39.477 D/nativeloader( 6251): InitDefaultPublicLibraries for_preload=1: libandroid.so:libaaudio.so:libamidi.so:libbinder_ndk.so:libc.so:libcamera2ndk.so:libdl.so:libEGL.so:libGLESv1_CM.so:libGLESv2.so:libGLESv3.so:libicu.so:libicui18n.so:libicuuc.so:libjnigraphics.so:liblog.so:libmediandk.so:libm.so:libnativehelper.so:libnativewindow.so:libOpenMAXAL.so:libOpenSLES.so:libRS.so:libstdc++.so:libsync.so:libvulkan.so:libwebviewchromium_plat_support.so:libz.so
+09-28 16:46:40.587 D/AndroidRuntime( 6251): Shutting down VM
+09-28 16:46:41.460 D/EGL_emulation( 5986): app_time_stats: avg=454.91ms min=20.63ms max=2150.15ms count=5
+09-28 16:46:41.562 D/EGL_emulation(  834): app_time_stats: avg=8329.81ms min=8329.81ms max=8329.81ms count=1
+09-28 16:46:45.059 I/Goccia  ( 5986): posizione da sistema, gps in 3597 ms
+09-28 16:46:45.096 D/EGL_emulation( 5986): app_time_stats: avg=908.80ms min=21.09ms max=3530.71ms count=4
+09-28 16:46:45.104 D/EGL_emulation(  834): app_time_stats: avg=1762.38ms min=10.83ms max=3513.93ms count=2
+09-28 16:46:51.553 D/AndroidRuntime( 6304): >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
+09-28 16:46:51.556 I/AndroidRuntime( 6304): Using default boot image
+09-28 16:46:51.556 I/AndroidRuntime( 6304): Leaving lock profiling enabled
+09-28 16:46:51.594 D/nativeloader( 6304): InitDefaultPublicLibraries for_preload=1: libandroid.so:libaaudio.so:libamidi.so:libbinder_ndk.so:libc.so:libcamera2ndk.so:libdl.so:libEGL.so:libGLESv1_CM.so:libGLESv2.so:libGLESv3.so:libicu.so:libicui18n.so:libicuuc.so:libjnigraphics.so:liblog.so:libmediandk.so:libm.so:libnativehelper.so:libnativewindow.so:libOpenMAXAL.so:libOpenSLES.so:libRS.so:libstdc++.so:libsync.so:libvulkan.so:libwebviewchromium_plat_support.so:libz.so
+09-28 16:46:52.647 D/AndroidRuntime( 6304): Shutting down VM
+09-28 16:46:53.529 D/EGL_emulation( 5986): app_time_stats: avg=4207.34ms min=7.18ms max=8407.49ms count=2
+09-28 16:46:53.753 I/Goccia  ( 5986): posizione recente, di 8 s fa
+09-28 16:46:57.366 W/ProcessStats(  523): Tracking association SourceState{77f5852 it.goccia.app/10192 BTop #11328} whose proc state 2 is better than process ProcessState{c020208 com.google.android.gms.persistent/10131 pkg=com.google.android.gms} proc state 4 (278 skipped)
+09-28 16:47:00.035 D/EGL_emulation(  834): app_time_stats: avg=14930.40ms min=14930.40ms max=14930.40ms count=1
+09-28 16:47:06.177 I/NnApiDriverManager( 5347): Registering application with GPU 'Android Emulator OpenGL ES Translator (Google SwiftShader)' by 'Google (Google Inc.)' [CONTEXT service_id=301 ]
+09-28 16:47:06.424 I/SemanticLocation( 5268): Caused by: android.system.ErrnoException: open failed: ENOENT (No such file or directory)
+09-28 16:47:06.438 I/SemanticLocation( 5268): Caused by: android.system.ErrnoException: open failed: ENOENT (No such file or directory)
+09-28 16:47:07.667 D/EGL_emulation(  834): app_time_stats: avg=7632.37ms min=7632.37ms max=7632.37ms count=1
+09-28 16:47:13.614 D/AndroidRuntime( 6389): >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
+09-28 16:47:13.617 I/AndroidRuntime( 6389): Using default boot image
+09-28 16:47:13.618 I/AndroidRuntime( 6389): Leaving lock profiling enabled
+09-28 16:47:13.653 D/nativeloader( 6389): InitDefaultPublicLibraries for_preload=1: libandroid.so:libaaudio.so:libamidi.so:libbinder_ndk.so:libc.so:libcamera2ndk.so:libdl.so:libEGL.so:libGLESv1_CM.so:libGLESv2.so:libGLESv3.so:libicu.so:libicui18n.so:libicuuc.so:libjnigraphics.so:liblog.so:libmediandk.so:libm.so:libnativehelper.so:libnativewindow.so:libOpenMAXAL.so:libOpenSLES.so:libRS.so:libstdc++.so:libsync.so:libvulkan.so:libwebviewchromium_plat_support.so:libz.so
+09-28 16:47:14.717 D/AndroidRuntime( 6389): Shutting down VM
+09-28 16:47:15.584 D/EGL_emulation( 5986): app_time_stats: avg=2444.26ms min=24.24ms max=21542.51ms count=9
+09-28 16:47:15.644 I/Mbgl-EGLConfigChooser( 5986): In emulator: false
+09-28 16:47:15.703 V/Mbgl-ConnectivityReceiver( 5986): connected - true
+09-28 16:47:15.765 D/AndroidRuntime( 6419): >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
+09-28 16:47:15.770 I/AndroidRuntime( 6419): Using default boot image
+09-28 16:47:15.770 I/AndroidRuntime( 6419): Leaving lock profiling enabled
+09-28 16:47:15.833 D/nativeloader( 6419): InitDefaultPublicLibraries for_preload=1: libandroid.so:libaaudio.so:libamidi.so:libbinder_ndk.so:libc.so:libcamera2ndk.so:libdl.so:libEGL.so:libGLESv1_CM.so:libGLESv2.so:libGLESv3.so:libicu.so:libicui18n.so:libicuuc.so:libjnigraphics.so:liblog.so:libmediandk.so:libm.so:libnativehelper.so:libnativewindow.so:libOpenMAXAL.so:libOpenSLES.so:libRS.so:libstdc++.so:libsync.so:libvulkan.so:libwebviewchromium_plat_support.so:libz.so
+09-28 16:47:15.973 I/Mbgl    ( 5986): {TextureViewRend}[General]: GPU Identifier: Android Emulator OpenGL ES Translator (Google SwiftShader)
+09-28 16:47:15.984 I/Goccia  ( 5986): mappa: adatto la vista a 4 punti vicini
+09-28 16:47:16.639 D/EGL_emulation( 5986): app_time_stats: avg=72.37ms min=19.00ms max=215.56ms count=14
+09-28 16:47:17.125 D/AndroidRuntime( 6419): Shutting down VM
+09-28 16:47:17.561 D/EGL_emulation( 5986): app_time_stats: avg=52.25ms min=2.57ms max=580.34ms count=28
+09-28 16:47:17.614 I/Goccia  ( 5986): mappa: 322 prezzi, sorgente ok
+09-28 16:47:17.649 D/EGL_emulation( 5986): app_time_stats: avg=99.46ms min=34.18ms max=528.62ms count=10
+09-28 16:47:17.771 I/it.goccia.app( 5986): Background concurrent copying GC freed 117303(3930KB) AllocSpace objects, 81(5444KB) LOS objects, 49% free, 7529KB/14MB, paused 18us,18us total 193.533ms
+09-28 16:47:18.350 W/ProcessStats(  523): Tracking association SourceState{77f5852 it.goccia.app/10192 BTop #11872} whose proc state 2 is better than process ProcessState{c020208 com.google.android.gms.persistent/10131 pkg=com.google.android.gms} proc state 4 (899 skipped)
+09-28 16:47:18.624 D/EGL_emulation( 5986): app_time_stats: avg=66.44ms min=5.37ms max=206.21ms count=16
+09-28 16:47:18.667 D/EGL_emulation( 5986): app_time_stats: avg=78.10ms min=33.36ms max=189.08ms count=13
+09-28 16:47:19.643 D/EGL_emulation( 5986): app_time_stats: avg=203.80ms min=80.28ms max=545.07ms count=5
+09-28 16:47:19.673 D/EGL_emulation( 5986): app_time_stats: avg=201.06ms min=97.35ms max=530.38ms count=5
+09-28 16:47:29.772 W/ProcessStats(  523): Tracking association SourceState{77f5852 it.goccia.app/10192 BTop #11952} whose proc state 2 is better than process ProcessState{c020208 com.google.android.gms.persistent/10131 pkg=com.google.android.gms} proc state 4 (388 skipped)
+09-28 16:47:33.389 D/EGL_emulation( 5986): app_time_stats: avg=6872.73ms min=127.61ms max=13617.85ms count=2
+09-28 16:47:33.417 D/EGL_emulation( 5986): app_time_stats: avg=6872.12ms min=139.78ms max=13604.45ms count=2
+09-28 16:47:33.751 I/Goccia  ( 5986): mappa: 322 prezzi, sorgente ok
+09-28 16:47:33.781 I/Goccia  ( 5986): mappa: 322 prezzi, sorgente ok
+09-28 16:47:33.844 I/it.goccia.app( 5986): Compiler allocated 4808KB to compile void it.goccia.app.ui.mappa.MappaKt.SchermataMappa(it.goccia.app.ui.GocciaViewModel, kotlin.jvm.functions.Function1, kotlin.jvm.functions.Function0, kotlin.jvm.functions.Function1, androidx.compose.runtime.Composer, int)
+09-28 16:47:34.830 D/AndroidRuntime( 6478): >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
+09-28 16:47:34.833 I/AndroidRuntime( 6478): Using default boot image
+09-28 16:47:34.833 I/AndroidRuntime( 6478): Leaving lock profiling enabled
+09-28 16:47:34.872 D/nativeloader( 6478): InitDefaultPublicLibraries for_preload=1: libandroid.so:libaaudio.so:libamidi.so:libbinder_ndk.so:libc.so:libcamera2ndk.so:libdl.so:libEGL.so:libGLESv1_CM.so:libGLESv2.so:libGLESv3.so:libicu.so:libicui18n.so:libicuuc.so:libjnigraphics.so:liblog.so:libmediandk.so:libm.so:libnativehelper.so:libnativewindow.so:libOpenMAXAL.so:libOpenSLES.so:libRS.so:libstdc++.so:libsync.so:libvulkan.so:libwebviewchromium_plat_support.so:libz.so
+09-28 16:47:35.940 D/AndroidRuntime( 6478): Shutting down VM
+09-28 16:47:41.687 W/ProcessStats(  523): Tracking association SourceState{77f5852 it.goccia.app/10192 BTop #11989} whose proc state 2 is better than process ProcessState{c020208 com.google.android.gms.persistent/10131 pkg=com.google.android.gms} proc state 4 (92 skipped)
+09-28 16:47:45.112 D/AndroidRuntime( 6534): >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
+09-28 16:47:45.114 I/AndroidRuntime( 6534): Using default boot image
+09-28 16:47:45.114 I/AndroidRuntime( 6534): Leaving lock profiling enabled
+09-28 16:47:45.152 D/nativeloader( 6534): InitDefaultPublicLibraries for_preload=1: libandroid.so:libaaudio.so:libamidi.so:libbinder_ndk.so:libc.so:libcamera2ndk.so:libdl.so:libEGL.so:libGLESv1_CM.so:libGLESv2.so:libGLESv3.so:libicu.so:libicui18n.so:libicuuc.so:libjnigraphics.so:liblog.so:libmediandk.so:libm.so:libnativehelper.so:libnativewindow.so:libOpenMAXAL.so:libOpenSLES.so:libRS.so:libstdc++.so:libsync.so:libvulkan.so:libwebviewchromium_plat_support.so:libz.so
+09-28 16:47:46.230 D/AndroidRuntime( 6534): Shutting down VM
+09-28 16:47:51.688 W/ProcessStats(  523): Tracking association SourceState{77f5852 it.goccia.app/10192 BTop #12013} whose proc state 2 is better than process ProcessState{c020208 com.google.android.gms.persistent/10131 pkg=com.google.android.gms} proc state 4 (74 skipped)
+09-28 16:47:57.410 D/AndroidRuntime( 6571): >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
+09-28 16:47:57.413 I/AndroidRuntime( 6571): Using default boot image
+09-28 16:47:57.413 I/AndroidRuntime( 6571): Leaving lock profiling enabled
+09-28 16:47:57.449 D/nativeloader( 6571): InitDefaultPublicLibraries for_preload=1: libandroid.so:libaaudio.so:libamidi.so:libbinder_ndk.so:libc.so:libcamera2ndk.so:libdl.so:libEGL.so:libGLESv1_CM.so:libGLESv2.so:libGLESv3.so:libicu.so:libicui18n.so:libicuuc.so:libjnigraphics.so:liblog.so:libmediandk.so:libm.so:libnativehelper.so:libnativewindow.so:libOpenMAXAL.so:libOpenSLES.so:libRS.so:libstdc++.so:libsync.so:libvulkan.so:libwebviewchromium_plat_support.so:libz.so
+09-28 16:47:58.516 D/AndroidRuntime( 6571): Shutting down VM
+09-28 16:47:59.438 D/AndroidRuntime( 6592): >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
+09-28 16:47:59.441 I/AndroidRuntime( 6592): Using default boot image
+09-28 16:47:59.441 I/AndroidRuntime( 6592): Leaving lock profiling enabled
+09-28 16:47:59.479 D/nativeloader( 6592): InitDefaultPublicLibraries for_preload=1: libandroid.so:libaaudio.so:libamidi.so:libbinder_ndk.so:libc.so:libcamera2ndk.so:libdl.so:libEGL.so:libGLESv1_CM.so:libGLESv2.so:libGLESv3.so:libicu.so:libicui18n.so:libicuuc.so:libjnigraphics.so:liblog.so:libmediandk.so:libm.so:libnativehelper.so:libnativewindow.so:libOpenMAXAL.so:libOpenSLES.so:libRS.so:libstdc++.so:libsync.so:libvulkan.so:libwebviewchromium_plat_support.so:libz.so
+09-28 16:48:00.036 D/EGL_emulation(  834): app_time_stats: avg=52368.94ms min=52368.94ms max=52368.94ms count=1
+09-28 16:48:00.534 D/AndroidRuntime( 6592): Shutting down VM
+09-28 16:48:01.410 D/EGL_emulation( 5986): app_time_stats: avg=3499.10ms min=54.99ms max=27229.33ms count=8
+09-28 16:48:01.750 W/ProcessStats(  523): Tracking association SourceState{77f5852 it.goccia.app/10192 BTop #12096} whose proc state 2 is better than process ProcessState{c020208 com.google.android.gms.persistent/10131 pkg=com.google.android.gms} proc state 4 (312 skipped)
+09-28 16:48:04.483 D/AndroidRuntime( 6618): >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
+09-28 16:48:04.486 I/AndroidRuntime( 6618): Using default boot image
+09-28 16:48:04.486 I/AndroidRuntime( 6618): Leaving lock profiling enabled
+09-28 16:48:04.522 D/nativeloader( 6618): InitDefaultPublicLibraries for_preload=1: libandroid.so:libaaudio.so:libamidi.so:libbinder_ndk.so:libc.so:libcamera2ndk.so:libdl.so:libEGL.so:libGLESv1_CM.so:libGLESv2.so:libGLESv3.so:libicu.so:libicui18n.so:libicuuc.so:libjnigraphics.so:liblog.so:libmediandk.so:libm.so:libnativehelper.so:libnativewindow.so:libOpenMAXAL.so:libOpenSLES.so:libRS.so:libstdc++.so:libsync.so:libvulkan.so:libwebviewchromium_plat_support.so:libz.so
+09-28 16:48:05.572 D/AndroidRuntime( 6618): Shutting down VM
+09-28 16:48:06.450 D/EGL_emulation( 5986): app_time_stats: avg=837.82ms min=24.25ms max=4783.46ms count=6
+09-28 16:48:06.458 I/ImeTracker( 5986): it.goccia.app:ef3af294: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT_BY_INSETS_API
+09-28 16:48:06.503 D/ContentCapturePerUserService(  523): Notified activity assist data for activity: Token{9a52e2f ActivityRecord{74cea0d u0 it.goccia.app/.MainActivity t8}} without a session Id
+09-28 16:48:06.505 I/ImeTracker( 5986): it.goccia.app:92d115b4: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT
+09-28 16:48:06.525 I/GoogleInputMethodService( 1499): GoogleInputMethodService.onStartInput():1877 onStartInput(EditorInfo{inputType=0x8001(Normal) imeOptions=0x2000003 privateImeOptions=null actionName=SEARCH actionLabel=null actionId=0 initialSelStart=0 initialSelEnd=0 initialCapsMode=0x0 hintText=null label=null packageName=it.goccia.app fieldId=-1 fieldName=null extras=Bundle[mParcelledData.dataSize=404]}, false)
+09-28 16:48:06.528 I/GoogleInputMethodService( 1499): GoogleInputMethodService.onStartInput():1877 onStartInput(EditorInfo{inputType=0x8001(Normal) imeOptions=0x2000003 privateImeOptions=null actionName=SEARCH actionLabel=null actionId=0 initialSelStart=0 initialSelEnd=0 initialCapsMode=0x0 hintText=null label=null packageName=it.goccia.app fieldId=-1 fieldName=null extras=Bundle[mParcelledData.dataSize=404]}, true)
+09-28 16:48:06.534 I/GoogleInputMethodService( 1499): GoogleInputMethodService.onStartInputView():1995 onStartInputView(EditorInfo{inputType=0x8001(Normal) imeOptions=0x2000003 privateImeOptions=null actionName=SEARCH actionLabel=null actionId=0 initialSelStart=0 initialSelEnd=0 initialCapsMode=0x0 hintText=null label=null packageName=it.goccia.app fieldId=-1 fieldName=null extras=Bundle[{android.support.text.emoji.emojiCompat_metadataVersion=9, androidx.core.view.inputmethod.EditorInfoCompat.STYLUS_HANDWRITING_ENABLED=true, android.support.text.emoji.emojiCompat_replaceAll=false}]}, false)
+09-28 16:48:06.583 I/AndroidIME( 1499): AbstractIme.onActivate():86 LatinIme.onActivate() : EditorInfo = inputType=0x8001(Normal) imeOptions=0x2000003 privateImeOptions=null actionName=SEARCH actionLabel=null actionId=0 initialSelStart=0 initialSelEnd=0 initialCapsMode=0x0 hintText=null label=null packageName=it.goccia.app fieldId=-1 fieldName=null extras=Bundle[{android.support.text.emoji.emojiCompat_metadataVersion=9, androidx.core.view.inputmethod.EditorInfoCompat.STYLUS_HANDWRITING_ENABLED=true, android.support.text.emoji.emojiCompat_replaceAll=false}], IncognitoMode = false, DeviceLocked = false
+09-28 16:48:06.625 D/CoreBackPreview(  523): Window{9a6cfd9 u0 it.goccia.app/it.goccia.app.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@239076, mPriority=0, mIsAnimationCallback=false}
+09-28 16:48:06.628 I/ImeTracker(  523): it.goccia.app:ef3af294: onFailed at PHASE_WM_SHOW_IME_RUNNER
+09-28 16:48:06.637 D/libEGL  ( 1499): loaded /vendor/lib64/egl/libEGL_emulation.so
+09-28 16:48:06.641 D/libEGL  ( 1499): loaded /vendor/lib64/egl/libGLESv1_CM_emulation.so
+09-28 16:48:06.646 D/libEGL  ( 1499): loaded /vendor/lib64/egl/libGLESv2_emulation.so
+09-28 16:48:06.700 W/OpenGLRenderer( 1499): Failed to initialize 101010-2 format, error = EGL_SUCCESS
+09-28 16:48:06.833 W/OpenGLRenderer( 1499): Failed to initialize 101010-2 format, error = EGL_SUCCESS
+09-28 16:48:07.552 I/ImeTracker( 5986): it.goccia.app:92d115b4: onShown
+09-28 16:48:07.556 D/EGL_emulation( 5986): app_time_stats: avg=276.50ms min=21.57ms max=535.70ms count=4
+09-28 16:48:08.516 D/AndroidRuntime( 6702): >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
+09-28 16:48:08.519 I/AndroidRuntime( 6702): Using default boot image
+09-28 16:48:08.519 I/AndroidRuntime( 6702): Leaving lock profiling enabled
+09-28 16:48:08.576 D/nativeloader( 6702): InitDefaultPublicLibraries for_preload=1: libandroid.so:libaaudio.so:libamidi.so:libbinder_ndk.so:libc.so:libcamera2ndk.so:libdl.so:libEGL.so:libGLESv1_CM.so:libGLESv2.so:libGLESv3.so:libicu.so:libicui18n.so:libicuuc.so:libjnigraphics.so:liblog.so:libmediandk.so:libm.so:libnativehelper.so:libnativewindow.so:libOpenMAXAL.so:libOpenSLES.so:libRS.so:libstdc++.so:libsync.so:libvulkan.so:libwebviewchromium_plat_support.so:libz.so
+09-28 16:48:09.050 D/EGL_emulation( 5986): app_time_stats: avg=373.45ms min=20.27ms max=499.69ms count=4
+09-28 16:48:09.649 D/AndroidRuntime( 6702): Shutting down VM
+09-28 16:48:10.050 D/EGL_emulation( 5986): app_time_stats: avg=500.04ms min=499.82ms max=500.25ms count=2
+09-28 16:48:10.532 I/ImeTracker( 5986): it.goccia.app:568db89d: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT_BY_INSETS_API
+09-28 16:48:10.532 I/ImeTracker( 5986): it.goccia.app:568db89d: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+09-28 16:48:10.534 I/ImeTracker( 5986): it.goccia.app:4089d2c6: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT
+09-28 16:48:10.539 I/ImeTracker( 5986): it.goccia.app:4089d2c6: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+09-28 16:48:10.640 D/EGL_emulation( 1499): app_time_stats: avg=1056.30ms min=73.00ms max=2939.00ms count=3
+09-28 16:48:11.284 D/EGL_emulation( 5986): app_time_stats: avg=204.84ms min=30.91ms max=490.61ms count=6
+09-28 16:48:12.304 D/EGL_emulation( 5986): app_time_stats: avg=202.26ms min=18.99ms max=499.63ms count=5
+09-28 16:48:13.232 D/EGL_emulation(  834): app_time_stats: avg=13195.33ms min=13195.33ms max=13195.33ms count=1
+09-28 16:48:13.804 D/EGL_emulation( 5986): app_time_stats: avg=499.78ms min=499.49ms max=499.97ms count=3
+09-28 16:48:14.101 D/AndroidRuntime( 6734): >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
+09-28 16:48:14.104 I/AndroidRuntime( 6734): Using default boot image
+09-28 16:48:14.104 I/AndroidRuntime( 6734): Leaving lock profiling enabled
+09-28 16:48:14.166 D/nativeloader( 6734): InitDefaultPublicLibraries for_preload=1: libandroid.so:libaaudio.so:libamidi.so:libbinder_ndk.so:libc.so:libcamera2ndk.so:libdl.so:libEGL.so:libGLESv1_CM.so:libGLESv2.so:libGLESv3.so:libicu.so:libicui18n.so:libicuuc.so:libjnigraphics.so:liblog.so:libmediandk.so:libm.so:libnativehelper.so:libnativewindow.so:libOpenMAXAL.so:libOpenSLES.so:libRS.so:libstdc++.so:libsync.so:libvulkan.so:libwebviewchromium_plat_support.so:libz.so
+09-28 16:48:15.257 D/AndroidRuntime( 6734): Shutting down VM
+09-28 16:48:15.318 D/EGL_emulation( 5986): app_time_stats: avg=504.64ms min=498.90ms max=514.11ms count=3
+09-28 16:48:16.133 I/ImeTracker( 5986): it.goccia.app:895e8da3: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+09-28 16:48:16.133 I/ImeTracker( 5986): it.goccia.app:93d6067: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+09-28 16:48:16.158 I/GoogleInputMethodService( 1499): GoogleInputMethodService.onStartInput():1877 onStartInput(EditorInfo{inputType=0x0(NULL) imeOptions=0x0 privateImeOptions=null actionName=UNSPECIFIED actionLabel=null actionId=0 initialSelStart=-1 initialSelEnd=-1 initialCapsMode=0x0 hintText=null label=null packageName=it.goccia.app fieldId=0 fieldName=null extras=null}, true)
+09-28 16:48:16.172 I/ImeTracker( 5986): it.goccia.app:93d6067: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+09-28 16:48:16.174 D/CoreBackPreview(  523): Window{9a6cfd9 u0 it.goccia.app/it.goccia.app.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@da2ce38, mPriority=0, mIsAnimationCallback=false}
+09-28 16:48:16.196 I/ImeTracker( 5986): it.goccia.app:e84f27dd: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+09-28 16:48:16.196 I/ImeTracker(  523): it.goccia.app:e84f27dd: onCancelled at PHASE_SERVER_SHOULD_HIDE
+09-28 16:48:16.196 I/ImeTracker( 5986): it.goccia.app:895e8da3: onHidden
+09-28 16:48:16.201 D/EGL_emulation( 1499): app_time_stats: avg=1853.84ms min=272.30ms max=4643.25ms count=3
+09-28 16:48:17.807 E/FrameTracker( 5986): force finish cuj, time out: J<IME_INSETS_ANIMATION::0@1@it.goccia.app>
+09-28 16:48:18.214 D/AndroidRuntime( 6759): >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
+09-28 16:48:18.217 I/AndroidRuntime( 6759): Using default boot image
+09-28 16:48:18.217 I/AndroidRuntime( 6759): Leaving lock profiling enabled
+09-28 16:48:18.254 D/nativeloader( 6759): InitDefaultPublicLibraries for_preload=1: libandroid.so:libaaudio.so:libamidi.so:libbinder_ndk.so:libc.so:libcamera2ndk.so:libdl.so:libEGL.so:libGLESv1_CM.so:libGLESv2.so:libGLESv3.so:libicu.so:libicui18n.so:libicuuc.so:libjnigraphics.so:liblog.so:libmediandk.so:libm.so:libnativehelper.so:libnativewindow.so:libOpenMAXAL.so:libOpenSLES.so:libRS.so:libstdc++.so:libsync.so:libvulkan.so:libwebviewchromium_plat_support.so:libz.so
+09-28 16:48:19.303 D/AndroidRuntime( 6759): Shutting down VM
+09-28 16:48:20.154 I/Goccia  ( 5986): posizione recente, di 95 s fa
+09-28 16:48:20.259 D/EGL_emulation( 5986): app_time_stats: avg=985.20ms min=41.23ms max=4001.07ms count=5
+09-28 16:48:20.291 D/AndroidRuntime( 6788): >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
+09-28 16:48:20.294 I/AndroidRuntime( 6788): Using default boot image
+09-28 16:48:20.294 I/AndroidRuntime( 6788): Leaving lock profiling enabled
+09-28 16:48:20.346 D/nativeloader( 6788): InitDefaultPublicLibraries for_preload=1: libandroid.so:libaaudio.so:libamidi.so:libbinder_ndk.so:libc.so:libcamera2ndk.so:libdl.so:libEGL.so:libGLESv1_CM.so:libGLESv2.so:libGLESv3.so:libicu.so:libicui18n.so:libicuuc.so:libjnigraphics.so:liblog.so:libmediandk.so:libm.so:libnativehelper.so:libnativewindow.so:libOpenMAXAL.so:libOpenSLES.so:libRS.so:libstdc++.so:libsync.so:libvulkan.so:libwebviewchromium_plat_support.so:libz.so
+09-28 16:48:21.406 D/AndroidRuntime( 6788): Shutting down VM
+09-28 16:48:21.759 D/EGL_emulation( 5986): app_time_stats: avg=749.82ms min=106.53ms max=1393.12ms count=2
+09-28 16:48:21.966 I/Mbgl-EGLConfigChooser( 5986): In emulator: false
+09-28 16:48:22.002 V/Mbgl-ConnectivityReceiver( 5986): connected - true
+09-28 16:48:22.229 I/Goccia  ( 5986): viaggio: 6 segnaposto sulla mappa
+09-28 16:48:22.718 W/ProcessStats(  523): Tracking association SourceState{77f5852 it.goccia.app/10192 BTop #12296} whose proc state 2 is better than process ProcessState{c020208 com.google.android.gms.persistent/10131 pkg=com.google.android.gms} proc state 4 (229 skipped)
+09-28 16:48:22.784 D/EGL_emulation( 5986): app_time_stats: avg=84.49ms min=25.38ms max=275.52ms count=12
+09-28 16:48:23.026 I/it.goccia.app( 5986): Background concurrent copying GC freed 106951(4892KB) AllocSpace objects, 19(2252KB) LOS objects, 49% free, 11MB/23MB, paused 40us,14us total 117.026ms
+09-28 16:48:23.577 D/EGL_emulation( 5986): app_time_stats: avg=62.50ms min=2.81ms max=630.04ms count=23
+09-28 16:48:23.863 D/EGL_emulation( 5986): app_time_stats: avg=132.27ms min=27.43ms max=619.20ms count=8
+09-28 16:48:26.440 E/FrameTracker( 5986): force finish cuj, time out: J<IME_INSETS_ANIMATION::1@1@it.goccia.app>
+09-28 16:48:43.232 D/EGL_emulation(  834): app_time_stats: avg=30000.25ms min=30000.25ms max=30000.25ms count=1
+09-28 16:48:46.722 W/ProcessStats(  523): Tracking association SourceState{77f5852 it.goccia.app/10192 BTop #12320} whose proc state 2 is better than process ProcessState{c020208 com.google.android.gms.persistent/10131 pkg=com.google.android.gms} proc state 4 (58 skipped)
+09-28 16:48:52.534 D/EGL_emulation( 5986): app_time_stats: avg=2068.27ms min=13.06ms max=28089.39ms count=14
+09-28 16:48:52.560 D/EGL_emulation( 5986): app_time_stats: avg=2869.11ms min=28.84ms max=28084.49ms count=10
+09-28 16:48:53.109 D/AndroidRuntime( 6870): >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
+09-28 16:48:53.114 I/AndroidRuntime( 6870): Using default boot image
+09-28 16:48:53.114 I/AndroidRuntime( 6870): Leaving lock profiling enabled
+09-28 16:48:53.181 D/nativeloader( 6870): InitDefaultPublicLibraries for_preload=1: libandroid.so:libaaudio.so:libamidi.so:libbinder_ndk.so:libc.so:libcamera2ndk.so:libdl.so:libEGL.so:libGLESv1_CM.so:libGLESv2.so:libGLESv3.so:libicu.so:libicui18n.so:libicuuc.so:libjnigraphics.so:liblog.so:libmediandk.so:libm.so:libnativehelper.so:libnativewindow.so:libOpenMAXAL.so:libOpenSLES.so:libRS.so:libstdc++.so:libsync.so:libvulkan.so:libwebviewchromium_plat_support.so:libz.so
+09-28 16:48:53.588 D/EGL_emulation( 5986): app_time_stats: avg=87.89ms min=34.08ms max=158.89ms count=12
+09-28 16:48:53.621 D/EGL_emulation( 5986): app_time_stats: avg=87.11ms min=32.13ms max=119.47ms count=12
+09-28 16:48:54.319 D/AndroidRuntime( 6870): Shutting down VM
+09-28 16:49:00.038 D/EGL_emulation(  834): app_time_stats: avg=16805.53ms min=16805.53ms max=16805.53ms count=1
+09-28 16:49:03.418 D/EGL_emulation( 5986): app_time_stats: avg=4898.25ms min=90.90ms max=9705.59ms count=2
+09-28 16:49:04.951 D/AndroidRuntime( 6907): >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
+09-28 16:49:04.953 I/AndroidRuntime( 6907): Using default boot image
+09-28 16:49:04.953 I/AndroidRuntime( 6907): Leaving lock profiling enabled
+09-28 16:49:04.991 D/nativeloader( 6907): InitDefaultPublicLibraries for_preload=1: libandroid.so:libaaudio.so:libamidi.so:libbinder_ndk.so:libc.so:libcamera2ndk.so:libdl.so:libEGL.so:libGLESv1_CM.so:libGLESv2.so:libGLESv3.so:libicu.so:libicui18n.so:libicuuc.so:libjnigraphics.so:liblog.so:libmediandk.so:libm.so:libnativehelper.so:libnativewindow.so:libOpenMAXAL.so:libOpenSLES.so:libRS.so:libstdc++.so:libsync.so:libvulkan.so:libwebviewchromium_plat_support.so:libz.so
+09-28 16:49:06.043 D/AndroidRuntime( 6907): Shutting down VM
+09-28 16:49:06.959 D/AndroidRuntime( 6929): >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
+09-28 16:49:06.962 I/AndroidRuntime( 6929): Using default boot image
+09-28 16:49:06.962 I/AndroidRuntime( 6929): Leaving lock profiling enabled
+09-28 16:49:07.001 D/nativeloader( 6929): InitDefaultPublicLibraries for_preload=1: libandroid.so:libaaudio.so:libamidi.so:libbinder_ndk.so:libc.so:libcamera2ndk.so:libdl.so:libEGL.so:libGLESv1_CM.so:libGLESv2.so:libGLESv3.so:libicu.so:libicui18n.so:libicuuc.so:libjnigraphics.so:liblog.so:libmediandk.so:libm.so:libnativehelper.so:libnativewindow.so:libOpenMAXAL.so:libOpenSLES.so:libRS.so:libstdc++.so:libsync.so:libvulkan.so:libwebviewchromium_plat_support.so:libz.so
+09-28 16:49:08.050 D/AndroidRuntime( 6929): Shutting down VM
+09-28 16:49:08.914 D/EGL_emulation( 5986): app_time_stats: avg=5495.12ms min=5495.12ms max=5495.12ms count=1
+09-28 16:49:08.951 I/Mbgl-EGLConfigChooser( 5986): In emulator: false
+09-28 16:49:09.037 V/Mbgl-ConnectivityReceiver( 5986): connected - true
+09-28 16:49:09.102 I/Goccia  ( 5986): mappa: adatto la vista a 4 punti vicini
+09-28 16:49:09.274 I/Goccia  ( 5986): mappa: 1500 prezzi, sorgente ok
+09-28 16:49:09.370 I/it.goccia.app( 5986): Background young concurrent copying GC freed 149416(6013KB) AllocSpace objects, 116(9320KB) LOS objects, 19% free, 18MB/23MB, paused 1.858ms,28us total 140.655ms
+09-28 16:49:10.259 D/EGL_emulation( 5986): app_time_stats: avg=94.70ms min=12.50ms max=508.85ms count=13
+09-28 16:49:10.259 I/Goccia  ( 5986): mappa: 1500 prezzi, sorgente ok
+09-28 16:49:10.293 D/EGL_emulation( 5986): app_time_stats: avg=114.68ms min=35.75ms max=468.35ms count=12
+09-28 16:49:10.310 I/Goccia  ( 5986): mappa: 1500 prezzi, sorgente ok
+09-28 16:49:12.017 D/AndroidRuntime( 6960): >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
+09-28 16:49:12.019 I/AndroidRuntime( 6960): Using default boot image
+09-28 16:49:12.019 I/AndroidRuntime( 6960): Leaving lock profiling enabled
+09-28 16:49:12.057 D/nativeloader( 6960): InitDefaultPublicLibraries for_preload=1: libandroid.so:libaaudio.so:libamidi.so:libbinder_ndk.so:libc.so:libcamera2ndk.so:libdl.so:libEGL.so:libGLESv1_CM.so:libGLESv2.so:libGLESv3.so:libicu.so:libicui18n.so:libicuuc.so:libjnigraphics.so:liblog.so:libmediandk.so:libm.so:libnativehelper.so:libnativewindow.so:libOpenMAXAL.so:libOpenSLES.so:libRS.so:libstdc++.so:libsync.so:libvulkan.so:libwebviewchromium_plat_support.so:libz.so
+09-28 16:49:13.126 D/AndroidRuntime( 6960): Shutting down VM
+09-28 16:49:14.019 I/Goccia  ( 5986): mappa: 0 colonnine, sorgente ok
+09-28 16:49:14.035 D/EGL_emulation( 5986): app_time_stats: avg=534.51ms min=93.58ms max=3104.28ms count=7
+09-28 16:49:14.288 D/EGL_emulation( 5986): app_time_stats: avg=575.58ms min=97.81ms max=3379.86ms count=7
+09-28 16:49:14.328 I/Goccia  ( 5986): mappa: 75 colonnine, sorgente ok
+09-28 16:49:14.329 D/AndroidRuntime( 6986): >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
+09-28 16:49:14.333 I/AndroidRuntime( 6986): Using default boot image
+09-28 16:49:14.333 I/AndroidRuntime( 6986): Leaving lock profiling enabled
+09-28 16:49:14.433 D/nativeloader( 6986): InitDefaultPublicLibraries for_preload=1: libandroid.so:libaaudio.so:libamidi.so:libbinder_ndk.so:libc.so:libcamera2ndk.so:libdl.so:libEGL.so:libGLESv1_CM.so:libGLESv2.so:libGLESv3.so:libicu.so:libicui18n.so:libicuuc.so:libjnigraphics.so:liblog.so:libmediandk.so:libm.so:libnativehelper.so:libnativewindow.so:libOpenMAXAL.so:libOpenSLES.so:libRS.so:libstdc++.so:libsync.so:libvulkan.so:libwebviewchromium_plat_support.so:libz.so
+09-28 16:49:15.506 D/AndroidRuntime( 6986): Shutting down VM
+09-28 16:49:31.673 D/EGL_emulation( 5986): app_time_stats: avg=2897.43ms min=80.89ms max=16720.79ms count=6
+09-28 16:49:31.699 D/EGL_emulation( 5986): app_time_stats: avg=1355.89ms min=27.72ms max=16690.62ms count=13
+09-28 16:49:32.060 I/Goccia  ( 5986): mappa: 74 colonnine, sorgente ok
+09-28 16:49:32.736 D/EGL_emulation( 5986): app_time_stats: avg=118.08ms min=93.73ms max=158.31ms count=9
+09-28 16:49:32.764 D/EGL_emulation( 5986): app_time_stats: avg=106.49ms min=45.02ms max=137.72ms count=10
+09-28 16:49:33.136 D/AndroidRuntime( 7019): >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
+09-28 16:49:33.139 I/AndroidRuntime( 7019): Using default boot image
+09-28 16:49:33.139 I/AndroidRuntime( 7019): Leaving lock profiling enabled
+09-28 16:49:33.179 D/nativeloader( 7019): InitDefaultPublicLibraries for_preload=1: libandroid.so:libaaudio.so:libamidi.so:libbinder_ndk.so:libc.so:libcamera2ndk.so:libdl.so:libEGL.so:libGLESv1_CM.so:libGLESv2.so:libGLESv3.so:libicu.so:libicui18n.so:libicuuc.so:libjnigraphics.so:liblog.so:libmediandk.so:libm.so:libnativehelper.so:libnativewindow.so:libOpenMAXAL.so:libOpenSLES.so:libRS.so:libstdc++.so:libsync.so:libvulkan.so:libwebviewchromium_plat_support.so:libz.so
+09-28 16:49:34.234 D/AndroidRuntime( 7019): Shutting down VM
