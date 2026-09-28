@@ -85,4 +85,28 @@ class TragittoTest {
         assertTrue(pieno.senzaSoste)
         assertEquals(600, pieno.margineArrivoKm)
     }
+
+    @Test
+    fun areeDiServizioSoloDalNostroLato() {
+        // verso est: si viaggia sulla carreggiata sud, le aree "Sud" sono raggiungibili, le "Nord" no
+        val campioni = Tragitto.campiona(rettilineo(100.0))
+        val (lat, lon40) = Esempi.estDi(40.0)
+        val (_, lon70) = Esempi.estDi(70.0)
+        fun area(id: Long, nome: String, dLat: Double, lon: Double) =
+            distributore(id, lat + dLat, lon, gasolioSelf = 1800, autostradale = true).copy(nome = nome)
+        val lista = listOf(
+            area(1, "Area Pioppa Sud", 0.0006, lon40), // il nome vince anche se le coordinate sono un po' a nord
+            area(2, "Area Pioppa Nord", 0.0007, lon40),
+            area(3, "Servizi 70", -0.0008, lon70), // senza lato nel nome: a destra, cioe a sud
+            area(4, "Servizi 71", 0.0008, lon70), // a sinistra
+        )
+        val lungo = Tragitto.lungoIlPercorso(lista, Carburante.GASOLIO, true, campioni, 1.0, ADESSO_SECONDI)
+        assertEquals(listOf(1L, 3L), lungo.map { it.distributore.id }.sorted())
+        // e al contrario, verso ovest
+        val ritorno = Tragitto.campiona(rettilineo(100.0).reversed())
+        val lungoRitorno = Tragitto.lungoIlPercorso(lista, Carburante.GASOLIO, true, ritorno, 1.0, ADESSO_SECONDI)
+        assertEquals(listOf(2L, 4L), lungoRitorno.map { it.distributore.id }.sorted())
+        assertEquals(270.0, Tragitto.latoDalNome("Cantagallo Ovest") ?: 0.0, 1e-9)
+        assertEquals(null, Tragitto.latoDalNome("Area Secchia"))
+    }
 }

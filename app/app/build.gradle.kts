@@ -19,6 +19,9 @@ val tutteLeAbi: Boolean = providers.gradleProperty("goccia.tutteLeAbi").isPresen
 val repository: String = System.getenv("GITHUB_REPOSITORY")?.takeIf { it.isNotBlank() }
     ?: providers.gradleProperty("goccia.repo").get()
 
+// Pagina per le donazioni (PayPal.me, Ko-fi...): vuota = nessun pulsante per donare.
+val donazioni: String = providers.gradleProperty("goccia.donazioni").orNull.orEmpty()
+
 android {
     namespace = "it.goccia.app"
     compileSdk = 36
@@ -31,6 +34,7 @@ android {
         versionName = "0.1.$numeroBuild"
         buildConfigField("String", "DATI_URL", "\"$datiUrl\"")
         buildConfigField("String", "REPO", "\"$repository\"")
+        buildConfigField("String", "DONAZIONI", "\"$donazioni\"")
         // i telefoni Android sono ARM: niente librerie x86 (solo emulatori) e APK piu leggero
         if (!tutteLeAbi) ndk { abiFilters += listOf("arm64-v8a", "armeabi-v7a") }
     }

@@ -78,6 +78,7 @@ import it.goccia.app.ui.componenti.Scheda
 import it.goccia.app.ui.icone.Icone
 import it.goccia.app.ui.mappa.PinPrezzo
 import it.goccia.app.ui.mappa.STILE_MAPPA
+import it.goccia.app.ui.mappa.etichetteInItaliano
 import it.goccia.app.ui.mappa.rememberVistaMappa
 import it.goccia.app.ui.stati.SuggerimentiComuni
 import it.goccia.app.ui.tema.Colori
@@ -672,6 +673,7 @@ internal fun MappaViaggio(campioni: List<PuntoPercorso>, pin: List<PinViaggio>) 
             m.uiSettings.isCompassEnabled = false
             m.uiSettings.isLogoEnabled = false
             m.setStyle(Style.Builder().fromUri(STILE_MAPPA)) { stile ->
+                etichetteInItaliano(stile)
                 val linea = LineString.fromLngLats(campioni.map { Point.fromLngLat(it.lon, it.lat) })
                 stile.addSource(GeoJsonSource("goccia-percorso", FeatureCollection.fromFeatures(listOf(Feature.fromGeometry(linea)))))
                 stile.addLayer(

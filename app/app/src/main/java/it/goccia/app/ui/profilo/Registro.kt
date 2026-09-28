@@ -44,6 +44,7 @@ import it.goccia.app.ui.apriLink
 import it.goccia.app.ui.componenti.Badge
 import it.goccia.app.ui.componenti.BarraTitolo
 import it.goccia.app.ui.componenti.BottoneIcona
+import it.goccia.app.ui.componenti.BottonePrimario
 import it.goccia.app.ui.componenti.GraficoBarre
 import it.goccia.app.ui.componenti.Gruppo
 import it.goccia.app.ui.componenti.RigaVoce
@@ -244,6 +245,22 @@ fun SchermataSostieni(onIndietro: () -> Unit) {
                 coloreIcona = Colori.AmbraScuro,
                 sfondoIcona = Colori.AmbraChiaro,
             )
+            val donazioni = BuildConfig.DONAZIONI
+            if (donazioni.isNotBlank()) {
+                BottonePrimario(
+                    "Offri un caffè",
+                    { apriLink(context, donazioni) },
+                    Modifier.fillMaxWidth(),
+                    icona = Icone.Caffe,
+                    altezza = 52.dp,
+                    sfondo = Colori.AmbraScuro,
+                )
+                Text(
+                    "Una donazione una tantum, dell'importo che vuoi: copre server e mappe e non sblocca nulla, perché ogni funzione è già di tutti.",
+                    style = Testi.Didascalia.copy(color = Colori.Testo2),
+                    modifier = Modifier.padding(horizontal = 4.dp),
+                )
+            }
             Gruppo("Come puoi aiutare") {
                 RigaVoce(
                     "Fallo conoscere",
@@ -274,11 +291,13 @@ fun SchermataSostieni(onIndietro: () -> Unit) {
                     onClick = { apriLink(context, repo) },
                 )
             }
-            Text(
-                "Quando Goccia sarà su Google Play potrai offrire un caffè direttamente da qui. Tutte le funzioni restano gratuite per tutti.",
-                style = Testi.Didascalia.copy(color = Colori.Testo2),
-                modifier = Modifier.padding(horizontal = 4.dp),
-            )
+            if (BuildConfig.DONAZIONI.isBlank()) {
+                Text(
+                    "Presto potrai offrire un caffè direttamente da qui. Tutte le funzioni restano gratuite per tutti.",
+                    style = Testi.Didascalia.copy(color = Colori.Testo2),
+                    modifier = Modifier.padding(horizontal = 4.dp),
+                )
+            }
         }
     }
 }
