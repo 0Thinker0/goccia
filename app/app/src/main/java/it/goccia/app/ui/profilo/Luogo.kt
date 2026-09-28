@@ -48,6 +48,7 @@ import it.goccia.app.ui.componenti.IntestazioneFoglio
 import it.goccia.app.ui.componenti.Opzione
 import it.goccia.app.ui.icone.Icone
 import it.goccia.app.ui.mappa.STILE_MAPPA
+import it.goccia.app.ui.mappa.etichetteInItaliano
 import it.goccia.app.ui.mappa.rememberVistaMappa
 import it.goccia.app.ui.stati.SuggerimentiComuni
 import it.goccia.app.ui.tema.Colori
@@ -102,7 +103,7 @@ fun SchermataLuogo(vm: GocciaViewModel, id: String?, tipo: String?, onChiudi: ()
             m.uiSettings.isCompassEnabled = false
             m.uiSettings.isLogoEnabled = false
             m.moveCamera(CameraUpdateFactory.newLatLngZoom(LatLng(lat, lon), if (scelto) 15.0 else 5.0))
-            m.setStyle(Style.Builder().fromUri(STILE_MAPPA))
+            m.setStyle(Style.Builder().fromUri(STILE_MAPPA)) { etichetteInItaliano(it) }
             m.addOnCameraIdleListener {
                 val t = m.cameraPosition.target ?: return@addOnCameraIdleListener
                 if (m.cameraPosition.zoom >= 11.0) {

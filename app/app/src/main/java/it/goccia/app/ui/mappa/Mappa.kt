@@ -142,6 +142,7 @@ fun SchermataMappa(
                 m.moveCamera(CameraUpdateFactory.newLatLngZoom(LatLng(42.5, 12.5), 5.0))
             }
             m.setStyle(Style.Builder().fromUri(STILE_MAPPA)) { s ->
+                etichetteInItaliano(s)
                 immaginiCaricate.clear()
                 s.addSource(GeoJsonSource(SORGENTE_IO, FeatureCollection.fromFeatures(emptyList<Feature>())))
                 s.addLayer(

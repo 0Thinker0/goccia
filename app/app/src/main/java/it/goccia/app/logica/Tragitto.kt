@@ -4,6 +4,8 @@ import it.goccia.app.dati.Carburante
 import it.goccia.app.dati.Coordinate
 import it.goccia.app.dati.Distributore
 import it.goccia.app.dati.Prezzo
+import kotlin.math.abs
+import kotlin.math.atan2
 import kotlin.math.ceil
 import kotlin.math.cos
 import kotlin.math.floor
@@ -143,35 +145,73 @@ object Tragitto {
         if (campioni.isEmpty()) return emptyList()
         // griglia di circa 5 km per trovare in fretta i punti vicini
         val cella = 0.05
-        val griglia = HashMap<Long, MutableList<PuntoPercorso>>()
+        val griglia = HashMap<Long, MutableList<Int>>()
         fun chiave(lat: Double, lon: Double): Long = (floor(lat / cella).toLong() shl 32) or (floor(lon / cella).toLong() and 0xffffffffL)
-        for (p in campioni) griglia.getOrPut(chiave(p.lat, p.lon)) { ArrayList() } += p
+        campioni.forEachIndexed { i, p -> griglia.getOrPut(chiave(p.lat, p.lon)) { ArrayList() } += i }
         val risultato = ArrayList<LungoIlPercorso>()
         for (d in distributori) {
             val (prezzo, self) = Convenienza.prezzoPer(d, carburante, preferisciSelf) ?: continue
             if (Convenienza.giorniDa(prezzo.comunicato, adessoSecondi) > GIORNI_VECCHIO) continue
             val cLat = floor(d.lat / cella).toLong()
             val cLon = floor(d.lon / cella).toLong()
-            var migliore: PuntoPercorso? = null
+            var migliore = -1
             var distanza = Double.MAX_VALUE
             for (dl in -1L..1L) for (dn in -1L..1L) {
                 val k = ((cLat + dl) shl 32) or ((cLon + dn) and 0xffffffffL)
                 val vicini = griglia[k] ?: continue
-                for (p in vicini) {
+                for (i in vicini) {
+                    val p = campioni[i]
                     val km = distanzaVeloce(d.lat, d.lon, p.lat, p.lon)
                     if (km < distanza) {
                         distanza = km
-                        migliore = p
+                        migliore = i
                     }
                 }
             }
-            val punto = migliore ?: continue
+            if (migliore < 0) continue
             val limite = if (d.autostradale) min(0.25, maxDistanzaKm) else maxDistanzaKm
             if (distanza > limite) continue
-            risultato += LungoIlPercorso(d, prezzo, self, punto.km, distanza, deviazioneMinuti(distanza, d.autostradale))
+            // un'area di servizio sulla carreggiata opposta non si puo raggiungere
+            if (d.autostradale && !dalNostroLato(d, campioni, migliore)) continue
+            risultato += LungoIlPercorso(d, prezzo, self, campioni[migliore].km, distanza, deviazioneMinuti(distanza, d.autostradale))
         }
         return risultato.sortedBy { it.km }
     }
+
+    /**
+     * Vero se l'area di servizio sta sul lato della strada dove si viaggia (in Italia a destra).
+     * Il nome lo dice quasi sempre ("Cantagallo Ovest": sul lato ovest, per chi va verso sud);
+     * altrimenti decide la posizione rispetto al percorso, se non e proprio sulla linea.
+     */
+    fun dalNostroLato(d: Distributore, campioni: List<PuntoPercorso>, indice: Int): Boolean {
+        val a = campioni[max(0, indice - 2)]
+        val b = campioni[min(campioni.lastIndex, indice + 2)]
+        val kx = cos(Math.toRadians(a.lat))
+        val dx = (b.lon - a.lon) * kx
+        val dy = b.lat - a.lat
+        if (dx == 0.0 && dy == 0.0) return true
+        val destra = Math.toDegrees(atan2(dx, dy)) + 90
+        latoDalNome(d.nome)?.let { lato ->
+            val scarto = abs(((lato - destra) % 360 + 540) % 360 - 180)
+            return scarto < 90
+        }
+        // prodotto vettoriale: negativo = a destra della direzione di marcia
+        val px = (d.lon - a.lon) * kx
+        val py = d.lat - a.lat
+        val croce = dx * py - dy * px
+        val distanzaDallaLinea = abs(croce) / sqrt(dx * dx + dy * dy) * 111.32
+        return croce <= 0 || distanzaDallaLinea < 0.03
+    }
+
+    /** "Area Cantagallo Ovest" -> 270 gradi; null se il nome non dice il lato. */
+    fun latoDalNome(nome: String): Double? =
+        when (nome.trim().split(' ', '-', '(', ')', '.').lastOrNull { it.isNotBlank() }?.lowercase()) {
+            "nord" -> 0.0
+            "est" -> 90.0
+            "sud" -> 180.0
+            "ovest" -> 270.0
+            else -> null
+        }
 
     /** Distanza approssimata (equirettangolare): va benissimo per pochi km e costa poco. */
     private fun distanzaVeloce(lat1: Double, lon1: Double, lat2: Double, lon2: Double): Double {

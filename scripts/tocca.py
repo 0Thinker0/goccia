@@ -3,7 +3,7 @@
 
     python3 tocca.py "Iniziamo"            testo esatto, altrimenti contenuto
     python3 tocca.py --descrizione "Mappa"  solo content-desc
-    python3 tocca.py --esiste "Roma"        esce con 0 se c'e, 1 se no (non tocca)
+    python3 tocca.py --esiste "Roma"        esce con 0 se c'e (testo identico), 1 se no (non tocca)
     python3 tocca.py --solo-dialoghi        chiude solo gli eventuali dialoghi di sistema
     python3 tocca.py --elenco               scrive i testi visibili sullo schermo
     --subito                                un solo tentativo, senza aspettare che compaia
@@ -92,9 +92,10 @@ def valori(nodo, solo_descrizione):
     return [nodo.get("text", ""), nodo.get("content-desc", ""), nodo.get("hint", "")]
 
 
-def cerca(radice, testo, solo_descrizione=False):
+def cerca(radice, testo, solo_descrizione=False, esatto=False):
     """Il testo esatto vince; tra quelli che lo contengono, meglio un elemento toccabile
-    (nei dialoghi di sistema il titolo spesso ripete il testo del pulsante)."""
+    (nei dialoghi di sistema il titolo spesso ripete il testo del pulsante). Con [esatto]
+    conta solo il testo identico: "Home" non deve trovare "Widget per la schermata Home"."""
     candidati = []
     for nodo in radice.iter("node"):
         for v in valori(nodo, solo_descrizione):
@@ -102,7 +103,7 @@ def cerca(radice, testo, solo_descrizione=False):
                 continue
             if v == testo:
                 return nodo
-            if testo.lower() in v.lower():
+            if not esatto and testo.lower() in v.lower():
                 candidati.append(nodo)
     toccabili = [n for n in candidati if n.get("clickable") == "true"]
     return (toccabili or candidati or [None])[0]
@@ -152,7 +153,8 @@ def main():
     radice = None
     for _ in range(tentativi):
         radice = schermo()
-        nodo = cerca(radice, testo, solo_descrizione) if radice is not None else None
+        # le verifiche (usate per capire in che schermata siamo) vogliono il testo identico
+        nodo = cerca(radice, testo, solo_descrizione, esatto=verifica) if radice is not None else None
         if nodo is not None:
             if verifica:
                 return 0

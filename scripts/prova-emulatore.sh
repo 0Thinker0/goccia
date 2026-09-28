@@ -123,6 +123,8 @@ tocca "Cerca un comune"
 scrivi "Roma"
 foto viaggio-cerca 3
 tocca "Roma (RM)"
+# con un quarto di serbatoio serve una sosta: cosi la modalita autostrada ha qualcosa da consigliare
+tocca "1/4"
 foto viaggio-pronto
 tocca "Calcola soste"
 foto viaggio-risultato 30
