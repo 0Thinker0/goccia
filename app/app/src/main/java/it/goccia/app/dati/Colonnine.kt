@@ -72,8 +72,11 @@ data class Colonnina(
 
     fun ha(presa: Presa): Boolean = connettori.any { it.presa == presa }
 
-    /** Si puo usare con almeno una delle prese indicate (nessun filtro = tutte). */
-    fun compatibile(prese: Set<Presa>): Boolean = prese.isEmpty() || connettori.any { it.presa in prese }
+    /**
+     * Si puo usare con almeno una delle prese indicate (nessun filtro = tutte). Le colonnine
+     * senza prese indicate su OpenStreetMap restano: sono vere, solo descritte male.
+     */
+    fun compatibile(prese: Set<Presa>): Boolean = prese.isEmpty() || connettori.isEmpty() || connettori.any { it.presa in prese }
 
     /** "CCS2 ×4 · Type 2 ×2" */
     val descrizionePrese: String
