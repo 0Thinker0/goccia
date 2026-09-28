@@ -20,13 +20,23 @@ class PinPrezzo(context: Context) {
         Typeface.DEFAULT_BOLD
     }
 
-    fun disegna(testo: String, colore: Int, grande: Boolean): Bitmap {
+    /**
+     * [colore] riempie la pillola; [coloreTesto] e [coloreBordo] di serie sono bianchi
+     * (per le colonnine si usa il contrario: pillola bianca, testo e bordo petrolio).
+     */
+    fun disegna(
+        testo: String,
+        colore: Int,
+        grande: Boolean,
+        coloreTesto: Int = android.graphics.Color.WHITE,
+        coloreBordo: Int = android.graphics.Color.WHITE,
+    ): Bitmap {
         val scala = if (grande) 1.12f else 1f
         val d = densita * scala
         val pennello = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             typeface = carattere
             textSize = 14f * d
-            color = android.graphics.Color.WHITE
+            color = coloreTesto
         }
         val larghezzaTesto = pennello.measureText(testo)
         val bordo = 2f * d
@@ -35,7 +45,7 @@ class PinPrezzo(context: Context) {
         val larghezza = larghezzaTesto + 20f * d + 2 * bordo
         val bitmap = Bitmap.createBitmap(ceil(larghezza).toInt(), ceil(altezza + punta).toInt(), Bitmap.Config.ARGB_8888)
         val tela = Canvas(bitmap)
-        val bianco = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = android.graphics.Color.WHITE }
+        val bianco = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = coloreBordo }
         val pieno = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = colore }
 
         val esterno = RectF(0f, 0f, larghezza, altezza)

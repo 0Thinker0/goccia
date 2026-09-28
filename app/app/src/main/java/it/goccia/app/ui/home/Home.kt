@@ -53,6 +53,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import it.goccia.app.dati.Carburante
+import it.goccia.app.dati.Colonnina
 import it.goccia.app.dati.DatiUtente
 import it.goccia.app.dati.Distributore
 import it.goccia.app.logica.Consiglio
@@ -78,6 +79,7 @@ import it.goccia.app.ui.componenti.GraficoLinea
 import it.goccia.app.ui.componenti.IntestazioneSezione
 import it.goccia.app.ui.componenti.Scheda
 import it.goccia.app.ui.componenti.metaOfferta
+import it.goccia.app.ui.elettrico.sezioniElettriche
 import it.goccia.app.ui.icone.Icone
 import it.goccia.app.ui.stati.BannerOffline
 import it.goccia.app.ui.stati.PannelloPosizione
@@ -104,12 +106,23 @@ fun SchermataHome(
     onSostieni: () -> Unit,
     onNuovaAuto: () -> Unit,
     onLuogo: () -> Unit,
+    onColonnina: (Colonnina) -> Unit,
+    onMappaColonnine: () -> Unit,
+    onTariffa: () -> Unit,
 ) {
     LaunchedEffect(Unit) { vm.avvia() }
     val dati by vm.dati.collectAsStateWithLifecycle()
     val utente by vm.utente.collectAsStateWithLifecycle()
     val statoVista by vm.vista.collectAsStateWithLifecycle()
     val vista = statoVista
+    val vistaColonnine by vm.vistaColonnine.collectAsStateWithLifecycle()
+    val statoColonnine by vm.colonnine.collectAsStateWithLifecycle()
+    val elettrica = utente.elettrica
+    // passando a un'auto elettrica servono le colonnine attorno al centro
+    LaunchedEffect(elettrica, dati.centro) {
+        val centro = dati.centro
+        if (elettrica && centro != null) vm.caricaColonnineAttorno(centro.coordinate, 20.0)
+    }
 
     PullToRefreshBox(isRefreshing = dati.aggiornando, onRefresh = { vm.aggiorna() }, modifier = Modifier.fillMaxSize()) {
         LazyColumn(
@@ -128,6 +141,17 @@ fun SchermataHome(
                 dati.centro == null && !dati.caricamento && !dati.cercoPosizione -> item(key = "posizione") {
                     PannelloPosizione(vm, dati, onLuogo = onLuogo, modifier = Modifier.padding(20.dp))
                 }
+                elettrica -> sezioniElettriche(
+                    vm = vm,
+                    utente = utente,
+                    vista = vistaColonnine,
+                    colonnine = statoColonnine,
+                    caricamento = dati.caricamento || dati.cercoPosizione,
+                    onColonnina = onColonnina,
+                    onMappa = onMappaColonnine,
+                    onTariffa = onTariffa,
+                    onViaggio = onViaggio,
+                )
                 else -> {
                     item(key = "auto") { CardAuto(vm, utente, vista, onRifornimento, onViaggio, onNuovaAuto) }
                     item(key = "vicini") { TitoloVicini(vista, dati, onVediTutti) }
@@ -149,9 +173,11 @@ fun SchermataHome(
                     }
                 }
             }
-            item(key = "risparmio") { CardRisparmio(utente, onStatistiche) }
-            item(key = "consumi") { Consumi(vm, utente, onStatistiche) }
-            item(key = "media") { CardMediaZona(dati, vista) }
+            if (!elettrica) {
+                item(key = "risparmio") { CardRisparmio(utente, onStatistiche) }
+                item(key = "consumi") { Consumi(vm, utente, onStatistiche) }
+                item(key = "media") { CardMediaZona(dati, vista) }
+            }
             item(key = "sostieni") { InvitoSostegno(vm, utente, onSostieni) }
         }
     }
@@ -173,7 +199,7 @@ private fun Intestazione(utente: DatiUtente, onAvvisi: () -> Unit) {
     ) {
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
             Text(saluto, style = Testi.Chip.copy(color = Colori.Testo2))
-            Text("Dove fai il pieno oggi?", style = Testi.TitoloSchermata)
+            Text(if (utente.elettrica) "Dove ricarichi oggi?" else "Dove fai il pieno oggi?", style = Testi.TitoloSchermata)
         }
         Box {
             BottoneIcona(
@@ -259,7 +285,7 @@ private fun Scelte(vm: GocciaViewModel, utente: DatiUtente, onProfilo: () -> Uni
                 )
             }
         }
-        ChipCarburanti(vm, utente, Modifier.fillMaxWidth())
+        if (!utente.elettrica) ChipCarburanti(vm, utente, Modifier.fillMaxWidth())
     }
 }
 
@@ -308,17 +334,7 @@ private fun CardAuto(
         }
         return
     }
-    if (auto.alimentazione.elettrica) {
-        Scheda(modificatore.fillMaxWidth()) {
-            Text("${auto.nome} · elettrica · ${Formati.numero(auto.capienza, 0)} kWh", style = Testi.DidascaliaForte.copy(color = Colori.Testo3))
-            Text("Ricarica e colonnine in arrivo", style = Testi.Titolo)
-            Text(
-                "Stiamo preparando la mappa delle colonnine e il costo della ricarica di casa. Intanto puoi usare Goccia per i prezzi dei carburanti.",
-                style = Testi.Didascalia.copy(color = Colori.Testo2),
-            )
-        }
-        return
-    }
+    if (auto.alimentazione.elettrica) return
     val serbatoio = vm.serbatoio(utente) ?: return
     var dialogo by remember { mutableStateOf(false) }
     val riserva = serbatoio.livello <= Consiglio.RISERVA

@@ -44,7 +44,11 @@ import it.goccia.app.BuildConfig
 import it.goccia.app.avvisi.Notifiche
 import it.goccia.app.dati.AppNavigazione
 import it.goccia.app.dati.Carburante
+import it.goccia.app.dati.TariffeColonnine
 import it.goccia.app.dati.TipoLuogo
+import it.goccia.app.logica.Elettrico
+import it.goccia.app.logica.FonteTariffa
+import it.goccia.app.logica.Formati
 import it.goccia.app.ui.GocciaViewModel
 import it.goccia.app.ui.apriLink
 import it.goccia.app.ui.componenti.BarraTitolo
@@ -64,6 +68,7 @@ fun SchermataImpostazioni(
     onIndietro: () -> Unit,
     onLuogo: (String?, String?) -> Unit,
     onSostieni: () -> Unit,
+    onTariffa: () -> Unit,
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -111,6 +116,27 @@ fun SchermataImpostazioni(
                     imp.escludiAutostrade,
                     { v -> vm.impostazioni { it.copy(escludiAutostrade = v) } },
                     divisore = false,
+                )
+            }
+
+            Gruppo("Auto elettrica") {
+                val stime = vm.stime
+                val prezzo = Elettrico.prezzoCasa(utente.tariffaCasa, stime.casa)
+                RigaVoce(
+                    "Tariffa di casa",
+                    sottotitolo = "Prezzo al kWh, fasce orarie, fotovoltaico",
+                    valore = Formati.numero(prezzo.euroKwh, if (prezzo.fonte == FonteTariffa.TUA) 3 else 2) +
+                        if (prezzo.fonte == FonteTariffa.STIMA) " · stima" else "",
+                    altezza = 58.dp,
+                    onClick = onTariffa,
+                )
+                RigaVoce(
+                    "Tariffe alle colonnine",
+                    sottotitolo = "Lenta, veloce e ultraveloce",
+                    valore = if (utente.tariffeColonnine == TariffeColonnine()) "stime" else "le tue",
+                    altezza = 58.dp,
+                    divisore = false,
+                    onClick = onTariffa,
                 )
             }
 
@@ -206,6 +232,8 @@ fun SchermataImpostazioni(
                         buildAnnotatedString {
                             withStyle(SpanStyle(fontWeight = FontWeight.ExtraBold)) { append("Prezzi: ") }
                             append("Ministero delle Imprese e del Made in Italy – Osservaprezzi carburanti, licenza IODL 2.0. ")
+                            withStyle(SpanStyle(fontWeight = FontWeight.ExtraBold)) { append("Colonnine: ") }
+                            append("© OpenStreetMap contributors, licenza ODbL. ")
                             withStyle(SpanStyle(fontWeight = FontWeight.ExtraBold)) { append("Mappe: ") }
                             append("© OpenStreetMap, OpenFreeMap, OpenMapTiles.")
                         },

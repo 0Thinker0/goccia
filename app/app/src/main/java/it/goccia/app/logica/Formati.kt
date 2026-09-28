@@ -45,6 +45,22 @@ object Formati {
 
     fun litri(valore: Double, unita: String = "l"): String = numero(valore, if (valore < 100) 1 else 0) + " " + unita
 
+    /** 0.46 -> "46%" */
+    fun percento(livello: Double): String = "${(livello * 100).roundToInt()}%"
+
+    /** 150.0 -> "150 kW", 7.4 -> "7,4 kW" */
+    fun kw(valore: Double): String = (if (valore % 1.0 == 0.0 || valore >= 50) numero(valore, 0) else numero(valore, 1)) + " kW"
+
+    /** 0.59 -> "0,59 €/kWh" (tre cifre per le tariffe di casa, che cambiano di poco) */
+    fun euroKwh(valore: Double, cifre: Int = 2): String = numero(valore, cifre) + " €/kWh"
+
+    /** 22 -> "22 min", 260 -> "4 h 20 min", 120 -> "2 h" */
+    fun durata(minuti: Int): String = when {
+        minuti < 60 -> "$minuti min"
+        minuti % 60 == 0 -> "${minuti / 60} h"
+        else -> "${minuti / 60} h ${minuti % 60} min"
+    }
+
     /** "−5 cent vs media", "+6 cent vs media", "Nella media · −1 cent" */
     fun differenza(cent: Int?): String = when {
         cent == null -> "Media non disponibile"

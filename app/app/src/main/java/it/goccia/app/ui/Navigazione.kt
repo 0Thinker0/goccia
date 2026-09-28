@@ -39,7 +39,10 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import android.net.Uri
 import it.goccia.app.ui.dettaglio.SchermataDettaglio
+import it.goccia.app.ui.elettrico.SchermataColonnina
+import it.goccia.app.ui.elettrico.SchermataTariffa
 import it.goccia.app.ui.home.SchermataHome
 import it.goccia.app.ui.icone.Icone
 import it.goccia.app.ui.intro.SchermataIntro
@@ -76,12 +79,15 @@ object Rotte {
     const val REGISTRO = "registro"
     const val STATISTICHE = "statistiche"
     const val SOSTIENI = "sostieni"
+    const val COLONNINA = "colonnina/{id}"
+    const val TARIFFA = "tariffa"
 
     fun dettaglio(provincia: String, id: Long) = "dettaglio/$provincia/$id"
     fun rifornimento(provincia: String? = null, id: Long? = null) = "rifornimento?prov=${provincia ?: ""}&id=${id ?: -1}"
     fun avviso(id: String? = null) = "avviso?id=${id ?: ""}&prov=&distributore=-1"
     fun auto(id: String? = null) = "auto?id=${id ?: ""}"
     fun luogo(id: String? = null, tipo: String? = null) = "luogo?id=${id ?: ""}&tipo=${tipo ?: ""}"
+    fun colonnina(id: String) = "colonnina/${Uri.encode(id)}"
 }
 
 private data class Scheda(val rotta: String, val etichetta: String, val icona: ImageVector)
@@ -148,6 +154,12 @@ fun GocciaRadice(vm: GocciaViewModel, distributoreDaAprire: Pair<String, Long>?,
                     onSostieni = { nav.navigate(Rotte.SOSTIENI) },
                     onNuovaAuto = { nav.navigate(Rotte.auto()) },
                     onLuogo = { nav.navigate(Rotte.luogo(tipo = "CASA")) },
+                    onColonnina = { nav.navigate(Rotte.colonnina(it.id)) },
+                    onMappaColonnine = {
+                        vm.mostraColonnine(true)
+                        nav.vaiAScheda(Rotte.MAPPA)
+                    },
+                    onTariffa = { nav.navigate(Rotte.TARIFFA) },
                 )
             }
             composable(Rotte.MAPPA) {
@@ -155,6 +167,7 @@ fun GocciaRadice(vm: GocciaViewModel, distributoreDaAprire: Pair<String, Long>?,
                     vm = vm,
                     onDistributore = { nav.navigate(Rotte.dettaglio(it.provincia, it.id)) },
                     onLista = { nav.navigate(Rotte.LISTA) { launchSingleTop = true } },
+                    onColonnina = { nav.navigate(Rotte.colonnina(it.id)) },
                 )
             }
             composable(Rotte.LISTA) {
@@ -169,6 +182,7 @@ fun GocciaRadice(vm: GocciaViewModel, distributoreDaAprire: Pair<String, Long>?,
                     vm = vm,
                     onDistributore = { nav.navigate(Rotte.dettaglio(it.provincia, it.id)) },
                     onAuto = { nav.navigate(Rotte.auto(vm.utente.value.autoCorrente?.id)) },
+                    onColonnina = { nav.navigate(Rotte.colonnina(it.id)) },
                 )
             }
             composable(Rotte.PREFERITI) {
@@ -248,6 +262,7 @@ fun GocciaRadice(vm: GocciaViewModel, distributoreDaAprire: Pair<String, Long>?,
                     onIndietro = { nav.popBackStack() },
                     onLuogo = { id, tipo -> nav.navigate(Rotte.luogo(id, tipo)) },
                     onSostieni = { nav.navigate(Rotte.SOSTIENI) },
+                    onTariffa = { nav.navigate(Rotte.TARIFFA) },
                 )
             }
             composable(
@@ -267,6 +282,15 @@ fun GocciaRadice(vm: GocciaViewModel, distributoreDaAprire: Pair<String, Long>?,
             composable(Rotte.REGISTRO) { SchermataRegistro(vm = vm, onIndietro = { nav.popBackStack() }) }
             composable(Rotte.STATISTICHE) { SchermataStatistiche(vm = vm, onIndietro = { nav.popBackStack() }) }
             composable(Rotte.SOSTIENI) { SchermataSostieni(onIndietro = { nav.popBackStack() }) }
+            composable(Rotte.COLONNINA, arguments = listOf(navArgument("id") { type = NavType.StringType })) { e ->
+                SchermataColonnina(
+                    vm = vm,
+                    id = e.arguments?.getString("id").orEmpty(),
+                    onIndietro = { nav.popBackStack() },
+                    onTariffa = { nav.navigate(Rotte.TARIFFA) },
+                )
+            }
+            composable(Rotte.TARIFFA) { SchermataTariffa(vm = vm, onIndietro = { nav.popBackStack() }) }
         }
         if (conBarra) {
             BarraNavigazione(schedaCorrente) { nav.vaiAScheda(it) }

@@ -757,9 +757,14 @@ fun IndicatorePassi(passo: Int, totale: Int, modifier: Modifier = Modifier) {
     }
 }
 
-/** Barra del livello del serbatoio con le tacche. */
+/** Barra del livello del serbatoio con le tacche (per le batterie si passano null: niente tacche). */
 @Composable
-fun BarraLivello(livello: Double, colore: Color, modifier: Modifier = Modifier) {
+fun BarraLivello(
+    livello: Double,
+    colore: Color,
+    modifier: Modifier = Modifier,
+    tacche: List<String>? = listOf("R", "1/4", "1/2", "3/4", "Pieno"),
+) {
     Column(modifier, verticalArrangement = Arrangement.spacedBy(6.dp)) {
         Box(
             Modifier
@@ -776,9 +781,11 @@ fun BarraLivello(livello: Double, colore: Color, modifier: Modifier = Modifier) 
                     .background(colore),
             )
         }
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-            listOf("R", "1/4", "1/2", "3/4", "Pieno").forEach {
-                Text(it, style = Testi.Piccolo.copy(color = Colori.Testo3))
+        if (tacche != null) {
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                tacche.forEach {
+                    Text(it, style = Testi.Piccolo.copy(color = Colori.Testo3))
+                }
             }
         }
     }

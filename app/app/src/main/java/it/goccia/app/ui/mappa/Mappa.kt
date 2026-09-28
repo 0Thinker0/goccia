@@ -41,12 +41,16 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import it.goccia.app.dati.Carburante
+import it.goccia.app.dati.Colonnina
 import it.goccia.app.dati.Coordinate
 import it.goccia.app.dati.Distributore
+import it.goccia.app.dati.Presa
 import it.goccia.app.logica.Convenienza
+import it.goccia.app.logica.Elettrico
 import it.goccia.app.logica.Formati
 import it.goccia.app.logica.Offerta
 import it.goccia.app.ui.GocciaViewModel
+import it.goccia.app.ui.VistaColonnine
 import it.goccia.app.ui.VistaZona
 import it.goccia.app.ui.componenti.BadgeConvenienza
 import it.goccia.app.ui.componenti.BottoneIcona
@@ -57,6 +61,10 @@ import it.goccia.app.ui.componenti.ChipScelta
 import it.goccia.app.ui.componenti.LogoBandiera
 import it.goccia.app.ui.componenti.colorePin
 import it.goccia.app.ui.componenti.metaOfferta
+import it.goccia.app.ui.elettrico.IconaColonnina
+import it.goccia.app.ui.elettrico.metaColonnina
+import it.goccia.app.ui.elettrico.potenzaColonnina
+import it.goccia.app.ui.elettrico.titoloColonnina
 import it.goccia.app.ui.icone.Icone
 import it.goccia.app.ui.naviga
 import it.goccia.app.ui.stati.SuggerimentiComuni
@@ -89,7 +97,12 @@ private const val STRATO_IO = "goccia-io"
 private const val MASSIMO_PIN = 1500
 
 @Composable
-fun SchermataMappa(vm: GocciaViewModel, onDistributore: (Distributore) -> Unit, onLista: () -> Unit) {
+fun SchermataMappa(
+    vm: GocciaViewModel,
+    onDistributore: (Distributore) -> Unit,
+    onLista: () -> Unit,
+    onColonnina: (Colonnina) -> Unit,
+) {
     LaunchedEffect(Unit) { vm.avvia() }
     val context = LocalContext.current
     val densita = LocalDensity.current
@@ -97,6 +110,11 @@ fun SchermataMappa(vm: GocciaViewModel, onDistributore: (Distributore) -> Unit, 
     val utente by vm.utente.collectAsStateWithLifecycle()
     val statoVista by vm.vistaMappa.collectAsStateWithLifecycle()
     val vista = statoVista
+    // colonnine al posto dei distributori (di serie per le auto elettriche)
+    val colonnine by vm.mappaColonnine.collectAsStateWithLifecycle()
+    val statoVistaEv by vm.vistaColonnineMappa.collectAsStateWithLifecycle()
+    val vistaEv = statoVistaEv
+    var selezionataEv by rememberSaveable { mutableStateOf<String?>(null) }
 
     var selezionato by rememberSaveable { mutableStateOf<Long?>(null) }
     var testo by rememberSaveable { mutableStateOf("") }
@@ -164,12 +182,18 @@ fun SchermataMappa(vm: GocciaViewModel, onDistributore: (Distributore) -> Unit, 
                 val raggio = with(densita) { 14.dp.toPx() }
                 val area = RectF(schermo.x - raggio, schermo.y - raggio * 2, schermo.x + raggio, schermo.y + raggio / 2)
                 val trovato = m.queryRenderedFeatures(area, STRATO_PREZZI).firstOrNull()
+                val colonnina = trovato?.getStringProperty("colonnina")
                 val id = trovato?.getStringProperty("id")?.toLongOrNull()
-                if (id != null) {
-                    selezionato = id
-                    true
-                } else {
-                    false
+                when {
+                    colonnina != null -> {
+                        selezionataEv = colonnina
+                        true
+                    }
+                    id != null -> {
+                        selezionato = id
+                        true
+                    }
+                    else -> false
                 }
             }
             mappa = m
@@ -183,13 +207,18 @@ fun SchermataMappa(vm: GocciaViewModel, onDistributore: (Distributore) -> Unit, 
         val m = mappa ?: return@LaunchedEffect
         val c = centro ?: return@LaunchedEffect
         m.animateCamera(CameraUpdateFactory.newLatLngZoom(LatLng(c.coordinate.lat, c.coordinate.lon), 13.0), 600)
-        val attorno = withTimeoutOrNull(20_000) { vm.vista.first { it != null && it.centro == c } } ?: return@LaunchedEffect
-        val vicini = attorno.zona.offerte.sortedBy { it.distanzaKm }.take(4)
+        val vicini: List<LatLng> = if (vm.mappaColonnine.value) {
+            val attorno = withTimeoutOrNull(20_000) { vm.vistaColonnine.first { it != null && it.centro == c && it.zona.vicine.isNotEmpty() } }
+            attorno?.zona?.vicine.orEmpty().take(4).map { LatLng(it.colonnina.lat, it.colonnina.lon) }
+        } else {
+            val attorno = withTimeoutOrNull(20_000) { vm.vista.first { it != null && it.centro == c } }
+            attorno?.zona?.offerte.orEmpty().sortedBy { it.distanzaKm }.take(4).map { LatLng(it.distributore.lat, it.distributore.lon) }
+        }
         if (vicini.isEmpty()) return@LaunchedEffect
         val limiti = LatLngBounds.Builder()
             .include(LatLng(c.coordinate.lat + 0.004, c.coordinate.lon + 0.005))
             .include(LatLng(c.coordinate.lat - 0.004, c.coordinate.lon - 0.005))
-        vicini.forEach { limiti.include(LatLng(it.distributore.lat, it.distributore.lon)) }
+        vicini.forEach { limiti.include(it) }
         fun px(valore: Int) = with(densita) { valore.dp.roundToPx() }
         m.animateCamera(CameraUpdateFactory.newLatLngBounds(limiti.build(), px(48), px(190), px(48), px(260)), 700)
     }
@@ -199,9 +228,31 @@ fun SchermataMappa(vm: GocciaViewModel, onDistributore: (Distributore) -> Unit, 
         val punti = if (c != null) listOf(Feature.fromGeometry(Point.fromLngLat(c.lon, c.lat))) else emptyList()
         s.getSourceAs<GeoJsonSource>(SORGENTE_IO)?.setGeoJson(FeatureCollection.fromFeatures(punti))
     }
-    // prezzi sulla mappa
-    LaunchedEffect(stile, vista, selezionato) {
+    // prezzi (o colonnine) sulla mappa
+    LaunchedEffect(stile, vista, selezionato, colonnine, vistaEv, selezionataEv) {
         val s = stile ?: return@LaunchedEffect
+        if (colonnine) {
+            val elementi = vistaEv?.zona?.vicine.orEmpty().take(MASSIMO_PIN).map { cv ->
+                val c = cv.colonnina
+                val sel = c.id == selezionataEv
+                val testo = c.kw?.let { Formati.kw(it) } ?: "–"
+                val chiave = "c-$testo-$sel"
+                if (immaginiCaricate.add(chiave)) {
+                    s.addImage(
+                        chiave,
+                        if (sel) pin.disegna(testo, Colori.Petrolio.toArgb(), true)
+                        else pin.disegna(testo, android.graphics.Color.WHITE, false, Colori.PetrolioScuro.toArgb(), Colori.Petrolio.toArgb()),
+                    )
+                }
+                Feature.fromGeometry(Point.fromLngLat(c.lon, c.lat)).apply {
+                    addStringProperty("colonnina", c.id)
+                    addStringProperty("icona", chiave)
+                    addNumberProperty("ordine", if (sel) -1_000.0 else -(c.kw ?: 0.0))
+                }
+            }
+            s.getSourceAs<GeoJsonSource>(SORGENTE_PREZZI)?.setGeoJson(FeatureCollection.fromFeatures(elementi))
+            return@LaunchedEffect
+        }
         val v = vista ?: return@LaunchedEffect
         val offerte = v.zona.tutte.sortedBy { it.distanzaKm }.take(MASSIMO_PIN)
         val elementi = offerte.map { o ->
@@ -233,10 +284,12 @@ fun SchermataMappa(vm: GocciaViewModel, onDistributore: (Distributore) -> Unit, 
         ) {
             Row(Modifier.padding(start = 20.dp, end = 20.dp, top = 6.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 CampoRicerca(testo, { testo = it }, Modifier.weight(1f), segnaposto = "Cerca un comune")
-                BottoneIcona(
-                    Icone.Lista, "Vedi come lista", onLista,
-                    colore = Color.White, sfondo = Colori.Inchiostro, dimensione = 52.dp, forma = RoundedCornerShape(16.dp),
-                )
+                if (!colonnine) {
+                    BottoneIcona(
+                        Icone.Lista, "Vedi come lista", onLista,
+                        colore = Color.White, sfondo = Colori.Inchiostro, dimensione = 52.dp, forma = RoundedCornerShape(16.dp),
+                    )
+                }
             }
             if (testo.isNotBlank()) {
                 SuggerimentiComuni(
@@ -244,6 +297,7 @@ fun SchermataMappa(vm: GocciaViewModel, onDistributore: (Distributore) -> Unit, 
                     onScelto = {
                         testo = ""
                         selezionato = null
+                        selezionataEv = null
                         vm.centraSu(it)
                     },
                     modifier = Modifier.padding(start = 20.dp, end = 20.dp, top = 8.dp),
@@ -253,8 +307,33 @@ fun SchermataMappa(vm: GocciaViewModel, onDistributore: (Distributore) -> Unit, 
                 Modifier.horizontalScroll(rememberScrollState()).padding(start = 20.dp, end = 20.dp, top = 10.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                Carburante.entries.forEach { c ->
-                    ChipScelta(c.etichetta, c == utente.carburante, onClick = { vm.scegliCarburante(c) }, altezza = 38.dp)
+                ChipScelta(
+                    "Colonnine",
+                    colonnine,
+                    onClick = {
+                        selezionataEv = null
+                        vm.mostraColonnine(!colonnine)
+                    },
+                    icona = Icone.Fulmine,
+                    altezza = 38.dp,
+                )
+                if (colonnine) {
+                    val prese = utente.prese
+                    Presa.filtrabili.forEach { p ->
+                        ChipScelta(p.etichetta, p in prese, onClick = { vm.scegliPrese(if (p in prese) prese - p else prese + p) }, altezza = 38.dp)
+                    }
+                    val potenze = listOf(0, 50, 150)
+                    val attuale = utente.impostazioni.potenzaMinima
+                    ChipScelta(
+                        if (attuale == 0) "Tutte le potenze" else "≥ $attuale kW",
+                        attuale > 0,
+                        onClick = { vm.scegliPotenzaMinima(potenze[(potenze.indexOf(attuale).coerceAtLeast(0) + 1) % potenze.size]) },
+                        altezza = 38.dp,
+                    )
+                } else {
+                    Carburante.entries.forEach { c ->
+                        ChipScelta(c.etichetta, c == utente.carburante, onClick = { vm.scegliCarburante(c) }, altezza = 38.dp)
+                    }
                 }
             }
         }
@@ -270,13 +349,18 @@ fun SchermataMappa(vm: GocciaViewModel, onDistributore: (Distributore) -> Unit, 
                 BottoneIcona(
                     Icone.Mirino, "Centra sulla mia posizione", {
                         selezionato = null
+                        selezionataEv = null
                         vm.usaPosizione()
                     },
                     Modifier.ombra(CircleShape, 4.dp),
                     colore = Colori.Petrolio, sfondo = Colori.Superficie,
                 )
             }
-            SchedaSelezione(vm, vista, selezionato, zoom < ZOOM_PREZZI, onDistributore, onLista)
+            if (colonnine) {
+                SchedaColonnina(vm, vistaEv, selezionataEv, zoom < ZOOM_PREZZI, onColonnina)
+            } else {
+                SchedaSelezione(vm, vista, selezionato, zoom < ZOOM_PREZZI, onDistributore, onLista)
+            }
         }
     }
 }
@@ -354,6 +438,98 @@ private fun SchedaSelezione(
         Row(Modifier.padding(top = 4.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             BottonePrimario("Naviga", { naviga(context, d, utente.impostazioni.navigazione) }, Modifier.weight(1f), icona = Icone.Naviga)
             BottoneSecondario("Dettagli", { onDistributore(d) }, Modifier.weight(1f))
+        }
+    }
+}
+
+/** Foglio in basso con la colonnina scelta (o la piu vicina), come nel design "Colonnine". */
+@Composable
+private fun SchedaColonnina(
+    vm: GocciaViewModel,
+    vista: VistaColonnine?,
+    selezionata: String?,
+    lontano: Boolean,
+    onColonnina: (Colonnina) -> Unit,
+) {
+    val context = LocalContext.current
+    val utente by vm.utente.collectAsStateWithLifecycle()
+    val stato by vm.colonnine.collectAsStateWithLifecycle()
+    Column(
+        Modifier
+            .fillMaxWidth()
+            .ombra(Forme.Foglio, 8.dp)
+            .clip(Forme.Foglio)
+            .background(Colori.Superficie)
+            .padding(start = 20.dp, end = 20.dp, top = 10.dp, bottom = 16.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
+        Box(Modifier.align(Alignment.CenterHorizontally).size(width = 40.dp, height = 4.dp).clip(RoundedCornerShape(2.dp)).background(Colori.InterruttoreSpento))
+        if (lontano && selezionata == null) {
+            Text("Avvicina la mappa per vedere le colonnine", style = Testi.CorpoForte)
+            Text("Oppure cerca un comune qui sopra, o tocca il mirino per andare dove sei.", style = Testi.Didascalia.copy(color = Colori.Testo3))
+            return@Column
+        }
+        if (stato.nonDisponibili && stato.tutte.isEmpty()) {
+            Text("Colonnine non disponibili", style = Testi.CorpoForte)
+            Text("Non riusciamo a scaricare l'elenco: controlla la connessione e riprova.", style = Testi.Didascalia.copy(color = Colori.Testo3))
+            return@Column
+        }
+        val vicine = vista?.zona?.vicine.orEmpty()
+        if (vista == null || (vicine.isEmpty() && stato.caricamento)) {
+            Text("Carico le colonnine…", style = Testi.Didascalia.copy(color = Colori.Testo3))
+            return@Column
+        }
+        val massima = vicine.mapNotNull { it.colonnina.kw }.maxOrNull()
+        Text(
+            "${vicine.size} ${if (vicine.size == 1) "colonnina" else "colonnine"} entro ${vista.zona.raggioKm} km" +
+                (massima?.let { " · fino a ${Formati.kw(it)}" } ?: ""),
+            style = Testi.Didascalia.copy(color = Colori.Testo3, fontWeight = FontWeight.SemiBold),
+        )
+        val scelta = vicine.firstOrNull { it.colonnina.id == selezionata } ?: vicine.firstOrNull()
+        if (scelta == null) {
+            Text("Nessuna colonnina compatibile in quest'area: prova a cambiare prese o potenza qui sopra.", style = Testi.Corpo)
+            return@Column
+        }
+        val c = scelta.colonnina
+        val tariffa = vm.tariffaDi(c)
+        Row(
+            Modifier.clip(RoundedCornerShape(12.dp)).clickable { onColonnina(c) },
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            IconaColonnina(c, 48)
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                Text(titoloColonnina(c), style = Testi.Sottosezione, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text(metaColonnina(c, scelta.distanzaKm), style = Testi.Didascalia.copy(color = Colori.Testo3), maxLines = 1, overflow = TextOverflow.Ellipsis)
+            }
+            Column(horizontalAlignment = Alignment.End) {
+                Text(potenzaColonnina(c), style = Testi.PrezzoMedio)
+                val mia = Elettrico.tariffaPersonale(c.classe, utente.tariffeColonnine)
+                Text(
+                    if (c.gratuita) "gratuita" else (if (mia) "tua tariffa " else "stima ") + Formati.euroKwh(tariffa),
+                    style = Testi.Piccolo.copy(color = Colori.Testo3),
+                )
+            }
+        }
+        val auto = utente.autoCorrente?.takeIf { it.alimentazione.elettrica }
+        if (auto != null) {
+            val kwh = 0.6 * auto.capienza
+            val erogazione = Elettrico.erogazione(c, utente.prese, auto.acKw, auto.dcKw)
+            Text(
+                buildString {
+                    append("Dal 20% all'80% (${Formati.numero(kwh, 0)} kWh): circa ${Formati.euro(if (c.gratuita) 0.0 else kwh * tariffa)}")
+                    if (erogazione != null) {
+                        append(" e ${Formati.durata(Elettrico.minutiRicarica(auto.capienza, 0.2, 0.8, erogazione))}")
+                        if (!erogazione.continua) append(" (${Formati.kw(erogazione.kw)} di bordo)")
+                    }
+                    append(".")
+                },
+                style = Testi.Didascalia.copy(color = Colori.TestoChip),
+            )
+        }
+        Row(Modifier.padding(top = 4.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            BottonePrimario("Naviga", { naviga(context, c.lat, c.lon, c.titolo, utente.impostazioni.navigazione) }, Modifier.weight(1f), icona = Icone.Naviga)
+            BottoneSecondario("Dettagli e costi", { onColonnina(c) }, Modifier.weight(1f))
         }
     }
 }
