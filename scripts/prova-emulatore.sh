@@ -29,10 +29,27 @@ tocca() {
   return 1
 }
 esiste() { python3 "$QUI/tocca.py" --esiste "$1" > /dev/null 2>&1; }
+# come esiste, ma guarda lo schermo una volta sola
+subito() { python3 "$QUI/tocca.py" --esiste --subito "$1" > /dev/null 2>&1; }
 indietro() { adb shell input keyevent KEYCODE_BACK; sleep 1.5; }
 scorri() { adb shell input swipe 540 1900 540 700 500; sleep 1.5; }
 scrivi() { adb shell input text "$1"; sleep 1.5; }
 nota() { echo "== $*" >> "$PASSI"; }
+# scorre la schermata finche il testo non compare, poi lo tocca
+trova() {
+  for _ in 1 2 3 4 5; do subito "$1" && break; scorri; done
+  tocca "$1"
+}
+# conferma la richiesta di aggiungere un widget, qualunque sia il testo del launcher
+conferma_widget() {
+  sleep 3
+  for t in "Add to home screen" "Add automatically" "ADD AUTOMATICALLY" "Aggiungi a schermata Home" "Aggiungi automaticamente"; do
+    if subito "$t"; then tocca "$t"; return 0; fi
+  done
+  echo "!! nessun pulsante per aggiungere il widget" >> "$PASSI"
+  python3 "$QUI/tocca.py" --elenco >> "$PASSI" 2>&1
+  return 1
+}
 
 adb logcat -c
 # l'emulatore appena avviato e lento: lasciamo stabilizzare il launcher
@@ -132,6 +149,19 @@ tocca --descrizione "Impostazioni"
 foto impostazioni 2
 scorri
 foto impostazioni-2
+
+nota "widget"
+trova "Prezzi vicino a te"
+foto widget-richiesta 3
+conferma_widget
+sleep 2
+trova "La tua auto"
+conferma_widget
+sleep 2
+adb shell input keyevent KEYCODE_HOME
+foto widget-home 8
+adb shell am start -n it.goccia.app/.MainActivity >> "$PASSI" 2>&1
+sleep 3
 for _ in 1 2 3; do esiste "Home" && break; indietro; done
 
 nota "home dopo il rifornimento"
@@ -190,6 +220,10 @@ scorri
 foto ev-tariffa-2
 scorri
 foto ev-tariffa-3
+
+nota "widget con l'auto elettrica"
+adb shell input keyevent KEYCODE_HOME
+foto widget-home-ev 8
 
 kill "$GEO" 2> /dev/null
 

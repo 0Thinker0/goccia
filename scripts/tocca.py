@@ -5,6 +5,8 @@
     python3 tocca.py --descrizione "Mappa"  solo content-desc
     python3 tocca.py --esiste "Roma"        esce con 0 se c'e, 1 se no (non tocca)
     python3 tocca.py --solo-dialoghi        chiude solo gli eventuali dialoghi di sistema
+    python3 tocca.py --elenco               scrive i testi visibili sullo schermo
+    --subito                                un solo tentativo, senza aspettare che compaia
 
 Se l'elemento non si trova, salva la schermata letta (xml e testi visibili) nella cartella
 indicata da PROVA_USCITA, per capire cosa c'era al suo posto.
@@ -91,6 +93,8 @@ def valori(nodo, solo_descrizione):
 
 
 def cerca(radice, testo, solo_descrizione=False):
+    """Il testo esatto vince; tra quelli che lo contengono, meglio un elemento toccabile
+    (nei dialoghi di sistema il titolo spesso ripete il testo del pulsante)."""
     candidati = []
     for nodo in radice.iter("node"):
         for v in valori(nodo, solo_descrizione):
@@ -100,7 +104,8 @@ def cerca(radice, testo, solo_descrizione=False):
                 return nodo
             if testo.lower() in v.lower():
                 candidati.append(nodo)
-    return candidati[0] if candidati else None
+    toccabili = [n for n in candidati if n.get("clickable") == "true"]
+    return (toccabili or candidati or [None])[0]
 
 
 def testi_visibili(radice):
@@ -135,11 +140,15 @@ def main():
         if radice is not None:
             chiudi_dialoghi_di_sistema(radice)
         return 0
+    if "--elenco" in args:
+        radice = schermo()
+        print("sullo schermo: " + (" | ".join(testi_visibili(radice)) if radice is not None else f"non leggibile ({ultimo_errore})"))
+        return 0
     solo_descrizione = "--descrizione" in args
     verifica = "--esiste" in args
+    tentativi = 1 if "--subito" in args else 12
     args = [a for a in args if not a.startswith("--")]
     testo = args[0]
-    tentativi = 12
     radice = None
     for _ in range(tentativi):
         radice = schermo()

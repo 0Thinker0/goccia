@@ -1,5 +1,7 @@
 package it.goccia.app.widget
 
+import android.appwidget.AppWidgetManager
+import android.content.ComponentName
 import android.content.Context
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
@@ -73,6 +75,22 @@ object Widget {
             // un widget che non si aggiorna non deve bloccare l'app
         }
     }
+
+    /** Se il launcher sa aggiungere un widget su richiesta dell'app (quasi tutti da Android 8). */
+    fun puoAggiungere(context: Context): Boolean =
+        try {
+            AppWidgetManager.getInstance(context).isRequestPinAppWidgetSupported
+        } catch (e: Exception) {
+            false
+        }
+
+    /** Chiede al launcher di mettere il widget nella schermata Home: conferma l'utente. */
+    fun aggiungi(context: Context, ricevitore: Class<out GlanceAppWidgetReceiver>): Boolean =
+        try {
+            AppWidgetManager.getInstance(context).requestPinAppWidget(ComponentName(context, ricevitore), null, null)
+        } catch (e: Exception) {
+            false
+        }
 }
 
 // ------------------------------------------------------------------ prezzi

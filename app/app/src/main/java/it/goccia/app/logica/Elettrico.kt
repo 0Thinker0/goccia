@@ -78,6 +78,20 @@ data class PianoElettrico(
     val kwhRicaricati: Double get() = soste.sumOf { it.kwh }
 }
 
+/**
+ * Tutta l'energia di un viaggio: quella caricata a casa prima di partire ([kwhCasa]) e quella
+ * delle soste ([kwhSoste]), con i rispettivi costi in euro.
+ */
+data class CostoViaggio(
+    val kwhViaggio: Double,
+    val kwhCasa: Double,
+    val kwhSoste: Double,
+    val casa: Double,
+    val soste: Double,
+) {
+    val totale: Double get() = casa + soste
+}
+
 /** I conti delle auto elettriche: tariffe, costi, tempi di ricarica e soste nei viaggi. */
 object Elettrico {
     /** Sopra questo livello la ricarica rapida rallenta molto: nei viaggi ci si ferma prima. */
@@ -136,6 +150,19 @@ object Elettrico {
 
     /** Costo per 100 km con un prezzo al kWh (gia comprensivo delle perdite, se servono). */
     fun costoPer100(consumoKwh: Double, euroKwh: Double): Double = consumoKwh * euroKwh
+
+    /**
+     * Costo di tutta l'energia che il viaggio consuma: quella delle soste alla loro tariffa
+     * (zero se la colonnina e gratuita) e il resto, partito dalla batteria caricata a casa,
+     * a [costoKwhCasa] (euro per kWh in batteria, perdite incluse).
+     */
+    fun costoViaggio(lunghezzaKm: Double, consumoKwh100: Double, piano: PianoElettrico, costoKwhCasa: Double): CostoViaggio {
+        val viaggio = lunghezzaKm * consumoKwh100 / 100
+        val soste = piano.kwhRicaricati
+        val casa = (viaggio - soste).coerceAtLeast(0.0)
+        val euroSoste = piano.soste.sumOf { if (it.punto.colonnina.gratuita) 0.0 else it.costo }
+        return CostoViaggio(viaggio, casa, soste, casa * costoKwhCasa, euroSoste)
+    }
 
     // ------------------------------------------------------------------ ricarica
 

@@ -39,6 +39,7 @@ import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
+import androidx.glance.appwidget.GlanceAppWidgetReceiver
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import it.goccia.app.BuildConfig
 import it.goccia.app.avvisi.Notifiche
@@ -58,6 +59,9 @@ import it.goccia.app.ui.componenti.RigaVoce
 import it.goccia.app.ui.icone.Icone
 import it.goccia.app.ui.tema.Colori
 import it.goccia.app.ui.tema.Testi
+import it.goccia.app.widget.Widget
+import it.goccia.app.widget.WidgetAutoReceiver
+import it.goccia.app.widget.WidgetPrezziReceiver
 import kotlinx.coroutines.launch
 
 private enum class Dialogo { CARBURANTE, MODALITA, RAGGIO, NAVIGAZIONE, RIPRISTINO }
@@ -193,6 +197,31 @@ fun SchermataImpostazioni(
 
             Gruppo("Navigazione") {
                 RigaVoce("App di navigazione", valore = imp.navigazione.etichetta, divisore = false, onClick = { dialogo = Dialogo.NAVIGAZIONE })
+            }
+
+            if (remember { Widget.puoAggiungere(context) }) {
+                Gruppo("Widget per la schermata Home") {
+                    fun aggiungi(ricevitore: Class<out GlanceAppWidgetReceiver>) {
+                        if (!Widget.aggiungi(context, ricevitore)) {
+                            Toast.makeText(context, "Tieni premuto sulla schermata Home e scegli Widget, poi Goccia", Toast.LENGTH_LONG).show()
+                        }
+                    }
+                    RigaVoce(
+                        "Prezzi vicino a te",
+                        sottotitolo = "Il più conveniente e altri due in zona",
+                        icona = Icone.Pompa,
+                        altezza = 58.dp,
+                        onClick = { aggiungi(WidgetPrezziReceiver::class.java) },
+                    ) { Icon(Icone.Piu, null, tint = Colori.Petrolio, modifier = Modifier.size(18.dp)) }
+                    RigaVoce(
+                        "La tua auto",
+                        sottotitolo = "Serbatoio o batteria stimati",
+                        icona = Icone.Auto,
+                        altezza = 58.dp,
+                        divisore = false,
+                        onClick = { aggiungi(WidgetAutoReceiver::class.java) },
+                    ) { Icon(Icone.Piu, null, tint = Colori.Petrolio, modifier = Modifier.size(18.dp)) }
+                }
             }
 
             Gruppo("Dati e backup") {

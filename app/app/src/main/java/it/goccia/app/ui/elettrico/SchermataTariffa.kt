@@ -78,7 +78,7 @@ fun SchermataTariffa(vm: GocciaViewModel, onIndietro: () -> Unit) {
             verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
             Text(
-                "Serve per calcolare quanto ti costa ricaricare ${auto?.nome ?: "l'auto"} a casa e confrontarlo con colonnine e carburante.",
+                "Serve per calcolare quanto ti costa ricaricare l'auto a casa e confrontarlo con colonnine e carburante.",
                 style = Testi.Corpo.copy(color = Colori.Testo2),
             )
 

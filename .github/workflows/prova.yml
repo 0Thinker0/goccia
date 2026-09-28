@@ -8,13 +8,28 @@ on:
     branches: [main]
     paths: ["app/**", "scripts/**", ".github/workflows/prova.yml"]
   workflow_dispatch:
+    inputs:
+      gpu:
+        description: "Rendering grafico dell'emulatore"
+        type: choice
+        options: [swiftshader_indirect, swangle_indirect, guest]
+        default: swiftshader_indirect
+      giro:
+        description: "Tutte le schermate o solo le mappe"
+        type: choice
+        options: [completo, mappe]
+        default: completo
 
 permissions:
   contents: write
 
 concurrency:
-  group: prova-${{ github.ref }}
+  group: prova-${{ github.ref }}-${{ inputs.gpu || 'swiftshader_indirect' }}-${{ inputs.giro || 'completo' }}
   cancel-in-progress: true
+
+env:
+  GPU: ${{ inputs.gpu || 'swiftshader_indirect' }}
+  GIRO: ${{ inputs.giro || 'completo' }}
 
 jobs:
   emulatore:
@@ -51,8 +66,9 @@ jobs:
           arch: x86_64
           profile: pixel_6
           disable-animations: true
-          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
-          script: bash scripts/prova-emulatore.sh app/app/build/outputs/apk/release/app-release.apk /tmp/prova
+          emulator-options: -no-window -gpu ${{ env.GPU }} -noaudio -no-boot-anim -camera-back none
+          # ogni riga dello script viene eseguita a parte: la scelta del giro sta su una riga sola
+          script: if [ "$GIRO" = mappe ]; then bash scripts/prova-mappe.sh app/app/build/outputs/apk/release/app-release.apk /tmp/prova; else bash scripts/prova-emulatore.sh app/app/build/outputs/apk/release/app-release.apk /tmp/prova; fi
 
       - name: Pubblica screenshot e log nel ramo ci-prova
         if: always()
@@ -60,8 +76,11 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           [ -d /tmp/prova ] || exit 0
+          # il giro di serie va in ci-prova, le varianti in un ramo a parte
+          RAMO=ci-prova
+          if [ "$GPU" != swiftshader_indirect ] || [ "$GIRO" != completo ]; then RAMO="ci-prova-$GIRO-$GPU"; fi
           cd /tmp/prova
-          git init -q -b ci-prova
+          git init -q -b "$RAMO"
           git add .
-          git -c user.name=goccia-ci -c user.email=ci@users.noreply.github.com commit -q -m "Prova ${GITHUB_RUN_NUMBER} (${GITHUB_SHA::7})"
-          git push -f -q "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" ci-prova
+          git -c user.name=goccia-ci -c user.email=ci@users.noreply.github.com commit -q -m "Prova ${GITHUB_RUN_NUMBER} (${GITHUB_SHA::7}, $GIRO, $GPU)"
+          git push -f -q "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" "$RAMO"

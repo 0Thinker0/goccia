@@ -250,8 +250,12 @@ private fun CardCosto100(vm: GocciaViewModel, utente: DatiUtente, onTariffa: () 
             buildString {
                 append("Con ${Formati.numero(auto.consumo, 1)} kWh ogni 100 km")
                 if (utente.tariffeColonnine.dc == null) append(", colonnina a ${Formati.euroKwh(tariffaDc)} (media a consumo)")
-                if (risparmio != null && risparmio > 0) append(". Ricaricando a casa risparmi circa ${Formati.euro(risparmio)} ogni 100 km")
+                carburante?.let { c ->
+                    val consumo = "${Formati.numero(c.consumo, 1)} ${c.unita}/100 km"
+                    append(if (c.media) ", auto a benzina media con $consumo" else ", ${c.etichetta.lowercase()} con i consumi della tua auto ($consumo)")
+                }
                 append(".")
+                if (risparmio != null && risparmio > 0) append(" Ricaricando a casa risparmi circa ${Formati.euro(risparmio)} ogni 100 km.")
             },
             style = Testi.Didascalia.copy(color = Colori.Testo2),
         )

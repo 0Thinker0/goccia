@@ -406,6 +406,8 @@ fun Opzione(
     forma: Shape = RoundedCornerShape(12.dp),
     conSpunta: Boolean = false,
     allineamento: Alignment.Horizontal = Alignment.CenterHorizontally,
+    /** spazio orizzontale attorno al testo: meno nelle righe fitte di opzioni */
+    margine: Dp = 12.dp,
 ) {
     Row(
         modifier = modifier
@@ -414,7 +416,7 @@ fun Opzione(
             .background(if (scelta) Colori.PetrolioChiaro else Colori.Superficie)
             .border(1.5.dp, if (scelta) Colori.Petrolio else Colori.BordoControllo, forma)
             .clickable(role = Role.RadioButton, onClick = onClick)
-            .padding(horizontal = 12.dp),
+            .padding(horizontal = margine),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = if (allineamento == Alignment.Start) Arrangement.SpaceBetween else Arrangement.Center,
     ) {
