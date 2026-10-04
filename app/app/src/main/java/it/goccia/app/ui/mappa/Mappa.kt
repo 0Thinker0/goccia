@@ -364,7 +364,7 @@ fun SchermataMappa(
         Column(Modifier.align(Alignment.BottomCenter).fillMaxWidth()) {
             Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp), verticalAlignment = Alignment.Bottom) {
                 Text(
-                    "© OpenStreetMap · OpenFreeMap",
+                    "© OpenStreetMap · OpenFreeMap" + if (colonnine && vm.colonnineDaPun) " · Colonnine: GSE – PUN" else "",
                     style = Testi.Minimo.copy(color = Colori.Testo2, fontWeight = FontWeight.SemiBold, fontSize = 10.sp),
                     modifier = Modifier.clip(RoundedCornerShape(6.dp)).background(Color.White.copy(alpha = 0.8f)).padding(horizontal = 6.dp, vertical = 2.dp),
                 )

@@ -13,18 +13,24 @@ import androidx.work.WorkManager
 import androidx.work.WorkerParameters
 import it.goccia.app.contenitore
 import it.goccia.app.dati.Carburante
+import it.goccia.app.dati.Coordinate
 import it.goccia.app.dati.Distributore
 import it.goccia.app.logica.Convenienza
 import it.goccia.app.logica.FUSO_ITALIA
 import it.goccia.app.logica.Formati
+import it.goccia.app.logica.TempoReale
 import it.goccia.app.logica.Territorio
 import it.goccia.app.logica.ValutaAvvisi
 import it.goccia.app.widget.Widget
 import java.io.IOException
 import java.time.ZonedDateTime
 import java.util.concurrent.TimeUnit
+import kotlinx.coroutines.CancellationException
 
-/** Pianifica il controllo dei prezzi: ogni 3 ore, solo con la rete. I dati cambiano una volta al giorno. */
+/**
+ * Pianifica il controllo dei prezzi: ogni 3 ore, solo con la rete. Il file del Ministero cambia
+ * una volta al giorno; i prezzi in vigore adesso (Osservaprezzi) anche piu volte.
+ */
 object Sorveglianza {
     private const val PERIODICO = "controllo-prezzi"
     private const val SUBITO = "controllo-prezzi-subito"
@@ -87,6 +93,15 @@ class ControlloPrezzi(private val context: Context) {
             }
         }
 
+        /** I distributori con i prezzi in vigore adesso attorno a [centro]; null se Osservaprezzi non risponde. */
+        suspend fun conTempoReale(lista: List<Distributore>, centro: Coordinate, raggioKm: Int): List<Distributore>? = try {
+            TempoReale.applica(lista, c.osservaprezzi.attorno(centro, raggioKm).associateBy { it.id })
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            null
+        }
+
         if (conSoglia.isNotEmpty()) {
             val comuni = try {
                 c.repository.comuni()
@@ -94,12 +109,16 @@ class ControlloPrezzi(private val context: Context) {
                 emptyList()
             }
             for (avviso in conSoglia) {
-                if (avviso.ultimaEstrazione == estrazione) continue
                 val luogo = u.luogo(avviso.luogoId)
                 val centro = luogo?.coordinate ?: u.ultimaPosizione?.coordinate ?: continue
                 val carburante = Carburante.daCodice(avviso.carburante) ?: continue
                 val sigle = Territorio.provinceAttorno(indice.province, comuni, centro, avviso.raggioKm + 5.0)
-                val lista = sigle.flatMap { provincia(it) }
+                val delFile = sigle.flatMap { provincia(it) }
+                // con i prezzi in vigore adesso l'avviso arriva appena il gestore abbassa il prezzo;
+                // senza, il file cambia una volta al giorno e basta un controllo per estrazione
+                val aggiornata = conTempoReale(delFile, centro, avviso.raggioKm)
+                if (aggiornata == null && avviso.ultimaEstrazione == estrazione) continue
+                val lista = aggiornata ?: delFile
                 val trovato = ValutaAvvisi.migliore(
                     lista, carburante, imp.preferisciSelf, centro, avviso.raggioKm, imp.escludiAutostrade, adesso / 1000,
                 )
@@ -136,9 +155,23 @@ class ControlloPrezzi(private val context: Context) {
         if (conCalo.isNotEmpty()) {
             val carburante = u.carburante
             for (preferito in conCalo) {
-                val d = provincia(preferito.provincia).firstOrNull { it.id == preferito.id } ?: continue
-                val prezzo = Convenienza.prezzoPer(d, carburante, imp.preferisciSelf)?.first?.millesimi
-                val decisione = ValutaAvvisi.decidiCalo(preferito, prezzo, carburante, estrazione)
+                val delFile = provincia(preferito.provincia).firstOrNull { it.id == preferito.id } ?: continue
+                // la scheda del distributore ha i prezzi in vigore adesso, ognuno con la sua data
+                val scheda = try {
+                    c.osservaprezzi.scheda(preferito.id)
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (e: Exception) {
+                    null
+                }
+                val d = scheda?.let { TempoReale.applica(delFile, it.prezzi) } ?: delFile
+                val attuale = Convenienza.prezzoPer(d, carburante, imp.preferisciSelf)?.first
+                val prezzo = attuale?.millesimi
+                // conta ogni nuova comunicazione del gestore: "t" + quando ha comunicato il prezzo.
+                // Una comunicazione non piu recente di quella gia vista non dice niente di nuovo.
+                val vista = preferito.ultimaEstrazione?.removePrefix("t")?.toLongOrNull()
+                if (attuale != null && vista != null && attuale.comunicato <= vista && preferito.ultimoCarburante == carburante.codice) continue
+                val decisione = ValutaAvvisi.decidiCalo(preferito, prezzo, carburante, attuale?.let { "t${it.comunicato}" } ?: estrazione)
                 if (decisione.notifica && prezzo != null) {
                     Notifiche.mostra(
                         context,

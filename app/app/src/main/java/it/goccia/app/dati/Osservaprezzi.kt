@@ -3,7 +3,9 @@ package it.goccia.app.dati
 import it.goccia.app.logica.ImpiantoLive
 import it.goccia.app.logica.PrezzoLive
 import java.io.IOException
+import java.time.LocalDateTime
 import java.time.OffsetDateTime
+import java.time.ZoneId
 import kotlin.math.roundToInt
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -85,11 +87,21 @@ class Osservaprezzi(private val http: OkHttpClient) {
         const val BASE = "https://carburanti.mise.gov.it/ospzApi/"
         const val RAGGIO_MASSIMO_KM = 10
 
-        /** "2026-10-04T09:14:13+02:00" o "2026-10-04T07:14:13Z" -> secondi; null se non si legge. */
-        fun secondi(data: String?): Long? = try {
-            data?.let { OffsetDateTime.parse(it).toEpochSecond() }
-        } catch (e: Exception) {
-            null
+        /**
+         * "2026-10-04T09:14:13+02:00" o "2026-10-04T07:14:13Z" -> secondi; senza fuso e l'ora
+         * italiana. Null se non si legge.
+         */
+        fun secondi(data: String?): Long? {
+            if (data.isNullOrBlank()) return null
+            return try {
+                OffsetDateTime.parse(data).toEpochSecond()
+            } catch (e: Exception) {
+                try {
+                    LocalDateTime.parse(data).atZone(ZoneId.of("Europe/Rome")).toEpochSecond()
+                } catch (e: Exception) {
+                    null
+                }
+            }
         }
     }
 }

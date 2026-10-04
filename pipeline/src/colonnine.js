@@ -227,12 +227,19 @@ export function elaboraColonnine(elementi, adesso = new Date()) {
 export function elaboraColonninePun(dettagli, adesso = new Date()) {
   const colonnine = elaboraPun(dettagli);
   const punti = colonnine.reduce((somma, c) => somma + c[10].length, 0);
-  return inTessere(colonnine, {
-    adesso,
-    fonte: FONTE_PUN,
-    licenza: 'GSE – Piattaforma Unica Nazionale (CC BY 4.0 secondo AgID)',
-    punti
-  });
+  // quante hanno il prezzo dichiarato dal gestore e lo stato in tempo reale (per il registro)
+  const conPrezzo = colonnine.filter((c) => c[11] != null).length;
+  const tempoReale = colonnine.filter((c) => c[12] === 1).length;
+  return {
+    ...inTessere(colonnine, {
+      adesso,
+      fonte: FONTE_PUN,
+      licenza: 'GSE – Piattaforma Unica Nazionale (CC BY 4.0 secondo AgID)',
+      punti
+    }),
+    conPrezzo,
+    tempoReale
+  };
 }
 
 const AGENTE = `Goccia/1.0 (app gratuita prezzi carburanti e colonnine; https://github.com/${process.env.GITHUB_REPOSITORY ?? 'goccia'})`;
@@ -290,7 +297,11 @@ export async function aggiornaColonnine({
     try {
       const grezzo = await scaricaDallaPun();
       const nuovo = elaboraColonninePun(grezzo.dettagli, adesso);
-      console.log(`Colonnine dalla PUN: ${grezzo.elenco} punti in elenco, ${grezzo.dettagli.length} con i dettagli, ${nuovo.indice.punti} tenuti in ${nuovo.indice.conteggio} colonnine`);
+      console.log(
+        `Colonnine dalla PUN: ${grezzo.elenco} punti in elenco, ${grezzo.dettagli.length} con i dettagli, ` +
+          `${nuovo.indice.punti} tenuti in ${nuovo.indice.conteggio} colonnine ` +
+          `(${nuovo.conPrezzo} con il prezzo del gestore, ${nuovo.tempoReale} con lo stato in tempo reale)`
+      );
       if (nuovo.indice.punti < MINIMO_PUNTI) {
         throw new Error(`solo ${nuovo.indice.punti} punti di ricarica, risposta incompleta`);
       }

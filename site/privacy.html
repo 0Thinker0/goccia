@@ -36,7 +36,7 @@
     <li>I prezzi in vigore in quel momento, dal servizio pubblico Osservaprezzi del Ministero delle Imprese e del Made in Italy (carburanti.mise.gov.it). Riceve l'indirizzo IP, il centro della zona che stai guardando con il raggio della ricerca e, quando apri un distributore, il suo codice. Nessun dato su di te.</li>
     <li>Quando apri una colonnina di ricarica: quali punti sono liberi, dalla Piattaforma Unica Nazionale del GSE, che riceve l'indirizzo IP e i codici dei punti di quella colonnina. Per entrare come ospite, come fa il sito della piattaforma, il telefono chiede ad Amazon Cognito (AWS) credenziali temporanee legate a un identificativo casuale e anonimo, salvato solo sul telefono.</li>
   </ul>
-  <p>Gli avvisi di prezzo vengono controllati dal telefono stesso, scaricando i prezzi da questo sito: per gli avvisi la posizione non viene seguita in background.</p>
+  <p>Gli avvisi di prezzo vengono controllati dal telefono stesso, circa ogni tre ore, scaricando i prezzi da questo sito e quelli in vigore da Osservaprezzi (che riceve il centro del luogo scelto per l'avviso e i codici dei distributori preferiti con l'avviso di calo). Per gli avvisi la posizione non viene seguita in background.</p>
   <p>Non usiamo strumenti di analisi, tracciamento o profilazione.</p>
 
   <h2>Donazioni</h2>

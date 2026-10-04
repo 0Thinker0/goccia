@@ -8,7 +8,7 @@ Cosa fa:
 - **Mappa e lista**: prezzi di oggi per benzina, gasolio, GPL e metano, oppure le colonnine con i filtri per presa e potenza.
 - **Viaggio**: calcola il percorso e dice dove e quanto fare rifornimento (o ricaricare) in base all'auto e al livello di partenza, confrontando le aree di servizio con i distributori a pochi minuti dall'autostrada.
 - **Modalità autostrada**: durante il viaggio segue la posizione con una notifica fissa, aggiorna km, autonomia e sosta consigliata, avvisa 10 km prima e chiede se hai fatto il pieno quando ti fermi a un distributore.
-- **Preferiti e avvisi**: notifiche quando un preferito abbassa il prezzo o in zona si scende sotto la tua soglia.
+- **Preferiti e avvisi**: notifiche quando un preferito abbassa il prezzo o in zona si scende sotto la tua soglia, controllate ogni tre ore circa con i prezzi in vigore.
 - **Auto elettriche**: tariffa di casa (prezzo, bolletta o stima, fasce, fotovoltaico, perdite), tariffe delle colonnine, costi e tempi di ricarica.
 - **Widget** per la schermata Home: il più conveniente vicino a te e il livello stimato della tua auto.
 
