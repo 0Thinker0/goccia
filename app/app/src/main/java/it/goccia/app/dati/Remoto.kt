@@ -111,6 +111,7 @@ data class IndiceColonnineDto(
     val passo: Double = 0.5,
     val tessere: Map<String, Int> = emptyMap(),
     val tariffe: StimeDto? = null,
+    val fonte: String = FONTE_OSM,
 )
 
 @Serializable
@@ -122,7 +123,10 @@ data class StimaCasaDto(val p: Double, val nota: String = "")
 @Serializable
 data class StimeColonnineDto(val ac: Double, val dc: Double, val hpc: Double, val nota: String = "")
 
-/** Righe [id, lat, lon, nome, operatore, kW, [[presa, quante, kW]], bit, indirizzo, orari]. */
+/**
+ * Righe [id, lat, lon, nome, operatore, kW, [[presa, quante, kW]], bit, indirizzo, orari];
+ * dalla PUN anche [id dei punti], [tariffa AC, DC, HPC] e tempo reale (0/1).
+ */
 @Serializable
 data class TesseraColonnineDto(val v: Int = 1, val c: List<JsonArray> = emptyList())
 
@@ -141,5 +145,6 @@ fun IndiceColonnineDto.inDominio(): IndiceColonnine {
             hpc = tariffe?.colonnine?.hpc ?: base.hpc,
             notaColonnine = tariffe?.colonnine?.nota?.ifBlank { null } ?: base.notaColonnine,
         ),
+        fonte = fonte,
     )
 }

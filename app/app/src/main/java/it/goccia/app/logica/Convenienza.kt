@@ -14,6 +14,9 @@ import kotlin.math.sqrt
 const val GIORNI_DA_VERIFICARE = 3
 const val GIORNI_VECCHIO = 8
 
+/** Oltre un mese senza comunicazioni il distributore ha chiuso o non comunica piu: non lo mostriamo. */
+const val GIORNI_FERMO = 30
+
 /** La strada vera e piu lunga della linea d'aria. */
 const val FATTORE_STRADA = 1.3
 
@@ -54,6 +57,8 @@ data class Zona(
     /** true se la media e quella locale, false se e quella della provincia */
     val mediaLocale: Boolean,
     val raggioUsatoKm: Int,
+    /** distributori nel raggio che non mostriamo: prezzo fermo da oltre [GIORNI_FERMO] giorni */
+    val nascosti: Int = 0,
 )
 
 object Geo {
@@ -148,10 +153,23 @@ object Convenienza {
     ): Zona {
         data class Grezzo(val d: Distributore, val prezzo: Prezzo, val self: Boolean, val km: Double)
 
+        val fermi = ArrayList<Double>()
         val tutti = distributori.mapNotNull { d ->
             if (escludiAutostrade && d.autostradale) return@mapNotNull null
-            val (prezzo, self) = prezzoPer(d, carburante, preferisciSelf) ?: return@mapNotNull null
-            Grezzo(d, prezzo, self, Geo.distanzaKm(centro.lat, centro.lon, d.lat, d.lon))
+            var (prezzo, self) = prezzoPer(d, carburante, preferisciSelf) ?: return@mapNotNull null
+            val km = Geo.distanzaKm(centro.lat, centro.lon, d.lat, d.lon)
+            if (giorniDa(prezzo.comunicato, adessoSecondi) > GIORNI_FERMO) {
+                // l'altra modalita (self o servito) puo essere aggiornata
+                val altro = if (carburante.haSelf) prezzoEsatto(d, carburante, !self) else null
+                if (altro == null || giorniDa(altro.comunicato, adessoSecondi) > GIORNI_FERMO) {
+                    // prezzo fermo da oltre un mese: il distributore ha chiuso o non comunica piu
+                    fermi += km
+                    return@mapNotNull null
+                }
+                prezzo = altro
+                self = !self
+            }
+            Grezzo(d, prezzo, self, km)
         }
 
         var raggio = raggioKm.coerceIn(1, RAGGIO_MASSIMO_KM)
@@ -189,6 +207,7 @@ object Convenienza {
             media = media,
             mediaLocale = locale != null,
             raggioUsatoKm = raggio,
+            nascosti = fermi.count { it <= raggio },
         )
     }
 

@@ -73,6 +73,7 @@ import it.goccia.app.ui.componenti.BottoneIcona
 import it.goccia.app.ui.componenti.BottonePrimario
 import it.goccia.app.ui.componenti.CardOfferta
 import it.goccia.app.ui.componenti.CardScheletro
+import it.goccia.app.ui.componenti.RigaTempoReale
 import it.goccia.app.ui.componenti.ChipScelta
 import it.goccia.app.ui.componenti.GraficoBarre
 import it.goccia.app.ui.componenti.GraficoLinea
@@ -155,6 +156,16 @@ fun SchermataHome(
                 else -> {
                     item(key = "auto") { CardAuto(vm, utente, vista, onRifornimento, onViaggio, onNuovaAuto) }
                     item(key = "vicini") { TitoloVicini(vista, dati, onVediTutti) }
+                    if (vista != null) {
+                        item(key = "tempo-reale") {
+                            RigaTempoReale(
+                                vm.inTempoReale(dati, vista.centro.coordinate),
+                                dati.tempoRealeIl,
+                                dati.tempoRealeErrore,
+                                Modifier.padding(start = 22.dp, end = 20.dp, top = 2.dp, bottom = 6.dp),
+                            )
+                        }
+                    }
                     val consigliati = vista?.let { Convenienza.consigliati(it.zona) }
                     if (vista == null || consigliati == null || dati.caricamento || dati.cercoPosizione) {
                         items(3, key = { "scheletro$it" }) { CardScheletro(Modifier.padding(horizontal = 20.dp, vertical = 5.dp)) }

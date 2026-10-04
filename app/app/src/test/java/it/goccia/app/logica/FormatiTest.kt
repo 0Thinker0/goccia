@@ -59,7 +59,11 @@ class FormatiTest {
         assertEquals("Set 2026", Formati.meseIso("2026-09"))
         assertEquals("settembre", Formati.meseLungo(YearMonth.of(2026, 9)))
         val adesso = Esempi.ADESSO_MILLIS
-        assertEquals("aggiornato oggi", Formati.aggiornamento(Esempi.ADESSO_SECONDI - 3600, adesso))
+        assertEquals("aggiornato ora", Formati.aggiornamento(Esempi.ADESSO_SECONDI - 30, adesso))
+        assertEquals("aggiornato 25 min fa", Formati.aggiornamento(Esempi.ADESSO_SECONDI - 25 * 60, adesso))
+        assertEquals("aggiornato 1 ora fa", Formati.aggiornamento(Esempi.ADESSO_SECONDI - 3600, adesso))
+        assertEquals("aggiornato 3 ore fa", Formati.aggiornamento(Esempi.ADESSO_SECONDI - 3 * 3600 - 600, adesso))
+        assertEquals("aggiornato oggi alle 01:30", Formati.aggiornamento(Esempi.ADESSO_SECONDI - 7 * 3600 - 1800, adesso))
         assertEquals("aggiornato ieri", Formati.aggiornamento(Esempi.ADESSO_SECONDI - Esempi.GIORNO, adesso))
         assertEquals("5 giorni fa", Formati.aggiornamento(Esempi.ADESSO_SECONDI - 5 * Esempi.GIORNO, adesso))
         assertEquals("oggi alle 08:00", Formati.quando(Esempi.ADESSO_SECONDI - 3600, adesso))

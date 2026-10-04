@@ -260,9 +260,9 @@ fun SchermataImpostazioni(
                     Text(
                         buildAnnotatedString {
                             withStyle(SpanStyle(fontWeight = FontWeight.ExtraBold)) { append("Prezzi: ") }
-                            append("Ministero delle Imprese e del Made in Italy – Osservaprezzi carburanti, licenza IODL 2.0. ")
+                            append("Ministero delle Imprese e del Made in Italy – Osservaprezzi carburanti: file di ogni mattina (licenza IODL 2.0) e prezzi in vigore letti in tempo reale. ")
                             withStyle(SpanStyle(fontWeight = FontWeight.ExtraBold)) { append("Colonnine: ") }
-                            append("© OpenStreetMap contributors, licenza ODbL. ")
+                            append("GSE – Piattaforma Unica Nazionale (PUN), licenza CC BY 4.0; in sua assenza © OpenStreetMap contributors, licenza ODbL. ")
                             withStyle(SpanStyle(fontWeight = FontWeight.ExtraBold)) { append("Mappe: ") }
                             append("© OpenStreetMap, OpenFreeMap, OpenMapTiles.")
                         },

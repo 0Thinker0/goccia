@@ -56,6 +56,7 @@ import it.goccia.app.dati.Coordinate
 import it.goccia.app.dati.DatiUtente
 import it.goccia.app.dati.Distributore
 import it.goccia.app.dati.TipoLuogo
+import it.goccia.app.logica.Bandiere
 import it.goccia.app.logica.Consiglio
 import it.goccia.app.logica.Formati
 import it.goccia.app.logica.LungoIlPercorso
@@ -276,7 +277,13 @@ private fun Pianifica(vm: GocciaViewModel, stato: StatoViaggio, onAuto: () -> Un
             Text("Quanto carburante hai?", style = Testi.DidascaliaForte.copy(color = Colori.TestoChip))
             Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 LIVELLI.forEachIndexed { i, (etichetta, _) ->
-                    Opzione(etichetta, livello == i, { livello = i }, Modifier.weight(1f), altezza = 38.dp)
+                    // "Riserva" e "Pieno" sono piu lunghi delle frazioni: piu spazio a loro
+                    val peso = when (i) {
+                        0 -> 1.45f
+                        LIVELLI.lastIndex -> 1.15f
+                        else -> 0.8f
+                    }
+                    Opzione(etichetta, livello == i, { livello = i }, Modifier.weight(peso), altezza = 38.dp, margine = 4.dp)
                 }
             }
             val capienza = auto?.capienza ?: 50.0
@@ -345,8 +352,10 @@ private fun Pianifica(vm: GocciaViewModel, stato: StatoViaggio, onAuto: () -> Un
             }
         }
         Text(
-            if (elettrica != null) "Percorsi calcolati con OSRM sul servizio di FOSSGIS; percorso e colonnine da OpenStreetMap (ODbL)."
-            else "Percorsi calcolati con OSRM sul servizio di FOSSGIS, con i dati di OpenStreetMap. I prezzi sono quelli comunicati al Ministero.",
+            if (elettrica != null) {
+                "Percorsi calcolati con OSRM sul servizio di FOSSGIS, con i dati di OpenStreetMap (ODbL). Colonnine: " +
+                    if (vm.colonnineDaPun) "GSE – Piattaforma Unica Nazionale." else "OpenStreetMap."
+            } else "Percorsi calcolati con OSRM sul servizio di FOSSGIS, con i dati di OpenStreetMap. I prezzi sono quelli comunicati al Ministero.",
             style = Testi.Piccolo.copy(color = Colori.Testo3, fontWeight = FontWeight.Medium),
         )
     }
@@ -644,6 +653,8 @@ data class PinViaggio(
     val ordine: Double,
     val coloreTesto: Int = android.graphics.Color.WHITE,
     val coloreBordo: Int = android.graphics.Color.WHITE,
+    /** nome breve della bandiera, prima del prezzo */
+    val etichetta: String? = null,
 ) {
     companion object {
         /** l'ordine delle soste scelte: sopra a tutto */
@@ -654,10 +665,19 @@ data class PinViaggio(
 private fun pinCarburante(s: StatoViaggio.Pronto): List<PinViaggio> {
     val sosteId = s.piano.soste.map { it.punto.distributore.id }.toSet()
     val mostrati = (s.piano.soste.map { it.punto } + s.piano.alternative + listOfNotNull(s.piano.migliore)).distinctBy { it.distributore.id }
+    // come sulla mappa: verde la sosta consigliata (con il bordo scuro), blu le alternative
     return mostrati.map { p ->
         val scelto = p.distributore.id in sosteId || (s.piano.senzaSoste && p == s.piano.migliore)
-        val colore = if (scelto) Colori.Inchiostro else if (p.distributore.autostradale) Colori.Rosso else Colori.VerdeTesto
-        PinViaggio(p.distributore.lat, p.distributore.lon, Formati.prezzo(p.prezzo.millesimi), colore.toArgb(), scelto, if (scelto) PinViaggio.SCELTO else p.prezzo.millesimi.toDouble())
+        PinViaggio(
+            p.distributore.lat,
+            p.distributore.lon,
+            Formati.prezzo(p.prezzo.millesimi),
+            (if (scelto) Colori.VerdeTesto else Colori.PinAltri).toArgb(),
+            scelto,
+            if (scelto) PinViaggio.SCELTO else p.prezzo.millesimi.toDouble(),
+            coloreBordo = if (scelto) Colori.Inchiostro.toArgb() else android.graphics.Color.WHITE,
+            etichetta = Bandiere.breve(p.distributore),
+        )
     }
 }
 
@@ -685,8 +705,11 @@ internal fun MappaViaggio(campioni: List<PuntoPercorso>, pin: List<PinViaggio>) 
                     ),
                 )
                 val elementi = pin.map { p ->
-                    val chiave = "v-${p.testo}-${p.colore}-${p.coloreTesto}-${p.scelto}"
-                    stile.addImage(chiave, disegnatore.disegna(p.testo, p.colore, p.scelto, p.coloreTesto, p.coloreBordo, fulmine = p.testo.isEmpty()))
+                    val chiave = "v-${p.testo}-${p.etichetta}-${p.colore}-${p.coloreTesto}-${p.coloreBordo}-${p.scelto}"
+                    stile.addImage(
+                        chiave,
+                        disegnatore.disegna(p.testo, p.colore, p.scelto, p.coloreTesto, p.coloreBordo, fulmine = p.testo.isEmpty(), etichetta = p.etichetta),
+                    )
                     Feature.fromGeometry(Point.fromLngLat(p.lon, p.lat)).apply {
                         addStringProperty("icona", chiave)
                         addNumberProperty("ordine", p.ordine)

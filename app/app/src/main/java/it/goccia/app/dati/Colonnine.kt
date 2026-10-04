@@ -1,6 +1,7 @@
 package it.goccia.app.dati
 
-// Colonnine di ricarica, dai dati OpenStreetMap pubblicati dalla pipeline (licenza ODbL).
+// Colonnine di ricarica pubblicate dalla pipeline: dalla Piattaforma Unica Nazionale (PUN, GSE)
+// o, se la PUN non risponde, da OpenStreetMap (licenza ODbL).
 
 /** Tipo di presa, con il codice usato nei file pubblicati. */
 enum class Presa(val codice: String, val etichetta: String, val continua: Boolean) {
@@ -31,6 +32,16 @@ enum class ClasseRicarica(val etichetta: String, val sigla: String) {
     HPC("ultraveloce, da 150 kW", "HPC"),
 }
 
+/** Prezzi a consumo (senza abbonamento) dichiarati dal gestore alla PUN, in euro al kWh. */
+data class TariffeGestore(val ac: Double?, val dc: Double?, val hpc: Double?) {
+    /** Il prezzo per la classe di ricarica; se manca, quello della classe vicina in continua. */
+    fun per(classe: ClasseRicarica): Double? = when (classe) {
+        ClasseRicarica.AC -> ac
+        ClasseRicarica.DC -> dc ?: hpc
+        ClasseRicarica.HPC -> hpc ?: dc
+    }
+}
+
 data class Colonnina(
     val id: String,
     val lat: Double,
@@ -47,8 +58,16 @@ data class Colonnina(
     val potenzaStimata: Boolean = false,
     val indirizzo: String? = null,
     val orari: String? = null,
+    /** identificativi dei punti di ricarica (EVSE) nella PUN, per lo stato in tempo reale */
+    val punti: List<String> = emptyList(),
+    val tariffeGestore: TariffeGestore? = null,
+    /** il gestore trasmette alla PUN lo stato dei punti in tempo reale */
+    val tempoReale: Boolean = false,
 ) {
     val coordinate: Coordinate get() = Coordinate(lat, lon)
+
+    /** Viene dalla Piattaforma Unica Nazionale (gli id di OpenStreetMap iniziano con n, w o r). */
+    val daPun: Boolean get() = id.startsWith("p")
 
     val titolo: String get() = nome ?: operatore ?: "Colonnina di ricarica"
 
@@ -101,4 +120,11 @@ data class IndiceColonnine(
     /** tessere pubblicate, con il numero di colonnine */
     val tessere: Map<String, Int>,
     val stime: StimeTariffe,
-)
+    /** [FONTE_PUN] o [FONTE_OSM] */
+    val fonte: String = FONTE_OSM,
+) {
+    val daPun: Boolean get() = fonte == FONTE_PUN
+}
+
+const val FONTE_PUN = "PUN"
+const val FONTE_OSM = "OpenStreetMap"

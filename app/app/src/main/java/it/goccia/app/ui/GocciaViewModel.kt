@@ -1,6 +1,7 @@
 package it.goccia.app.ui
 
 import android.content.Context
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import it.goccia.app.Contenitore
@@ -19,6 +20,7 @@ import it.goccia.app.dati.Impostazioni
 import it.goccia.app.dati.Indice
 import it.goccia.app.dati.IndiceColonnine
 import it.goccia.app.dati.Luogo
+import it.goccia.app.dati.Osservaprezzi
 import it.goccia.app.dati.PosizioneSalvata
 import it.goccia.app.dati.Preferito
 import it.goccia.app.dati.Presa
@@ -26,6 +28,8 @@ import it.goccia.app.dati.Provincia
 import it.goccia.app.dati.Percorso
 import it.goccia.app.dati.PercorsoNonTrovato
 import it.goccia.app.dati.Rifornimento
+import it.goccia.app.dati.SchedaImpianto
+import it.goccia.app.dati.StatoColonnina
 import it.goccia.app.dati.StimeTariffe
 import it.goccia.app.dati.StoricoDistributore
 import it.goccia.app.dati.StoricoZona
@@ -38,17 +42,21 @@ import it.goccia.app.logica.Consiglio
 import it.goccia.app.logica.Convenienza
 import it.goccia.app.logica.Elettrico
 import it.goccia.app.logica.Geo
+import it.goccia.app.logica.ImpiantoLive
 import it.goccia.app.logica.LungoIlPercorso
 import it.goccia.app.logica.PianoElettrico
 import it.goccia.app.logica.PianoViaggio
 import it.goccia.app.logica.PuntoPercorso
 import it.goccia.app.logica.StatoSerbatoio
+import it.goccia.app.logica.TariffaUsata
+import it.goccia.app.logica.TempoReale
 import it.goccia.app.logica.Territorio
 import it.goccia.app.logica.Tragitto
 import it.goccia.app.logica.Zona
 import it.goccia.app.logica.ZonaColonnine
 import java.io.IOException
 import java.util.UUID
+import java.util.concurrent.ConcurrentHashMap
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -67,6 +75,8 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
+
+private const val DIECI_MINUTI = 10 * 60_000L
 
 enum class TipoCentro { POSIZIONE, LUOGO, COMUNE, ULTIMA }
 
@@ -94,6 +104,13 @@ data class StatoDati(
     val senzaDati: Boolean = false,
     val provincia: Provincia? = null,
     val storicoZona: StoricoZona? = null,
+    /** prezzi in vigore letti da Osservaprezzi, per distributore (gia applicati a [distributori]) */
+    val live: Map<Long, ImpiantoLive> = emptyMap(),
+    /** ultima lettura in tempo reale riuscita (millisecondi) e attorno a dove */
+    val tempoRealeIl: Long? = null,
+    val tempoRealeCentro: Coordinate? = null,
+    /** l'ultima richiesta in tempo reale non e andata: restano i prezzi del file */
+    val tempoRealeErrore: Boolean = false,
 )
 
 /** Quello che mostrano Home e Lista: i distributori attorno al centro per il carburante scelto. */
@@ -248,10 +265,16 @@ class GocciaViewModel(private val c: Contenitore) : ViewModel() {
         if (si) (_centroMappa.value ?: _dati.value.centro?.coordinate)?.let { caricaColonnineAttornoA(it, 15.0) }
     }
 
+    /** Le colonnine vengono dalla Piattaforma Unica Nazionale (altrimenti da OpenStreetMap). */
+    val colonnineDaPun: Boolean get() = _colonnine.value.indice?.daPun ?: true
+
     /** Stime delle tariffe (dalla pipeline, o quelle dell'app se non ancora scaricate). */
     val stime: StimeTariffe get() = _colonnine.value.indice?.stime ?: StimeTariffe()
 
-    fun tariffaDi(c: Colonnina): Double = Elettrico.tariffaColonnina(c.classe, utente.value.tariffeColonnine, stime)
+    /** La tariffa usata per i costi di una colonnina: la tua, quella del gestore o la stima. */
+    fun tariffaUsata(c: Colonnina): TariffaUsata = Elettrico.tariffa(c, utente.value.tariffeColonnine, stime)
+
+    fun tariffaDi(c: Colonnina): Double = tariffaUsata(c).euroKwh
 
     suspend fun indiceColonnine(): IndiceColonnine? {
         _colonnine.value.indice?.let { return it }
@@ -401,7 +424,7 @@ class GocciaViewModel(private val c: Contenitore) : ViewModel() {
             }
         }
         val centro = if (nuovaPosizione || _dati.value.centro == null) trovaCentro() ?: _dati.value.centro else _dati.value.centro
-        impostaCentroInterno(centro)
+        impostaCentroInterno(centro, forzaTempoReale = forza)
         c.aggiornaWidget()
     }
 
@@ -427,12 +450,14 @@ class GocciaViewModel(private val c: Contenitore) : ViewModel() {
         return null
     }
 
-    private suspend fun impostaCentroInterno(centro: Centro?) {
+    private suspend fun impostaCentroInterno(centro: Centro?, forzaTempoReale: Boolean = false) {
         _dati.update { it.copy(centro = centro) }
         if (centro == null) {
             _dati.update { it.copy(caricamento = false) }
             return
         }
+        // i prezzi in vigore adesso arrivano mentre carichiamo quelli del file
+        viewModelScope.launch { aggiornaInTempoReale(centro.coordinate, utente.value.impostazioni.raggioKm, forzaTempoReale) }
         // per chi ricarica, le colonnine arrivano insieme ai prezzi (senza farli aspettare)
         if (utente.value.autoCorrente?.alimentazione?.ricaricabile == true || mappaColonnine.value) {
             caricaColonnineAttornoA(centro.coordinate, 20.0)
@@ -547,7 +572,7 @@ class GocciaViewModel(private val c: Contenitore) : ViewModel() {
                     if (esito.offline) offline = true
                 }
             }
-            stato.copy(perProvincia = nuove, distributori = nuove.values.flatten(), offline = offline)
+            stato.copy(perProvincia = nuove, distributori = TempoReale.applica(nuove.values.flatten(), stato.live), offline = offline)
         }
     }
 
@@ -562,6 +587,104 @@ class GocciaViewModel(private val c: Contenitore) : ViewModel() {
             viewModelScope.launch { caricaAttorno(punto, 15.0) }
             if (mappaColonnine.value) caricaColonnineAttornoA(punto, 15.0)
         }
+        if (zoom >= 10.5 && !mappaColonnine.value) {
+            viewModelScope.launch { aggiornaInTempoReale(punto, Osservaprezzi.RAGGIO_MASSIMO_KM) }
+        }
+    }
+
+    // ------------------------------------------------------------------ prezzi in tempo reale
+
+    private data class Lettura(val centro: Coordinate, val raggioKm: Int, val quando: Long)
+
+    private val letture = ArrayList<Lettura>()
+    private val accessoLetture = Mutex()
+
+    /**
+     * Chiede a Osservaprezzi i prezzi in vigore adesso attorno a [centro] e li sovrappone a quelli
+     * del file del mattino. Una zona gia letta da meno di 10 minuti non si richiede (se non [forza]).
+     */
+    suspend fun aggiornaInTempoReale(centro: Coordinate, raggioKm: Int, forza: Boolean = false) {
+        val raggio = raggioKm.coerceIn(3, Osservaprezzi.RAGGIO_MASSIMO_KM)
+        val adesso = System.currentTimeMillis()
+        val lettura = Lettura(centro, raggio, adesso)
+        accessoLetture.withLock {
+            letture.removeAll { adesso - it.quando !in 0 until DIECI_MINUTI }
+            // gia letta: il nuovo cerchio sta (quasi) tutto dentro uno di quelli letti
+            if (!forza && letture.any { Geo.distanzaKm(it.centro, centro) <= it.raggioKm - raggio + 3.0 }) return
+            letture += lettura
+        }
+        val impianti = try {
+            c.osservaprezzi.attorno(centro, raggio)
+        } catch (e: CancellationException) {
+            accessoLetture.withLock { letture.remove(lettura) }
+            throw e
+        } catch (e: Exception) {
+            accessoLetture.withLock { letture.remove(lettura) }
+            Log.w("Goccia", "tempo reale: Osservaprezzi non risponde (${e.message})")
+            _dati.update { it.copy(tempoRealeErrore = true) }
+            return
+        }
+        Log.i("Goccia", "tempo reale: ${impianti.size} distributori entro $raggio km, in ${System.currentTimeMillis() - adesso} ms")
+        _dati.update { s ->
+            val live = s.live.toMutableMap()
+            for (i in impianti) live[i.id] = TempoReale.unisci(live[i.id], i)
+            s.copy(
+                live = live,
+                distributori = TempoReale.applica(s.perProvincia.values.flatten(), live),
+                tempoRealeIl = adesso,
+                tempoRealeCentro = centro,
+                tempoRealeErrore = false,
+            )
+        }
+    }
+
+    /** I prezzi sono in tempo reale attorno a [punto] (letti da poco, li vicino). */
+    fun inTempoReale(d: StatoDati, punto: Coordinate): Boolean {
+        val quando = d.tempoRealeIl ?: return false
+        val dove = d.tempoRealeCentro ?: return false
+        return System.currentTimeMillis() - quando < 30 * 60_000L && Geo.distanzaKm(dove, punto) <= Osservaprezzi.RAGGIO_MASSIMO_KM
+    }
+
+    private val _schede = MutableStateFlow<Map<Long, SchedaImpianto>>(emptyMap())
+
+    /** Schede dei distributori aperti: prezzi con la loro data e servizi dichiarati al Ministero. */
+    val schede: StateFlow<Map<Long, SchedaImpianto>> = _schede.asStateFlow()
+    private val schedeLette = ConcurrentHashMap<Long, Long>()
+
+    fun caricaScheda(id: Long) {
+        val adesso = System.currentTimeMillis()
+        schedeLette[id]?.let { if (adesso - it in 0 until DIECI_MINUTI) return }
+        schedeLette[id] = adesso
+        viewModelScope.launch {
+            val scheda = try {
+                c.osservaprezzi.scheda(id)
+            } catch (e: CancellationException) {
+                schedeLette.remove(id)
+                throw e
+            } catch (e: Exception) {
+                schedeLette.remove(id)
+                Log.w("Goccia", "tempo reale: scheda di $id non disponibile (${e.message})")
+                return@launch
+            }
+            Log.i("Goccia", "tempo reale: scheda di $id, ${scheda.prezzi.prezzi.size} prezzi, servizi ${scheda.servizi}")
+            _schede.update { it + (id to scheda) }
+            _dati.update { s ->
+                val live = s.live + (id to TempoReale.unisci(s.live[id], scheda.prezzi))
+                s.copy(live = live, distributori = TempoReale.applica(s.perProvincia.values.flatten(), live))
+            }
+        }
+    }
+
+    /** Stato in tempo reale dei punti di una colonnina della PUN (null se non disponibile). */
+    suspend fun statoColonnina(colonnina: Colonnina): StatoColonnina? = try {
+        c.pun.stato(colonnina)?.also {
+            Log.i("Goccia", "pun: ${colonnina.id} tempo reale ${it.tempoReale}, liberi ${it.liberi} su ${it.totale} (${it.punti.size} punti)")
+        }
+    } catch (e: CancellationException) {
+        throw e
+    } catch (e: Exception) {
+        Log.w("Goccia", "pun: stato di ${colonnina.id} non disponibile (${e.message})")
+        null
     }
 
     fun distributoreCaricato(id: Long): Distributore? = _dati.value.distributori.firstOrNull { it.id == id }

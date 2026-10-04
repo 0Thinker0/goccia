@@ -8,11 +8,14 @@ import it.goccia.app.logica.Consiglio
 import it.goccia.app.logica.Convenienza
 import it.goccia.app.logica.FUSO_ITALIA
 import it.goccia.app.logica.Formati
+import it.goccia.app.logica.TempoReale
 import it.goccia.app.logica.Territorio
 import it.goccia.app.logica.Urgenza
 import java.time.LocalDate
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeoutOrNull
 
 /**
  * Quello che mostrano i widget. I prezzi vengono dai file gia scaricati dall'app (o li scarichiamo
@@ -30,7 +33,8 @@ object DatiWidget {
         val id: Long,
     )
 
-    data class Prezzi(val carburante: String, val estrazione: String, val dove: String, val voci: List<Voce>)
+    /** [lettiIl]: millisecondi della lettura in tempo reale, null se i prezzi sono quelli del file. */
+    data class Prezzi(val carburante: String, val estrazione: String, val dove: String, val voci: List<Voce>, val lettiIl: Long? = null)
 
     data class Auto(val nome: String, val valore: String, val livello: Double, val testo: String, val elettrica: Boolean)
 
@@ -63,7 +67,7 @@ object DatiWidget {
             emptyList()
         }
         val sigle = Territorio.provinceAttorno(indice.province, comuni, centro, 15.0)
-        val distributori = sigle.flatMap { sigla ->
+        val delFile = sigle.flatMap { sigla ->
             try {
                 c.repository.distributori(sigla, indice.estrazione).dati
             } catch (e: Exception) {
@@ -72,6 +76,16 @@ object DatiWidget {
         }
         val carburante = u.carburante
         val imp = u.impostazioni
+        // i prezzi in vigore adesso, se Osservaprezzi risponde in fretta
+        val live = try {
+            withTimeoutOrNull(10_000) { c.osservaprezzi.attorno(centro, imp.raggioKm) }
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            null
+        }
+        val distributori = live?.let { lista -> TempoReale.applica(delFile, lista.associateBy { it.id }) } ?: delFile
+        val lettiIl = live?.let { System.currentTimeMillis() }
         val self = imp.preferisciSelf || !carburante.haSelf
         val provincia = Territorio.provinciaDi(indice.province, comuni, centro)
         val media = provincia?.medie?.get(carburante)?.let { if (self) it.self ?: it.servito else it.servito ?: it.self }
@@ -92,7 +106,7 @@ object DatiWidget {
             Voce(o.distributore.intestazione, o.distributore.titolo, o.distanzaKm, o.prezzo.millesimi, o.differenzaCent, o.distributore.provincia, o.distributore.id)
         }
         val modo = if (carburante.haSelf) (if (self) " self" else " servito") else ""
-        Prezzi(carburante.etichetta + modo, indice.estrazione, dove, voci)
+        Prezzi(carburante.etichetta + modo, indice.estrazione, dove, voci, lettiIl)
     }
 
     fun auto(context: Context): Auto? {

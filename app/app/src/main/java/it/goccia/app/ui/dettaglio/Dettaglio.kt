@@ -5,6 +5,8 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -22,6 +24,7 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.produceState
@@ -41,6 +44,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import it.goccia.app.dati.Carburante
 import it.goccia.app.dati.Distributore
 import it.goccia.app.dati.Prezzo
+import it.goccia.app.dati.ServizioImpianto
 import it.goccia.app.dati.StoricoDistributore
 import it.goccia.app.logica.Convenienza
 import it.goccia.app.logica.Formati
@@ -72,7 +76,9 @@ fun SchermataDettaglio(vm: GocciaViewModel, provincia: String, id: Long, onIndie
     val stato by produceState(Caricamento(false, vm.distributoreCaricato(id)), provincia, id) {
         value = Caricamento(true, vm.trovaDistributore(provincia, id))
     }
-    val d = stato.distributore
+    // i prezzi in tempo reale arrivano dopo: seguiamo la versione aggiornata
+    val dati by vm.dati.collectAsStateWithLifecycle()
+    val d = dati.distributori.firstOrNull { it.id == id } ?: stato.distributore
     Column(Modifier.fillMaxSize().statusBarsPadding()) {
         if (d == null) {
             BarraTitolo(null, onIndietro)
@@ -100,10 +106,14 @@ private fun ContenutoDettaglio(vm: GocciaViewModel, d: Distributore, onIndietro:
     val context = LocalContext.current
     val utente by vm.utente.collectAsStateWithLifecycle()
     val dati by vm.dati.collectAsStateWithLifecycle()
+    val schede by vm.schede.collectAsStateWithLifecycle()
     val adesso = System.currentTimeMillis()
     val carburante = utente.carburante
     val self = utente.impostazioni.preferisciSelf
     val preferito = utente.preferito(d.id)
+    LaunchedEffect(d.id) { vm.caricaScheda(d.id) }
+    val scheda = schede[d.id]
+    val lettiIl = dati.live[d.id]?.letto?.takeIf { adesso / 1000 - it < 30 * 60 }
 
     Column(Modifier.fillMaxSize()) {
         BarraTitolo(null, onIndietro) {
@@ -177,10 +187,15 @@ private fun ContenutoDettaglio(vm: GocciaViewModel, d: Distributore, onIndietro:
                     )
                 }
             }
+            if (scheda != null && scheda.servizi.isNotEmpty()) Servizi(scheda.servizi)
             Storico(vm, d, carburante, self)
             Text(
                 "Fonte: prezzi comunicati dal gestore al Ministero delle Imprese e del Made in Italy – Osservaprezzi carburanti. " +
-                    "Dati aggiornati ogni mattina (estrazione del ${dati.indice?.estrazione?.let { Formati.dataIso(it) } ?: "—"}).",
+                    if (lettiIl != null) {
+                        "Prezzi in vigore letti in tempo reale alle ${Formati.ora(lettiIl * 1000)}; storico dal file pubblicato ogni mattina."
+                    } else {
+                        "Dati aggiornati ogni mattina (estrazione del ${dati.indice?.estrazione?.let { Formati.dataIso(it) } ?: "—"})."
+                    },
                 style = Testi.Piccolo.copy(color = Colori.Testo3, fontWeight = FontWeight.Medium),
                 modifier = Modifier.padding(start = 24.dp, end = 24.dp, top = 18.dp),
             )
@@ -235,6 +250,27 @@ private fun Intestazione(vm: GocciaViewModel, d: Distributore) {
             else if (!d.pompaBianca && d.nome.isNotBlank() && d.nome != d.bandiera) Pillola(d.nome, null)
         }
     }
+}
+
+/** I servizi dichiarati dal gestore al Ministero: bar, autolavaggio, bancomat... */
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun Servizi(servizi: List<ServizioImpianto>) {
+    Scheda(Modifier.padding(start = 20.dp, end = 20.dp, top = 18.dp).fillMaxWidth(), spazio = 12.dp) {
+        Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            Text("Servizi", style = Testi.Sottosezione)
+            Text("Dichiarati dal gestore al Ministero", style = Testi.Piccolo.copy(color = Colori.Testo3, fontWeight = FontWeight.Medium))
+        }
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            servizi.forEach { s -> Pillola(s.etichetta, iconaServizio(s)) }
+        }
+    }
+}
+
+private fun iconaServizio(s: ServizioImpianto): ImageVector? = when (s) {
+    ServizioImpianto.RICARICA -> Icone.Fulmine
+    ServizioImpianto.SOSTA_CAMPER_TIR -> Icone.Autostrada
+    else -> null
 }
 
 @Composable

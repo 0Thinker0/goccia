@@ -19,7 +19,7 @@ on:
         type: boolean
         default: false
       colonnine:
-        description: "Scarica di nuovo le colonnine da OpenStreetMap (di solito una volta a settimana)"
+        description: "Scarica di nuovo le colonnine dalla PUN (o da OpenStreetMap se non risponde) anche se sono di oggi"
         type: boolean
         default: false
 

@@ -26,6 +26,20 @@ enum class FonteTariffa(val etichetta: String) {
 
 data class PrezzoCasa(val euroKwh: Double, val fonte: FonteTariffa)
 
+/** Da dove arriva il prezzo di una colonnina. */
+enum class OrigineTariffa {
+    /** quella del tuo abbonamento o della tua app, per tutte le colonnine della stessa classe */
+    TUA,
+
+    /** il prezzo a consumo dichiarato dal gestore alla Piattaforma Unica Nazionale */
+    GESTORE,
+
+    /** la media nazionale per la classe di ricarica */
+    STIMA,
+}
+
+data class TariffaUsata(val euroKwh: Double, val origine: OrigineTariffa)
+
 /** Come ricarica davvero l'auto a una colonnina: potenza utile e tipo di corrente. */
 data class Erogazione(val kw: Double, val continua: Boolean)
 
@@ -128,6 +142,17 @@ object Elettrico {
 
     /** kWh da prelevare dalla rete per metterne [kwh] in batteria. */
     fun kwhDallaRete(t: TariffaCasa, kwh: Double): Double = kwh / efficienza(t)
+
+    /**
+     * La tariffa di una colonnina: la tua (abbonamento o app) se l'hai messa per la sua classe,
+     * altrimenti il prezzo a consumo dichiarato dal gestore alla PUN, altrimenti la stima.
+     */
+    fun tariffa(c: Colonnina, tue: TariffeColonnine, stime: StimeTariffe): TariffaUsata {
+        val classe = c.classe
+        if (tariffaPersonale(classe, tue)) return TariffaUsata(tariffaColonnina(classe, tue, stime), OrigineTariffa.TUA)
+        c.tariffeGestore?.per(classe)?.let { return TariffaUsata(it, OrigineTariffa.GESTORE) }
+        return TariffaUsata(tariffaColonnina(classe, TariffeColonnine(), stime), OrigineTariffa.STIMA)
+    }
 
     fun tariffaColonnina(classe: ClasseRicarica, tue: TariffeColonnine, stime: StimeTariffe): Double = when (classe) {
         ClasseRicarica.AC -> tue.ac ?: stime.ac

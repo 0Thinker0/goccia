@@ -9,7 +9,7 @@
 //   --precedente-cartella dir         legge lo stato pubblicato da una cartella invece che dal sito
 //   --forza                           rielabora anche se l'estrazione e gia pubblicata
 //   --senza-minimi                    salta i controlli sul numero minimo di righe (solo per i test)
-//   --colonnine-forza                 scarica di nuovo le colonnine anche se hanno meno di una settimana
+//   --colonnine-forza                 scarica di nuovo le colonnine anche se quelle pubblicate sono di oggi
 //   --senza-colonnine                 non pubblica le colonnine (solo per i test)
 
 import { appendFile, readFile } from 'node:fs/promises';

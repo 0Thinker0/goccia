@@ -12,14 +12,19 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -32,11 +37,13 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import it.goccia.app.dati.Colonnina
+import it.goccia.app.dati.StatoColonnina
 import it.goccia.app.dati.TariffeColonnine
 import it.goccia.app.logica.Elettrico
 import it.goccia.app.logica.Erogazione
 import it.goccia.app.logica.FonteTariffa
 import it.goccia.app.logica.Formati
+import it.goccia.app.logica.OrigineTariffa
 import it.goccia.app.ui.GocciaViewModel
 import it.goccia.app.ui.componenti.Badge
 import it.goccia.app.ui.componenti.BarraTitolo
@@ -54,6 +61,7 @@ import it.goccia.app.ui.naviga
 import it.goccia.app.ui.tema.Colori
 import it.goccia.app.ui.tema.Testi
 import kotlin.math.roundToInt
+import kotlinx.coroutines.delay
 
 private val OBIETTIVI = listOf(0.6, 0.8, 1.0)
 private const val DA = 0.2
@@ -77,10 +85,21 @@ fun SchermataColonnina(vm: GocciaViewModel, id: String, onIndietro: () -> Unit, 
     }
     val auto = utente.autoCorrente?.takeIf { it.alimentazione.elettrica }
     val stime = vm.stime
-    val tariffa = vm.tariffaDi(c)
-    val personale = Elettrico.tariffaPersonale(c.classe, utente.tariffeColonnine)
+    val usata = vm.tariffaUsata(c)
+    val tariffa = usata.euroKwh
     val distanza = vm.distanzaDalCentro(c.coordinate)
     var obiettivo by rememberSaveable { mutableIntStateOf(1) }
+    // stato dei punti in tempo reale (PUN): si rilegge ogni minuto finche la schermata e aperta
+    var statoPunti by remember(c.id) { mutableStateOf<StatoColonnina?>(null) }
+    var controllato by remember(c.id) { mutableStateOf(false) }
+    LaunchedEffect(c.id) {
+        if (!c.daPun) return@LaunchedEffect
+        while (true) {
+            statoPunti = vm.statoColonnina(c) ?: statoPunti
+            controllato = true
+            delay(60_000)
+        }
+    }
 
     Column(Modifier.fillMaxSize().background(Colori.Sfondo)) {
         BarraTitolo(null, onIndietro, Modifier.statusBarsPadding()) {
@@ -124,7 +143,8 @@ fun SchermataColonnina(vm: GocciaViewModel, id: String, onIndietro: () -> Unit, 
             Scheda(Modifier.fillMaxWidth(), spazio = 0.dp, padding = PaddingValues(horizontal = 18.dp, vertical = 6.dp)) {
                 if (c.connettori.isEmpty()) {
                     Text(
-                        "Su OpenStreetMap non sono ancora indicate le prese di questa colonnina.",
+                        if (c.daPun) "Il gestore non ha indicato le prese di questa colonnina."
+                        else "Su OpenStreetMap non sono ancora indicate le prese di questa colonnina.",
                         style = Testi.Didascalia.copy(color = Colori.Testo2),
                         modifier = Modifier.padding(vertical = 10.dp),
                     )
@@ -143,21 +163,29 @@ fun SchermataColonnina(vm: GocciaViewModel, id: String, onIndietro: () -> Unit, 
                     if (i < c.connettori.lastIndex) Separatore()
                 }
             }
-            Riquadro(Modifier.fillMaxWidth(), icona = Icone.Info) {
-                Text(
-                    "La disponibilità in tempo reale non è pubblica: controllala nell'app con cui paghi." +
-                        if (c.potenzaStimata) " La potenza è dedotta dal tipo di presa." else "",
-                    style = Testi.Didascalia.copy(color = Color(0xFF1F3A4A)),
-                )
-            }
+            StatoPuntiScheda(c, statoPunti, controllato)
 
             // tariffa
+            val sigla = c.classe.sigla
             Scheda(Modifier.fillMaxWidth()) {
                 Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                    Text("La tua tariffa · ricarica ${c.classe.sigla}", style = Testi.Voce)
                     Text(
-                        if (personale) "Quella del tuo abbonamento o della tua app di ricarica."
-                        else "Stima: ${stime.notaColonnine}. Metti quella del tuo abbonamento o della tua app.",
+                        when (usata.origine) {
+                            OrigineTariffa.TUA -> "La tua tariffa · ricarica $sigla"
+                            OrigineTariffa.GESTORE -> "Prezzo del gestore · ricarica $sigla"
+                            OrigineTariffa.STIMA -> "Prezzo stimato · ricarica $sigla"
+                        },
+                        style = Testi.Voce,
+                    )
+                    Text(
+                        when (usata.origine) {
+                            OrigineTariffa.TUA -> "Quella del tuo abbonamento o della tua app di ricarica, per tutte le colonnine $sigla."
+                            OrigineTariffa.GESTORE ->
+                                "A consumo, senza abbonamento, come dichiarato alla Piattaforma Unica Nazionale. " +
+                                    "Se paghi con un abbonamento cambiala qui: varrà per tutte le colonnine $sigla."
+                            OrigineTariffa.STIMA ->
+                                "Il gestore non l'ha indicato: stima sui ${stime.notaColonnine}. Metti quella del tuo abbonamento o della tua app."
+                        },
                         style = Testi.Didascalia.copy(color = Colori.Testo2),
                     )
                 }
@@ -168,10 +196,13 @@ fun SchermataColonnina(vm: GocciaViewModel, id: String, onIndietro: () -> Unit, 
                     descrizioneMeno = "Abbassa la tariffa di un centesimo",
                     descrizionePiu = "Alza la tariffa di un centesimo",
                 )
-                if (personale) {
-                    BottoneTesto("Torna alla stima (${Formati.euroKwh(Elettrico.tariffaColonnina(c.classe, TariffeColonnine(), stime))})", {
-                        vm.salvaTariffeColonnine(Elettrico.conTariffa(utente.tariffeColonnine, c.classe, null))
-                    })
+                if (usata.origine == OrigineTariffa.TUA) {
+                    val senza = Elettrico.tariffa(c, TariffeColonnine(), stime)
+                    BottoneTesto(
+                        if (senza.origine == OrigineTariffa.GESTORE) "Usa i prezzi dei gestori (qui ${Formati.euroKwh(senza.euroKwh)})"
+                        else "Torna alla stima (${Formati.euroKwh(senza.euroKwh)})",
+                        { vm.salvaTariffeColonnine(Elettrico.conTariffa(utente.tariffeColonnine, c.classe, null)) },
+                    )
                 }
             }
 
@@ -188,7 +219,12 @@ fun SchermataColonnina(vm: GocciaViewModel, id: String, onIndietro: () -> Unit, 
                 }
             }
             Text(
-                "Colonnine: © OpenStreetMap contributors, licenza ODbL. Tariffe: quelle che inserisci tu, altrimenti ${stime.notaColonnine}.",
+                if (c.daPun) {
+                    "Colonnine, stato e prezzi dei gestori: GSE – Piattaforma Unica Nazionale (PUN), licenza CC BY 4.0. " +
+                        "Se il gestore non indica il prezzo usiamo la tua tariffa o i ${stime.notaColonnine}."
+                } else {
+                    "Colonnine: © OpenStreetMap contributors, licenza ODbL. Tariffe: quelle che inserisci tu, altrimenti ${stime.notaColonnine}."
+                },
                 style = Testi.Piccolo.copy(color = Colori.Testo3, fontWeight = FontWeight.Medium),
                 modifier = Modifier.padding(horizontal = 4.dp),
             )
@@ -286,5 +322,35 @@ private fun Riquadrino(titolo: String, valore: String, modifier: Modifier = Modi
     ) {
         Text(titolo, style = Testi.Piccolo.copy(color = Colori.Testo3), maxLines = 1)
         Text(valore, style = Testi.Numero.copy(fontSize = 19.sp), maxLines = 1)
+    }
+}
+
+/** Quanti punti sono liberi adesso: dalla PUN, se il gestore trasmette lo stato in tempo reale. */
+@Composable
+private fun StatoPuntiScheda(c: Colonnina, stato: StatoColonnina?, controllato: Boolean) {
+    val nota = if (c.potenzaStimata) " La potenza è dedotta dal tipo di presa." else ""
+    if (c.daPun && stato != null && stato.tempoReale) {
+        Scheda(Modifier.fillMaxWidth(), spazio = 6.dp) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(9.dp)) {
+                Box(Modifier.size(10.dp).clip(CircleShape).background(coloreStatoPunti(stato)))
+                Text("Adesso: " + testoStatoPunti(stato), style = Testi.Voce)
+            }
+            Text(
+                "Stato trasmesso dal gestore alla Piattaforma Unica Nazionale, letto alle ${Formati.ora(stato.quando)}.$nota",
+                style = Testi.Didascalia.copy(color = Colori.Testo2),
+            )
+        }
+        return
+    }
+    Riquadro(Modifier.fillMaxWidth(), icona = Icone.Info) {
+        Text(
+            when {
+                !c.daPun -> "La disponibilità in tempo reale non è pubblica per questa colonnina: controllala nell'app con cui paghi."
+                !controllato -> "Controllo quali punti sono liberi…"
+                stato == null -> "Lo stato dei punti non è disponibile adesso: controllalo nell'app con cui paghi."
+                else -> "Il gestore non trasmette lo stato in tempo reale: controllalo nell'app con cui paghi."
+            } + nota,
+            style = Testi.Didascalia.copy(color = Color(0xFF1F3A4A)),
+        )
     }
 }

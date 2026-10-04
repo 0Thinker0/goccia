@@ -44,6 +44,8 @@ object Colori {
     val TestoChip = Color(0xFF33475B)
     val Segnaposto = Color(0xFF6B7A8C)
     val Linea = Color(0xFF9AA6B4)
+    /** segnaposto dei prezzi non in evidenza: blu scuro, testo bianco leggibile */
+    val PinAltri = Color(0xFF34506E)
 
     val Sfondo = Color(0xFFF6F8FB)
     val Superficie = Color.White

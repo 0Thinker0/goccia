@@ -88,12 +88,19 @@ object Formati {
         return ChronoUnit.DAYS.between(giorno, oggi)
     }
 
-    /** "aggiornato oggi", "aggiornato ieri", "3 giorni fa" rispetto a oggi in Italia. */
+    /**
+     * "aggiornato ora", "aggiornato 25 min fa", "aggiornato 3 ore fa", "aggiornato oggi alle 07:42",
+     * "aggiornato ieri", "3 giorni fa" rispetto a oggi in Italia.
+     */
     fun aggiornamento(epochSecondi: Long, adessoMillis: Long): String {
         if (epochSecondi <= 0) return "data sconosciuta"
         val giorni = giorniFa(epochSecondi, adessoMillis)
+        val minuti = (adessoMillis / 1000 - epochSecondi) / 60
         return when {
-            giorni <= 0 -> "aggiornato oggi"
+            giorni <= 0 && minuti < 2 -> "aggiornato ora"
+            giorni <= 0 && minuti < 60 -> "aggiornato $minuti min fa"
+            giorni <= 0 && minuti < 6 * 60 -> (minuti / 60).let { "aggiornato $it ${if (it == 1L) "ora" else "ore"} fa" }
+            giorni <= 0 -> "aggiornato oggi alle ${ora(epochSecondi * 1000)}"
             giorni == 1L -> "aggiornato ieri"
             else -> "$giorni giorni fa"
         }

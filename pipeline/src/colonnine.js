@@ -1,19 +1,26 @@
-// Colonnine di ricarica da OpenStreetMap (© OpenStreetMap contributors, licenza ODbL).
+// Colonnine di ricarica, divise in tessere di mezzo grado: l'app scarica solo la zona che le
+// serve, attorno a te o lungo un viaggio.
 //
-// Una volta alla settimana le scarichiamo da Overpass, teniamo solo quelle che un'auto puo
-// usare (non private, non solo per bici o monopattini) e le dividiamo in tessere di mezzo
-// grado: l'app scarica solo la zona che le serve, attorno a te o lungo un viaggio.
-// Negli altri giorni ripubblichiamo le tessere della settimana; se Overpass non risponde
-// teniamo quelle vecchie.
+// Fonte principale: la Piattaforma Unica Nazionale (PUN, vedi pun.js), ogni giorno.
+// Riserva: OpenStreetMap (© OpenStreetMap contributors, licenza ODbL) da Overpass, se la PUN
+// non risponde e le tessere pubblicate sono troppo vecchie. Se non risponde nessuna delle due
+// ripubblichiamo le tessere precedenti.
 
 import { join } from 'node:path';
 import { RADICE_DATI, conLimite, lettore, scriviJson } from './stato.js';
+import { MINIMO_PUNTI, elaboraPun, scaricaPun } from './pun.js';
 
-export const VERSIONE_COLONNINE = 1;
+/** 2: colonnine dalla PUN, con gli identificativi dei punti e le tariffe in coda. */
+export const VERSIONE_COLONNINE = 2;
 export const PASSO = 0.5;
 export const GIORNI_VALIDITA = 7;
+/** I dati della PUN si rinnovano ogni giorno (il secondo passaggio del giorno li riusa). */
+export const GIORNI_VALIDITA_PUN = 0.75;
 /** Sotto questa soglia la risposta di Overpass e incompleta: meglio i dati della settimana prima. */
 export const MINIMO_COLONNINE = 5000;
+
+export const FONTE_PUN = 'PUN';
+export const FONTE_OSM = 'OpenStreetMap';
 
 export const SERVER_OVERPASS = ['https://overpass-api.de/api/interpreter', 'https://overpass.kumi.systems/api/interpreter'];
 
@@ -174,17 +181,11 @@ export function normalizza(el) {
 
 export const chiaveTessera = (la, lo) => `${Math.floor(la / PASSO)}_${Math.floor(lo / PASSO)}`;
 
-/** Elementi di Overpass -> indice e tessere pronte da pubblicare. */
-export function elaboraColonnine(elementi, adesso = new Date()) {
+/** Colonnine compatte -> indice e tessere pronte da pubblicare. */
+export function inTessere(colonnine, { adesso = new Date(), fonte, licenza, punti = null }) {
   const tessere = new Map();
   const visti = new Set();
-  let scartate = 0;
-  for (const el of elementi) {
-    const c = normalizza(el);
-    if (!c) {
-      scartate++;
-      continue;
-    }
+  for (const c of colonnine) {
     if (visti.has(c[0])) continue;
     visti.add(c[0]);
     const chiave = chiaveTessera(c[1], c[2]);
@@ -199,14 +200,39 @@ export function elaboraColonnine(elementi, adesso = new Date()) {
   const indice = {
     v: VERSIONE_COLONNINE,
     generato: adesso.toISOString(),
-    fonte: 'OpenStreetMap',
-    licenza: 'ODbL 1.0',
+    fonte,
+    licenza,
     conteggio: visti.size,
+    ...(punti != null ? { punti } : {}),
     passo: PASSO,
     tessere: conteggi,
     tariffe: TARIFFE
   };
-  return { indice, tessere: new Map([...tessere.entries()].map(([k, lista]) => [k, { v: VERSIONE_COLONNINE, c: lista }])), scartate };
+  return { indice, tessere: new Map([...tessere.entries()].map(([k, lista]) => [k, { v: VERSIONE_COLONNINE, c: lista }])) };
+}
+
+/** Elementi di Overpass -> indice e tessere pronte da pubblicare. */
+export function elaboraColonnine(elementi, adesso = new Date()) {
+  const tenute = [];
+  let scartate = 0;
+  for (const el of elementi) {
+    const c = normalizza(el);
+    if (c) tenute.push(c);
+    else scartate++;
+  }
+  return { ...inTessere(tenute, { adesso, fonte: FONTE_OSM, licenza: 'ODbL 1.0' }), scartate };
+}
+
+/** Punti della PUN -> indice e tessere pronte da pubblicare. */
+export function elaboraColonninePun(dettagli, adesso = new Date()) {
+  const colonnine = elaboraPun(dettagli);
+  const punti = colonnine.reduce((somma, c) => somma + c[10].length, 0);
+  return inTessere(colonnine, {
+    adesso,
+    fonte: FONTE_PUN,
+    licenza: 'GSE – Piattaforma Unica Nazionale (CC BY 4.0 secondo AgID)',
+    punti
+  });
 }
 
 const AGENTE = `Goccia/1.0 (app gratuita prezzi carburanti e colonnine; https://github.com/${process.env.GITHUB_REPOSITORY ?? 'goccia'})`;
@@ -236,20 +262,48 @@ export async function scaricaOverpass({ server = SERVER_OVERPASS, query = QUERY 
 }
 
 /**
- * Scrive in uscita le colonnine: nuove da Overpass se quelle pubblicate hanno piu di una
- * settimana (o se forza), altrimenti quelle pubblicate. Non blocca mai la pipeline dei prezzi.
+ * Scrive in uscita le colonnine: ogni giorno dalla PUN; se non risponde, da Overpass quando
+ * quelle pubblicate sono troppo vecchie (o vengono da un'altra versione); altrimenti quelle
+ * pubblicate. Non blocca mai la pipeline dei prezzi.
  */
-export async function aggiornaColonnine({ uscita, url, cartella, forza = false, scarica = scaricaOverpass, adesso = new Date() }) {
+export async function aggiornaColonnine({
+  uscita,
+  url,
+  cartella,
+  forza = false,
+  scarica = scaricaOverpass,
+  scaricaDallaPun = scaricaPun,
+  adesso = new Date()
+}) {
   const leggi = lettore({ url, cartella });
   const base = `${RADICE_DATI}ev/`;
   const precedente = await leggi(`${base}indice.json`);
   const giorni = precedente?.generato ? (adesso - new Date(precedente.generato)) / 86_400_000 : Infinity;
-  const valido = precedente && precedente.v === VERSIONE_COLONNINE && giorni < GIORNI_VALIDITA;
+  const stessaVersione = precedente && precedente.v === VERSIONE_COLONNINE;
+  const daPun = stessaVersione && precedente.fonte === FONTE_PUN;
+  const fresche = stessaVersione && giorni < (daPun ? GIORNI_VALIDITA_PUN : 1);
 
   let risultato = null;
   let origine = null;
-  let avviso = null;
-  if (forza || !valido) {
+  const avvisi = [];
+  if (forza || !fresche) {
+    try {
+      const grezzo = await scaricaDallaPun();
+      const nuovo = elaboraColonninePun(grezzo.dettagli, adesso);
+      console.log(`Colonnine dalla PUN: ${grezzo.elenco} punti in elenco, ${grezzo.dettagli.length} con i dettagli, ${nuovo.indice.punti} tenuti in ${nuovo.indice.conteggio} colonnine`);
+      if (nuovo.indice.punti < MINIMO_PUNTI) {
+        throw new Error(`solo ${nuovo.indice.punti} punti di ricarica, risposta incompleta`);
+      }
+      risultato = nuovo;
+      origine = 'pun';
+    } catch (errore) {
+      avvisi.push(`PUN: ${errore.message}`);
+      console.warn(`Colonnine dalla PUN: ${errore.message}`);
+    }
+  }
+  // senza la PUN: OpenStreetMap solo se le tessere pubblicate non bastano piu
+  const ancoraBuone = stessaVersione && giorni < GIORNI_VALIDITA;
+  if (!risultato && (forza || !ancoraBuone)) {
     try {
       const grezzo = await scarica();
       const nuovo = elaboraColonnine(grezzo.elements, adesso);
@@ -260,11 +314,12 @@ export async function aggiornaColonnine({ uscita, url, cartella, forza = false, 
       risultato = nuovo;
       origine = 'overpass';
     } catch (errore) {
-      avviso = errore.message;
-      console.warn(`Colonnine: ${errore.message}. Tengo quelle pubblicate.`);
+      avvisi.push(`Overpass: ${errore.message}`);
+      console.warn(`Colonnine da Overpass: ${errore.message}. Tengo quelle pubblicate.`);
     }
   }
-  if (!risultato && precedente && precedente.v === VERSIONE_COLONNINE) {
+  const avviso = avvisi.length ? avvisi.join('; ') : null;
+  if (!risultato && precedente && precedente.v >= 1) {
     const chiavi = Object.keys(precedente.tessere ?? {});
     const tessere = new Map();
     await conLimite(chiavi, 8, async (k) => {

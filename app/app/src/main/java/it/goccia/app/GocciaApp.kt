@@ -7,6 +7,8 @@ import it.goccia.app.avvisi.Sorveglianza
 import it.goccia.app.dati.ArchivioUtente
 import it.goccia.app.dati.DatiRepository
 import it.goccia.app.dati.Instradamento
+import it.goccia.app.dati.Osservaprezzi
+import it.goccia.app.dati.Pun
 import it.goccia.app.dati.ServizioPosizione
 import it.goccia.app.widget.Widget
 import java.io.File
@@ -42,6 +44,8 @@ class Contenitore(context: Context) {
     val archivio = ArchivioUtente(File(context.filesDir, "utente.json"))
     val posizione = ServizioPosizione(context.applicationContext)
     val instradamento = Instradamento(http)
+    val osservaprezzi = Osservaprezzi(http)
+    val pun = Pun(http, File(context.filesDir, "dati"))
 
     /** Ridisegna i widget con i dati appena scaricati. */
     fun aggiornaWidget() {

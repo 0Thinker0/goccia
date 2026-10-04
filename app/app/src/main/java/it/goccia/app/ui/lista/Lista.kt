@@ -50,6 +50,7 @@ import it.goccia.app.ui.componenti.CampoRicerca
 import it.goccia.app.ui.componenti.CardOfferta
 import it.goccia.app.ui.componenti.CardScheletro
 import it.goccia.app.ui.componenti.ChipScelta
+import it.goccia.app.ui.componenti.RigaTempoReale
 import it.goccia.app.ui.componenti.Segmentato
 import it.goccia.app.ui.componenti.metaOfferta
 import it.goccia.app.ui.icone.Icone
@@ -194,6 +195,12 @@ fun SchermataLista(vm: GocciaViewModel, onDistributore: (Distributore) -> Unit, 
                 }
                 Text(riga, style = Testi.Didascalia.copy(color = Colori.Testo2, fontWeight = FontWeight.Medium), maxLines = 1)
             }
+            RigaTempoReale(
+                vm.inTempoReale(dati, vista.centro.coordinate),
+                dati.tempoRealeIl,
+                dati.tempoRealeErrore,
+                Modifier.padding(start = 26.dp, end = 20.dp, top = 6.dp),
+            )
         }
 
         PullToRefreshBox(isRefreshing = dati.aggiornando, onRefresh = { vm.aggiorna() }, modifier = Modifier.weight(1f)) {
@@ -230,6 +237,17 @@ fun SchermataLista(vm: GocciaViewModel, onDistributore: (Distributore) -> Unit, 
                             metaOfferta(o, vista.adessoMillis)
                         }
                         CardOfferta(o, carburante, meta, onClick = { onDistributore(o.distributore) })
+                    }
+                }
+                val nascosti = vista?.zona?.nascosti ?: 0
+                if (nascosti > 0 && !offerte.isNullOrEmpty() && !dati.caricamento) {
+                    item(key = "nascosti") {
+                        Text(
+                            if (nascosti == 1) "1 distributore non è in elenco: non comunica i prezzi da oltre un mese, forse ha chiuso."
+                            else "$nascosti distributori non sono in elenco: non comunicano i prezzi da oltre un mese, forse hanno chiuso.",
+                            style = Testi.Piccolo.copy(color = Colori.Testo3, fontWeight = FontWeight.Medium),
+                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 4.dp),
+                        )
                     }
                 }
             }

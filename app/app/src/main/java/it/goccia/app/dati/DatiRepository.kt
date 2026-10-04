@@ -7,6 +7,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.double
 import kotlinx.serialization.json.doubleOrNull
@@ -262,6 +263,12 @@ class DatiRepository(
             potenzaStimata = bit and 8 != 0,
             indirizzo = riga.getOrNull(8)?.jsonPrimitive?.contentOrNull,
             orari = riga.getOrNull(9)?.jsonPrimitive?.contentOrNull,
+            punti = (riga.getOrNull(10) as? JsonArray)?.mapNotNull { (it as? JsonPrimitive)?.contentOrNull } ?: emptyList(),
+            tariffeGestore = (riga.getOrNull(11) as? JsonArray)?.let { t ->
+                fun valore(i: Int) = (t.getOrNull(i) as? JsonPrimitive)?.doubleOrNull?.takeIf { it in 0.0..3.0 }
+                TariffeGestore(valore(0), valore(1), valore(2)).takeIf { it.ac != null || it.dc != null || it.hpc != null }
+            },
+            tempoReale = (riga.getOrNull(12) as? JsonPrimitive)?.intOrNull == 1,
         )
     } catch (e: Exception) {
         null

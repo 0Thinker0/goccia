@@ -273,6 +273,8 @@ foto widget-home-ev 8
 
 kill "$GEO" 2> /dev/null
 
+# prezzi in tempo reale (Osservaprezzi) e stato delle colonnine (PUN): risposte e tempi
+adb logcat -d -s Goccia:I | grep -E "tempo reale|pun:" > "$USCITA/tempo-reale.txt" 2>&1
 adb logcat -d -b crash > "$USCITA/crash.txt" 2>&1
 adb logcat -d -v time > "$USCITA/logcat-completo.txt" 2>&1
 # senza il rumore di uiautomator, che parte a ogni tocco

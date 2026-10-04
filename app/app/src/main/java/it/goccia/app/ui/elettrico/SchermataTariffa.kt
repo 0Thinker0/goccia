@@ -211,7 +211,7 @@ fun SchermataTariffa(vm: GocciaViewModel, onIndietro: () -> Unit) {
             Scheda(Modifier.fillMaxWidth()) {
                 Text("Tariffe alle colonnine", style = Testi.Voce)
                 Text(
-                    "Quelle del tuo abbonamento o della tua app di ricarica. Finché non le cambi usiamo i ${stime.notaColonnine}.",
+                    "Quelle del tuo abbonamento o della tua app di ricarica. Finché non le cambi usiamo il prezzo a consumo dichiarato da ogni gestore e, dove manca, i ${stime.notaColonnine}.",
                     style = Testi.Didascalia.copy(color = Colori.Testo2),
                 )
                 ClasseRicarica.entries.forEach { classe ->
@@ -223,7 +223,7 @@ fun SchermataTariffa(vm: GocciaViewModel, onIndietro: () -> Unit) {
                             ClasseRicarica.DC -> "Veloce (DC)"
                             ClasseRicarica.HPC -> "Ultraveloce (HPC)"
                         },
-                        if (mia) "La tua tariffa" else "Stima",
+                        if (mia) "La tua tariffa" else "Stima, se il gestore non lo indica",
                         valore,
                         passo = 0.01,
                     ) { colonnine = Elettrico.conTariffa(colonnine, classe, it) }

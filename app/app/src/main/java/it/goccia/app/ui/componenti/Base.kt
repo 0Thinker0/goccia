@@ -173,13 +173,6 @@ fun coloriTono(tono: Tono): Pair<Color, Color> = when (tono) {
     Tono.CARO -> Colori.RossoChiaro to Colori.Rosso
 }
 
-/** Colore del segnaposto sulla mappa */
-fun colorePin(tono: Tono): Color = when (tono) {
-    Tono.CONVENIENTE -> Colori.VerdeTesto
-    Tono.MEDIA -> Colori.AmbraScuro
-    Tono.CARO -> Colori.Rosso
-}
-
 @Composable
 fun BadgeConvenienza(cent: Int?, tono: Tono, modifier: Modifier = Modifier, piccolo: Boolean = false, sfondo: Color? = null) {
     if (cent == null) return

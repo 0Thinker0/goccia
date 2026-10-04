@@ -26,7 +26,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import it.goccia.app.dati.Colonnina
 import it.goccia.app.dati.Presa
+import it.goccia.app.dati.StatoColonnina
 import it.goccia.app.logica.Formati
+import it.goccia.app.logica.OrigineTariffa
+import it.goccia.app.logica.TariffaUsata
 import it.goccia.app.ui.icone.Icone
 import it.goccia.app.ui.tema.Colori
 import it.goccia.app.ui.tema.Forme
@@ -59,12 +62,58 @@ fun descrizioneFiltroPrese(prese: Set<Presa>): String {
     }
 }
 
+/**
+ * La tariffa in breve: "0,67 €/kWh" se e il prezzo dichiarato dal gestore, "tua tariffa 0,45 €/kWh",
+ * "stima 0,64 €/kWh" o "gratuita".
+ */
+fun testoTariffa(c: Colonnina, t: TariffaUsata): String = when {
+    c.gratuita -> "gratuita"
+    t.origine == OrigineTariffa.GESTORE -> Formati.euroKwh(t.euroKwh)
+    t.origine == OrigineTariffa.TUA -> "tua tariffa " + Formati.euroKwh(t.euroKwh)
+    else -> "stima " + Formati.euroKwh(t.euroKwh)
+}
+
+/** "2 liberi su 4 · 1 in uso · 1 fuori servizio" (solo i punti con lo stato in tempo reale). */
+fun testoStatoPunti(s: StatoColonnina): String {
+    if (s.totale == 1) {
+        return when {
+            s.liberi == 1 -> "libera"
+            s.occupati == 1 -> "in uso"
+            s.guasti == 1 -> "fuori servizio"
+            else -> "stato sconosciuto"
+        }
+    }
+    return buildList {
+        add("${s.liberi} ${if (s.liberi == 1) "libero" else "liberi"} su ${s.totale}")
+        if (s.occupati > 0) add("${s.occupati} in uso")
+        if (s.guasti > 0) add("${s.guasti} fuori servizio")
+    }.joinToString(" · ")
+}
+
+/** Verde se c'e un punto libero, ambra se sono in uso, rosso se sono tutti guasti. */
+fun coloreStatoPunti(s: StatoColonnina): Color = when {
+    s.liberi > 0 -> Colori.Verde
+    s.totale > 0 && s.guasti == s.totale -> Colori.Rosso
+    s.occupati > 0 -> Colori.Ambra
+    else -> Colori.Linea
+}
+
+/** Riga compatta per il foglio della mappa: "● Adesso: 2 liberi su 4". Niente se non si sa. */
+@Composable
+fun RigaStatoPunti(stato: StatoColonnina?, modifier: Modifier = Modifier) {
+    if (stato == null || !stato.tempoReale) return
+    Row(modifier, verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(7.dp)) {
+        Box(Modifier.size(8.dp).clip(RoundedCornerShape(4.dp)).background(coloreStatoPunti(stato)))
+        Text("Adesso: " + testoStatoPunti(stato), style = Testi.Didascalia.copy(color = Colori.TestoChip, fontWeight = FontWeight.SemiBold))
+    }
+}
+
 /** Una colonnina nelle liste: fulmine (pieno se veloce), nome, distanza e prese, potenza e tariffa. */
 @Composable
 fun CardColonnina(
     c: Colonnina,
     distanzaKm: Double?,
-    tariffa: Double,
+    tariffa: TariffaUsata,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -93,7 +142,11 @@ fun CardColonnina(
         Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(1.dp)) {
             Text(potenzaColonnina(c), style = Testi.CorpoForte.copy(fontSize = 17.sp, fontWeight = FontWeight.ExtraBold, fontFeatureSettings = "tnum"))
             Text(
-                if (c.gratuita) "gratis" else Formati.euroKwh(tariffa),
+                when {
+                    c.gratuita -> "gratis"
+                    tariffa.origine == OrigineTariffa.STIMA -> "~" + Formati.euroKwh(tariffa.euroKwh)
+                    else -> Formati.euroKwh(tariffa.euroKwh)
+                },
                 style = Testi.Piccolo.copy(color = Colori.Testo3),
             )
         }

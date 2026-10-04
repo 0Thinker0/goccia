@@ -113,7 +113,9 @@ fun LazyListScope.sezioniElettriche(
             Scheda(Modifier.padding(horizontal = 20.dp, vertical = 5.dp).fillMaxWidth(), onClick = onMappa) {
                 Text("Nessuna colonnina compatibile entro 30 km", style = Testi.CorpoForte)
                 Text(
-                    "Prova a cambiare le prese o la potenza nei filtri della mappa: le colonnine arrivano da OpenStreetMap e alcune zone sono ancora poco mappate.",
+                    "Prova a cambiare le prese o la potenza nei filtri della mappa." +
+                        if (vm.colonnineDaPun) " Le colonnine sono quelle registrate dai gestori nella Piattaforma Unica Nazionale."
+                        else " Le colonnine arrivano da OpenStreetMap e alcune zone sono ancora poco mappate.",
                     style = Testi.Didascalia.copy(color = Colori.Testo2),
                 )
             }
@@ -122,7 +124,7 @@ fun LazyListScope.sezioniElettriche(
             CardColonnina(
                 v.colonnina,
                 v.distanzaKm,
-                vm.tariffaDi(v.colonnina),
+                vm.tariffaUsata(v.colonnina),
                 onClick = { onColonnina(v.colonnina) },
                 modifier = Modifier.padding(horizontal = 20.dp, vertical = 5.dp),
             )

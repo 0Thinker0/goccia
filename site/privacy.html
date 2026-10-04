@@ -16,7 +16,7 @@
 <body>
 <main>
   <h1>Privacy</h1>
-  <p>Ultimo aggiornamento: 28 settembre 2026</p>
+  <p>Ultimo aggiornamento: 4 ottobre 2026</p>
 
   <p>Goccia è un'app gratuita, senza pubblicità e senza account. È pensata per sapere il meno possibile di te.</p>
 
@@ -33,6 +33,8 @@
     <li>I prezzi della tua zona, da questo sito (ospitato da GitHub Pages). Come per ogni sito, GitHub riceve l'indirizzo IP del telefono.</li>
     <li>Le mappe, dal servizio gratuito OpenFreeMap, che riceve l'indirizzo IP e l'area della mappa che stai guardando.</li>
     <li>Solo quando calcoli un viaggio: il percorso, dal servizio pubblico di FOSSGIS (routing.openstreetmap.de), che riceve l'indirizzo IP e le coordinate di partenza e di arrivo.</li>
+    <li>I prezzi in vigore in quel momento, dal servizio pubblico Osservaprezzi del Ministero delle Imprese e del Made in Italy (carburanti.mise.gov.it). Riceve l'indirizzo IP, il centro della zona che stai guardando con il raggio della ricerca e, quando apri un distributore, il suo codice. Nessun dato su di te.</li>
+    <li>Quando apri una colonnina di ricarica: quali punti sono liberi, dalla Piattaforma Unica Nazionale del GSE, che riceve l'indirizzo IP e i codici dei punti di quella colonnina. Per entrare come ospite, come fa il sito della piattaforma, il telefono chiede ad Amazon Cognito (AWS) credenziali temporanee legate a un identificativo casuale e anonimo, salvato solo sul telefono.</li>
   </ul>
   <p>Gli avvisi di prezzo vengono controllati dal telefono stesso, scaricando i prezzi da questo sito: per gli avvisi la posizione non viene seguita in background.</p>
   <p>Non usiamo strumenti di analisi, tracciamento o profilazione.</p>
@@ -41,8 +43,8 @@
   <p>Se decidi di fare una donazione, il pagamento avviene sul sito del servizio di pagamento (o su Google Play, se l'app è installata da lì): l'app non vede né conserva i tuoi dati di pagamento.</p>
 
   <h2>Fonti dei dati</h2>
-  <p>Prezzi e anagrafica dei distributori: Ministero delle Imprese e del Made in Italy – Osservaprezzi carburanti, licenza IODL 2.0. Colonnine di ricarica: © OpenStreetMap contributors, licenza ODbL, aggiornate ogni settimana. Mappe © OpenStreetMap contributors, OpenMapTiles, OpenFreeMap. Percorsi: OSRM su dati OpenStreetMap, servizio FOSSGIS.</p>
-  <p>Le tariffe di ricarica mostrate sono quelle che inserisci tu; finché non lo fai usiamo stime pubbliche (media nazionale dell'energia per le famiglie, prezzi medi a consumo delle colonnine rilevati dall'Osservatorio Adiconsum).</p>
+  <p>Prezzi e anagrafica dei distributori: Ministero delle Imprese e del Made in Italy – Osservaprezzi carburanti, licenza IODL 2.0 (file di ogni mattina) e prezzi in vigore letti in tempo reale dal servizio pubblico del Ministero. Colonnine di ricarica, stato dei punti e prezzi dichiarati dai gestori: GSE – Piattaforma Unica Nazionale dei punti di ricarica, aggiornate ogni giorno (licenza CC BY 4.0, secondo le linee guida AgID per i dati pubblici senza licenza); se la piattaforma non risponde, © OpenStreetMap contributors, licenza ODbL. Mappe © OpenStreetMap contributors, OpenMapTiles, OpenFreeMap. Percorsi: OSRM su dati OpenStreetMap, servizio FOSSGIS.</p>
+  <p>Le tariffe di ricarica mostrate sono quelle che inserisci tu; altrimenti il prezzo a consumo dichiarato dal gestore e, dove manca, stime pubbliche (media nazionale dell'energia per le famiglie, prezzi medi a consumo delle colonnine rilevati dall'Osservatorio Adiconsum).</p>
 
   <h2>Contatti</h2>
   <p>Per domande o segnalazioni apri una issue sul <a href="https://github.com/__REPO__/issues">repository del progetto</a>.</p>

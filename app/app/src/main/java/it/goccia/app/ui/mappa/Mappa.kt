@@ -4,6 +4,7 @@ import android.graphics.RectF
 import android.util.Log
 import android.view.Gravity
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
@@ -25,6 +26,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableDoubleStateOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -46,10 +48,13 @@ import it.goccia.app.dati.Colonnina
 import it.goccia.app.dati.Coordinate
 import it.goccia.app.dati.Distributore
 import it.goccia.app.dati.Presa
+import it.goccia.app.dati.StatoColonnina
 import it.goccia.app.logica.Convenienza
 import it.goccia.app.logica.Elettrico
 import it.goccia.app.logica.Formati
+import it.goccia.app.logica.Bandiere
 import it.goccia.app.logica.Offerta
+import it.goccia.app.logica.Tono
 import it.goccia.app.ui.GocciaViewModel
 import it.goccia.app.ui.VistaColonnine
 import it.goccia.app.ui.VistaZona
@@ -60,11 +65,12 @@ import it.goccia.app.ui.componenti.BottoneSecondario
 import it.goccia.app.ui.componenti.CampoRicerca
 import it.goccia.app.ui.componenti.ChipScelta
 import it.goccia.app.ui.componenti.LogoBandiera
-import it.goccia.app.ui.componenti.colorePin
 import it.goccia.app.ui.componenti.metaOfferta
 import it.goccia.app.ui.elettrico.IconaColonnina
+import it.goccia.app.ui.elettrico.RigaStatoPunti
 import it.goccia.app.ui.elettrico.metaColonnina
 import it.goccia.app.ui.elettrico.potenzaColonnina
+import it.goccia.app.ui.elettrico.testoTariffa
 import it.goccia.app.ui.elettrico.titoloColonnina
 import it.goccia.app.ui.icone.Icone
 import it.goccia.app.ui.naviga
@@ -214,7 +220,11 @@ fun SchermataMappa(
             attorno?.zona?.vicine.orEmpty().take(4).map { LatLng(it.colonnina.lat, it.colonnina.lon) }
         } else {
             val attorno = withTimeoutOrNull(20_000) { vm.vista.first { it != null && it.centro == c } }
-            attorno?.zona?.offerte.orEmpty().sortedBy { it.distanzaKm }.take(4).map { LatLng(it.distributore.lat, it.distributore.lon) }
+            // i piu vicini e il piu conveniente, che il foglio in basso descrive: deve stare nella vista
+            val zona = attorno?.zona
+            val consigliato = zona?.let { Convenienza.consigliati(it, 1) }.orEmpty()
+            (zona?.offerte.orEmpty().sortedBy { it.distanzaKm }.take(4) + consigliato)
+                .map { LatLng(it.distributore.lat, it.distributore.lon) }
         }
         Log.i("Goccia", "mappa: adatto la vista a ${vicini.size} punti vicini")
         if (vicini.isEmpty()) return@LaunchedEffect
@@ -235,18 +245,17 @@ fun SchermataMappa(
     LaunchedEffect(stile, vista, selezionato, colonnine, vistaEv, selezionataEv) {
         val s = stile ?: return@LaunchedEffect
         if (colonnine) {
+            // la colonnina descritta nel foglio in basso (scelta, o la piu vicina) e evidenziata
+            val evidenziata = selezionataEv ?: vistaEv?.zona?.vicine?.firstOrNull()?.colonnina?.id
             val elementi = vistaEv?.zona?.vicine.orEmpty().take(MASSIMO_PIN).map { cv ->
                 val c = cv.colonnina
-                val sel = c.id == selezionataEv
+                val sel = c.id == evidenziata
                 // senza potenza nota il segnaposto mostra solo il fulmine
                 val testo = c.kw?.let { Formati.kw(it) } ?: ""
-                val chiave = "c-$testo-$sel"
+                val aspetto = stileColonnina(c, sel)
+                val chiave = "c-$testo-${aspetto.fondo}-${aspetto.bordo}-$sel"
                 if (immaginiCaricate.add(chiave)) {
-                    s.addImage(
-                        chiave,
-                        if (sel) pin.disegna(testo, Colori.Petrolio.toArgb(), true, fulmine = testo.isEmpty())
-                        else pin.disegna(testo, android.graphics.Color.WHITE, false, Colori.PetrolioScuro.toArgb(), Colori.Petrolio.toArgb(), fulmine = testo.isEmpty()),
-                    )
+                    s.addImage(chiave, pin.disegna(testo, aspetto.fondo, sel, aspetto.testo, aspetto.bordo, fulmine = testo.isEmpty()))
                 }
                 Feature.fromGeometry(Point.fromLngLat(c.lon, c.lat)).apply {
                     addStringProperty("colonnina", c.id)
@@ -261,12 +270,17 @@ fun SchermataMappa(
         }
         val v = vista ?: return@LaunchedEffect
         val offerte = v.zona.tutte.sortedBy { it.distanzaKm }.take(MASSIMO_PIN)
+        // il distributore descritto nel foglio in basso (scelto, o il piu conveniente) e evidenziato
+        val evidenziato = selezionato ?: Convenienza.consigliati(v.zona, 1).firstOrNull()?.distributore?.id
         val elementi = offerte.map { o ->
-            val sel = o.distributore.id == selezionato
+            val sel = o.distributore.id == evidenziato
             val prezzo = Formati.prezzo(o.prezzo.millesimi)
-            val colore = if (sel) Colori.Inchiostro else if (o.vecchio) Colori.Linea else colorePin(o.tono)
-            val chiave = "p-$prezzo-${colore.toArgb()}-$sel"
-            if (immaginiCaricate.add(chiave)) s.addImage(chiave, pin.disegna(prezzo, colore.toArgb(), sel))
+            val aspetto = stilePrezzo(o, sel)
+            val nome = Bandiere.breve(o.distributore)
+            val chiave = "p-$prezzo-$nome-${aspetto.fondo}-${aspetto.bordo}-$sel"
+            if (immaginiCaricate.add(chiave)) {
+                s.addImage(chiave, pin.disegna(prezzo, aspetto.fondo, sel, aspetto.testo, aspetto.bordo, etichetta = nome))
+            }
             Feature.fromGeometry(Point.fromLngLat(o.distributore.lon, o.distributore.lat)).apply {
                 addStringProperty("id", o.distributore.id.toString())
                 addStringProperty("icona", chiave)
@@ -344,6 +358,7 @@ fun SchermataMappa(
                     }
                 }
             }
+            Legenda(colonnine, Modifier.padding(start = 20.dp, end = 20.dp, top = 10.dp))
         }
 
         Column(Modifier.align(Alignment.BottomCenter).fillMaxWidth()) {
@@ -375,6 +390,62 @@ fun SchermataMappa(
 
 /** Sotto questo zoom la mappa mostra troppa Italia per caricare i prezzi (vedi GocciaViewModel.mappaSpostata). */
 private const val ZOOM_PREZZI = 9.0
+
+/** Colori di un segnaposto: riempimento, testo e bordo (ARGB). */
+private data class StilePin(val fondo: Int, val testo: Int, val bordo: Int)
+
+private const val BIANCO = android.graphics.Color.WHITE
+
+/** Verde i convenienti, blu scuro gli altri, bianco con il bordo grigio i prezzi vecchi; il scelto ha il bordo scuro. */
+private fun stilePrezzo(o: Offerta, scelto: Boolean): StilePin {
+    val base = when {
+        o.vecchio -> StilePin(BIANCO, Colori.Testo3.toArgb(), Colori.Linea.toArgb())
+        o.tono == Tono.CONVENIENTE -> StilePin(Colori.VerdeTesto.toArgb(), BIANCO, BIANCO)
+        else -> StilePin(Colori.PinAltri.toArgb(), BIANCO, BIANCO)
+    }
+    return if (scelto) base.copy(bordo = Colori.Inchiostro.toArgb()) else base
+}
+
+/** Petrolio pieno le colonnine veloci (in continua), bianche con il bordo petrolio le lente. */
+private fun stileColonnina(c: Colonnina, scelta: Boolean): StilePin {
+    val base = if (c.continua) StilePin(Colori.Petrolio.toArgb(), BIANCO, BIANCO)
+    else StilePin(BIANCO, Colori.PetrolioScuro.toArgb(), Colori.Petrolio.toArgb())
+    return if (scelta) base.copy(bordo = Colori.Inchiostro.toArgb()) else base
+}
+
+/** Cosa vogliono dire i colori dei segnaposto, sempre visibile sotto i filtri. */
+@Composable
+private fun Legenda(colonnine: Boolean, modifier: Modifier = Modifier) {
+    Row(
+        modifier.horizontalScroll(rememberScrollState()),
+        horizontalArrangement = Arrangement.spacedBy(14.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        if (colonnine) {
+            VoceLegenda(Colori.Petrolio, null, "Veloci (in continua)")
+            VoceLegenda(Color.White, Colori.Petrolio, "Lente (in alternata)")
+        } else {
+            VoceLegenda(Colori.VerdeTesto, null, "Convenienti")
+            VoceLegenda(Colori.PinAltri, null, "Altri prezzi")
+            VoceLegenda(Color.White, Colori.Linea, "Prezzo vecchio")
+        }
+    }
+}
+
+@Composable
+private fun VoceLegenda(fondo: Color, bordo: Color?, testo: String) {
+    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+        val forma = RoundedCornerShape(6.dp)
+        Box(
+            Modifier
+                .size(width = 18.dp, height = 12.dp)
+                .clip(forma)
+                .background(fondo)
+                .then(if (bordo != null) Modifier.border(1.5.dp, bordo, forma) else Modifier),
+        )
+        Text(testo, style = Testi.Piccolo.copy(color = Colori.Testo2, fontWeight = FontWeight.SemiBold))
+    }
+}
 
 @Composable
 private fun SchedaSelezione(
@@ -425,6 +496,12 @@ private fun SchedaSelezione(
         if (offerta == null) {
             Text("Nessun distributore con ${vista.carburante.etichetta.lowercase()} in quest'area.", style = Testi.Corpo)
             return@Column
+        }
+        if (selezionato == null) {
+            Text(
+                "Il più conveniente qui vicino · evidenziato sulla mappa",
+                style = Testi.Piccolo.copy(color = Colori.Petrolio, fontWeight = FontWeight.Bold),
+            )
         }
         val d = offerta.distributore
         Row(
@@ -499,7 +576,15 @@ private fun SchedaColonnina(
             return@Column
         }
         val c = scelta.colonnina
-        val tariffa = vm.tariffaDi(c)
+        val usata = vm.tariffaUsata(c)
+        val tariffa = usata.euroKwh
+        val statoPunti by produceState<StatoColonnina?>(null, c.id) { value = vm.statoColonnina(c) }
+        if (selezionata == null) {
+            Text(
+                "La più vicina · evidenziata sulla mappa",
+                style = Testi.Piccolo.copy(color = Colori.Petrolio, fontWeight = FontWeight.Bold),
+            )
+        }
         Row(
             Modifier.clip(RoundedCornerShape(12.dp)).clickable { onColonnina(c) },
             verticalAlignment = Alignment.CenterVertically,
@@ -512,13 +597,10 @@ private fun SchedaColonnina(
             }
             Column(horizontalAlignment = Alignment.End) {
                 Text(potenzaColonnina(c), style = Testi.PrezzoMedio)
-                val mia = Elettrico.tariffaPersonale(c.classe, utente.tariffeColonnine)
-                Text(
-                    if (c.gratuita) "gratuita" else (if (mia) "tua tariffa " else "stima ") + Formati.euroKwh(tariffa),
-                    style = Testi.Piccolo.copy(color = Colori.Testo3),
-                )
+                Text(testoTariffa(c, usata), style = Testi.Piccolo.copy(color = Colori.Testo3))
             }
         }
+        RigaStatoPunti(statoPunti)
         val auto = utente.autoCorrente?.takeIf { it.alimentazione.elettrica }
         if (auto != null) {
             val kwh = 0.6 * auto.capienza

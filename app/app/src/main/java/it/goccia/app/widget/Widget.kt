@@ -182,7 +182,11 @@ private fun PrezziLargo(dati: DatiWidget.Prezzi) {
     Column(GlanceModifier.fillMaxSize()) {
         Row(GlanceModifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             Box(GlanceModifier.defaultWeight()) { Intestazione(dati.carburante) }
-            Text("prezzi del ${Formati.dataIso(dati.estrazione)}", style = TextStyle(color = colore(Testo3), fontSize = 12.sp), maxLines = 1)
+            Text(
+                dati.lettiIl?.let { "prezzi delle ${Formati.ora(it)}" } ?: "prezzi del ${Formati.dataIso(dati.estrazione)}",
+                style = TextStyle(color = colore(Testo3), fontSize = 12.sp),
+                maxLines = 1,
+            )
         }
         Spacer(GlanceModifier.height(10.dp))
         Row(GlanceModifier.fillMaxWidth(), verticalAlignment = Alignment.Bottom) {

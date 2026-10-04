@@ -37,6 +37,7 @@ import it.goccia.app.dati.Colonnina
 import it.goccia.app.dati.Coordinate
 import it.goccia.app.logica.ColonninaSulPercorso
 import it.goccia.app.logica.Elettrico
+import it.goccia.app.logica.OrigineTariffa
 import it.goccia.app.logica.Formati
 import it.goccia.app.ui.GocciaViewModel
 import it.goccia.app.ui.StatoViaggio
@@ -59,14 +60,21 @@ private fun pinElettrici(s: StatoViaggio.ProntoElettrico): List<PinViaggio> {
         val scelta = p.colonnina.id in scelte
         // senza potenza nota il segnaposto mostra solo il fulmine
         val testo = p.colonnina.kw?.let { Formati.kw(it) } ?: ""
-        if (scelta) {
-            PinViaggio(p.colonnina.lat, p.colonnina.lon, testo, Colori.Petrolio.toArgb(), true, PinViaggio.SCELTO)
-        } else {
-            PinViaggio(
-                p.colonnina.lat, p.colonnina.lon, testo, android.graphics.Color.WHITE, false, -(p.colonnina.kw ?: 0.0),
-                coloreTesto = Colori.PetrolioScuro.toArgb(), coloreBordo = Colori.Petrolio.toArgb(),
-            )
-        }
+        // come sulla mappa: petrolio le veloci, bianche le lente; la sosta scelta e piu grande, con il bordo scuro
+        val bianco = android.graphics.Color.WHITE
+        val veloce = p.colonnina.continua
+        PinViaggio(
+            p.colonnina.lat, p.colonnina.lon, testo,
+            if (veloce) Colori.Petrolio.toArgb() else bianco,
+            scelta,
+            if (scelta) PinViaggio.SCELTO else -(p.colonnina.kw ?: 0.0),
+            coloreTesto = if (veloce) bianco else Colori.PetrolioScuro.toArgb(),
+            coloreBordo = when {
+                scelta -> Colori.Inchiostro.toArgb()
+                veloce -> bianco
+                else -> Colori.Petrolio.toArgb()
+            },
+        )
     }
 }
 
@@ -154,7 +162,7 @@ internal fun RisultatoElettrico(vm: GocciaViewModel, s: StatoViaggio.ProntoElett
                 )
                 piano.soste.forEach { sosta ->
                     val c = sosta.punto.colonnina
-                    val mia = Elettrico.tariffaPersonale(c.classe, utente.tariffeColonnine)
+                    val origine = vm.tariffaUsata(c).origine
                     PassoViaggio(
                         titolo = "km ${sosta.punto.km.roundToInt()} · ${c.titolo}",
                         dettaglio = listOfNotNull(
@@ -167,7 +175,16 @@ internal fun RisultatoElettrico(vm: GocciaViewModel, s: StatoViaggio.ProntoElett
                         ultima = false,
                         extra = "Arrivi al ${Formati.percento(sosta.arrivo)} e ricarichi al ${Formati.percento(sosta.ripartenza)}: " +
                             "${Formati.durata(sosta.minuti)} · ~${Formati.euro(if (c.gratuita) 0.0 else sosta.costo)}" +
-                            if (c.gratuita) " (gratuita)" else " (${if (mia) "tua tariffa" else "stima"} ${Formati.euroKwh(sosta.tariffa)})",
+                            if (c.gratuita) {
+                                " (gratuita)"
+                            } else {
+                                val prefisso = when (origine) {
+                                    OrigineTariffa.TUA -> "tua tariffa "
+                                    OrigineTariffa.GESTORE -> "prezzo del gestore "
+                                    OrigineTariffa.STIMA -> "stima "
+                                }
+                                " ($prefisso${Formati.euroKwh(sosta.tariffa)})"
+                            },
                         onClick = { onColonnina(c) },
                     )
                 }
@@ -231,7 +248,8 @@ internal fun RisultatoElettrico(vm: GocciaViewModel, s: StatoViaggio.ProntoElett
                 }
             } else if (s.lungo.isEmpty()) {
                 Text(
-                    "Non abbiamo trovato colonnine lungo questo percorso: OpenStreetMap potrebbe non averle ancora mappate.",
+                    if (vm.colonnineDaPun) "Non abbiamo trovato colonnine veloci compatibili lungo questo percorso."
+                    else "Non abbiamo trovato colonnine lungo questo percorso: OpenStreetMap potrebbe non averle ancora mappate.",
                     style = Testi.Didascalia.copy(color = Colori.Testo2),
                 )
             }

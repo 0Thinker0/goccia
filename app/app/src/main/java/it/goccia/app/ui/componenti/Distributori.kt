@@ -36,6 +36,23 @@ fun metaOfferta(o: Offerta, adessoMillis: Long): String =
         Formati.aggiornamento(o.prezzo.comunicato, adessoMillis)
     }
 
+/**
+ * Da dove vengono i prezzi mostrati: "● Prezzi in tempo reale dal Ministero · letti alle 14:32",
+ * oppure, se Osservaprezzi non risponde, quelli del file pubblicato ogni mattina.
+ */
+@Composable
+fun RigaTempoReale(attivo: Boolean, lettiIl: Long?, errore: Boolean, modifier: Modifier = Modifier) {
+    val (colore, testo) = when {
+        attivo && lettiIl != null -> Colori.Verde to "Prezzi in tempo reale dal Ministero · letti alle ${Formati.ora(lettiIl)}"
+        errore -> Colori.Ambra to "Tempo reale non disponibile: prezzi in vigore ieri alle 8"
+        else -> return
+    }
+    Row(modifier, verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(7.dp)) {
+        Box(Modifier.size(8.dp).clip(RoundedCornerShape(4.dp)).background(colore))
+        Text(testo, style = Testi.Piccolo.copy(color = Colori.Testo2), maxLines = 1, overflow = TextOverflow.Ellipsis)
+    }
+}
+
 /** La card di un distributore nelle liste: logo, nome, distanza, badge di convenienza e prezzo. */
 @Composable
 fun CardOfferta(
