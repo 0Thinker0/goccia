@@ -1,0 +1,36 @@
+name: Sonde delle fonti
+
+# Interroga a mano le fonti in tempo reale (Osservaprezzi del MIMIT e Piattaforma Unica
+# Nazionale delle colonnine) e salva esempi di risposta nel ramo "ci-sonde".
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  sonde:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Interroga le fonti
+        run: node .github/sonde/sonda-fonti.mjs /tmp/sonde
+
+      - name: Pubblica le risposte nel ramo ci-sonde
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          [ -d /tmp/sonde ] || exit 0
+          cd /tmp/sonde
+          git init -q -b ci-sonde
+          git add .
+          git -c user.name=goccia-ci -c user.email=ci@users.noreply.github.com commit -q -m "Sonde ${GITHUB_RUN_NUMBER}"
+          git push -f -q "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" ci-sonde
