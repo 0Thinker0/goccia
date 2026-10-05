@@ -1,6 +1,6 @@
 MIT License
 
-Copyright (c) 2026 0Thinker0
+Copyright (c) 2026 Gabriele Orlando
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -19,7 +19,3 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
-
-The fuel price data published by this project comes from the Italian Ministry of
-Enterprises and Made in Italy (Osservaprezzi carburanti) under the Italian Open
-Data License v2.0 (IODL 2.0). Map data © OpenStreetMap contributors.

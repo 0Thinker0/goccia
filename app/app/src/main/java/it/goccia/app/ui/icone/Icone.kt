@@ -62,6 +62,7 @@ object Icone {
     val StellaPiena by lazy { pieno("stella piena", "M12 2.5l2.9 5.9 6.6 1-4.8 4.6 1.1 6.5L12 17.4l-5.8 3.1 1.1-6.5-4.8-4.6 6.6-1z") }
     val Persona by lazy { tratto("persona", cerchio(12f, 8f, 4f), "M4 21a8 8 0 0 1 16 0") }
     val Campanella by lazy { tratto("campanella", "M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9", "M10.3 21a1.94 1.94 0 0 0 3.4 0") }
+    val CampanellaPiena by lazy { pieno("campanella piena", "M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9z", "M9.8 20.2h4.4a2.2 2.2 0 0 1-4.4 0z") }
     val Auto by lazy {
         tratto(
             "auto",

@@ -55,6 +55,7 @@ import it.goccia.app.ui.componenti.Badge
 import it.goccia.app.ui.componenti.BadgeConvenienza
 import it.goccia.app.ui.componenti.BarraTitolo
 import it.goccia.app.ui.componenti.BottoneIcona
+import it.goccia.app.ui.componenti.BottoneInterruttore
 import it.goccia.app.ui.componenti.BottonePrimario
 import it.goccia.app.ui.componenti.BottoneSecondario
 import it.goccia.app.ui.componenti.GraficoLinea
@@ -132,7 +133,7 @@ private fun ContenutoDettaglio(vm: GocciaViewModel, d: Distributore, onIndietro:
                 Icone.Campanella,
                 if (preferito?.avvisaCalo == true) "Avviso di calo attivo" else "Avvisami se scende",
                 {
-                    if (preferito == null) vm.preferito(d, true) else vm.avvisaCalo(d.id, !preferito.avvisaCalo)
+                    if (preferito == null) vm.preferito(d, true, conAvviso = true) else vm.avvisaCalo(d.id, !preferito.avvisaCalo)
                 },
                 colore = if (preferito?.avvisaCalo == true) Colori.Petrolio else Colori.Inchiostro,
                 dimensioneIcona = 21.dp,
@@ -153,23 +154,34 @@ private fun ContenutoDettaglio(vm: GocciaViewModel, d: Distributore, onIndietro:
         ) {
             Intestazione(vm, d)
             TabellaPrezzi(vm, d, carburante, self, adesso)
+            val allerta = preferito?.avvisaCalo == true
             Row(Modifier.padding(start = 20.dp, end = 20.dp, top = 12.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                val allerta = preferito?.avvisaCalo == true
-                BottoneSecondario(
-                    if (allerta) "Avviso attivo" else "Attiva avviso",
+                // accesi si colorano (petrolio l'avviso, ambra il preferito): si vede subito cosa e attivo
+                BottoneInterruttore(
+                    if (allerta) "Avviso attivo" else "Avvisami",
+                    allerta,
                     {
-                        if (preferito == null) vm.preferito(d, true) else vm.avvisaCalo(d.id, !allerta)
+                        if (preferito == null) vm.preferito(d, true, conAvviso = true) else vm.avvisaCalo(d.id, !allerta)
                     },
                     Modifier.weight(1f),
-                    icona = Icone.Campanella,
-                    coloreIcona = if (allerta) Colori.Petrolio else Colori.Inchiostro,
+                    icona = if (allerta) Icone.CampanellaPiena else Icone.Campanella,
                 )
-                BottoneSecondario(
+                BottoneInterruttore(
                     if (preferito != null) "Salvato" else "Salva",
+                    preferito != null,
                     { vm.preferito(d, preferito == null) },
                     Modifier.weight(1f),
                     icona = if (preferito != null) Icone.StellaPiena else Icone.Stella,
-                    coloreIcona = if (preferito != null) Colori.Ambra else Colori.Inchiostro,
+                    accento = Colori.AmbraScuro,
+                    testoAcceso = Colori.AmbraTesto,
+                    sfondoAcceso = Colori.AmbraChiaro,
+                )
+            }
+            if (allerta) {
+                Text(
+                    "Ti mandiamo una notifica quando questo distributore abbassa il prezzo del ${carburante.etichetta.lowercase()}.",
+                    style = Testi.Piccolo.copy(color = Colori.PetrolioScuro, fontWeight = FontWeight.SemiBold),
+                    modifier = Modifier.padding(start = 24.dp, end = 24.dp, top = 8.dp),
                 )
             }
             val prezzo = Convenienza.prezzoPer(d, carburante, self)?.first
@@ -210,15 +222,15 @@ private fun ContenutoDettaglio(vm: GocciaViewModel, d: Distributore, onIndietro:
                 BottonePrimario(
                     "Naviga",
                     { naviga(context, d, utente.impostazioni.navigazione) },
-                    Modifier.weight(0.7f),
+                    Modifier.weight(1f),
                     icona = Icone.Naviga,
                     altezza = 54.dp,
                     forma = RoundedCornerShape(16.dp),
                 )
                 BottoneSecondario(
-                    "Ho fatto il pieno qui",
+                    "Registra pieno",
                     onRifornimento,
-                    Modifier.weight(1.3f),
+                    Modifier.weight(1f),
                     icona = Icone.Piu,
                     altezza = 54.dp,
                     forma = RoundedCornerShape(16.dp),

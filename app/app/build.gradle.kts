@@ -19,8 +19,17 @@ val tutteLeAbi: Boolean = providers.gradleProperty("goccia.tutteLeAbi").isPresen
 val repository: String = System.getenv("GITHUB_REPOSITORY")?.takeIf { it.isNotBlank() }
     ?: providers.gradleProperty("goccia.repo").get()
 
-// Pagina per le donazioni (PayPal.me, Ko-fi...): vuota = nessun pulsante per donare.
-val donazioni: String = providers.gradleProperty("goccia.donazioni").orNull.orEmpty()
+// Versione per Google Play (-Pgoccia.play): i caffe si offrono con gli acquisti in-app di Google
+// Play e non c'e nessun link esterno per donare (le regole di Play non lo permettono).
+val perPlay: Boolean = providers.gradleProperty("goccia.play").isPresent
+
+// Pagina per le donazioni (PayPal.me, Ko-fi...) della versione scaricata da GitHub:
+// vuota = nessun pulsante per donare. Mai nella versione per Google Play.
+val donazioni: String = if (perPlay) "" else providers.gradleProperty("goccia.donazioni").orNull.orEmpty()
+
+// Chiave privata per firmare le versioni pubblicate (sulla build di GitHub arriva dai secret,
+// vedi .github/workflows/android.yml). Senza, si usa la chiave di prova fissa dell'anteprima.
+val chiaveRilascio: File? = System.getenv("GOCCIA_KEYSTORE_FILE")?.takeIf { it.isNotBlank() }?.let { file(it) }?.takeIf { it.exists() }
 
 android {
     namespace = "it.goccia.app"
@@ -31,10 +40,11 @@ android {
         minSdk = 26
         targetSdk = 36
         versionCode = numeroBuild
-        versionName = "0.1.$numeroBuild"
+        versionName = "1.0.$numeroBuild"
         buildConfigField("String", "DATI_URL", "\"$datiUrl\"")
         buildConfigField("String", "REPO", "\"$repository\"")
         buildConfigField("String", "DONAZIONI", "\"$donazioni\"")
+        buildConfigField("boolean", "PLAY", "$perPlay")
         // i telefoni Android sono ARM: niente librerie x86 (solo emulatori) e APK piu leggero
         if (!tutteLeAbi) ndk { abiFilters += listOf("arm64-v8a", "armeabi-v7a") }
     }
@@ -47,17 +57,26 @@ android {
             keyAlias = "androiddebugkey"
             keyPassword = "android"
         }
+        if (chiaveRilascio != null) {
+            create("pubblica") {
+                storeFile = chiaveRilascio
+                storePassword = System.getenv("GOCCIA_KEYSTORE_PASSWORD")
+                keyAlias = System.getenv("GOCCIA_KEY_ALIAS")
+                keyPassword = System.getenv("GOCCIA_KEY_PASSWORD")
+            }
+        }
     }
 
     buildTypes {
         debug {
             signingConfig = signingConfigs.getByName("debug")
         }
-        // La versione che si installa sul telefono: non "debuggable", quindi molto piu fluida,
-        // firmata con la stessa chiave fissa cosi ogni nuova build si installa sopra la precedente.
+        // La versione che si installa sul telefono: non "debuggable", quindi molto piu fluida.
+        // Firmata con la chiave privata se c'e, altrimenti con quella di prova fissa: in entrambi i
+        // casi ogni nuova build si installa sopra la precedente firmata con la stessa chiave.
         release {
             isMinifyEnabled = false
-            signingConfig = signingConfigs.getByName("debug")
+            signingConfig = signingConfigs.getByName(if (chiaveRilascio != null) "pubblica" else "debug")
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
         }
     }
@@ -112,6 +131,7 @@ dependencies {
     implementation(libs.maplibre)
     implementation(libs.androidx.work.runtime)
     implementation(libs.androidx.glance.appwidget)
+    implementation(libs.play.billing)
 
     testImplementation(libs.junit)
 }

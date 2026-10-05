@@ -100,9 +100,12 @@ foto lista 5
 nota "dettaglio e rifornimento"
 tocca "cent vs media" || tocca "Nella media"
 foto dettaglio 6
+# l'avviso acceso deve vedersi bene (pulsante colorato e riga di spiegazione)
+tocca "Avvisami"
+foto dettaglio-avviso 2
 scorri
 foto dettaglio-2 4
-tocca "Ho fatto il pieno qui"
+tocca "Registra pieno"
 foto rifornimento 3
 tocca "50 €"
 foto rifornimento-50
@@ -187,10 +190,22 @@ for _ in 1 2 3; do esiste "Profilo" && break; indietro; done
 nota "profilo e impostazioni"
 tocca "Profilo"
 foto profilo 3
+trova "Sostieni il progetto"
+foto sostieni 2
+scorri
+foto sostieni-2
+indietro
+sleep 1
+# torniamo in cima al profilo, dove c'e il pulsante delle impostazioni
+adb shell input swipe 540 700 540 2000 300
+adb shell input swipe 540 700 540 2000 300
+sleep 1
 tocca --descrizione "Impostazioni"
 foto impostazioni 2
 scorri
 foto impostazioni-2
+scorri
+foto impostazioni-3
 
 nota "widget"
 trova "Prezzi vicino a te"

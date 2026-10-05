@@ -1,5 +1,12 @@
 package it.goccia.app.ui
 
+import androidx.compose.animation.AnimatedContentTransitionScope
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -30,8 +37,12 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.navigation.NamedNavArgument
+import androidx.navigation.NavBackStackEntry
+import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -103,6 +114,27 @@ private val schede = listOf(
     Scheda(Rotte.PROFILO, "Profilo", Icone.Persona),
 )
 
+/** Le pagine principali (le schede e la lista): tra loro si passa con una dissolvenza in sequenza. */
+private val radici = setOf(Rotte.INTRO, Rotte.HOME, Rotte.MAPPA, Rotte.LISTA, Rotte.VIAGGIO, Rotte.PREFERITI, Rotte.PROFILO)
+
+private fun AnimatedContentTransitionScope<NavBackStackEntry>.traSchede(): Boolean =
+    initialState.destination.route in radici && targetState.destination.route in radici
+
+private const val USCITA_SCHEDA = 90
+private const val ENTRATA_SCHEDA = 210
+private val scorrimento = tween<IntOffset>(300, easing = FastOutSlowInEasing)
+
+/** Una pagina della navigazione, sempre opaca: durante lo scorrimento non si vede quella sotto. */
+private fun NavGraphBuilder.pagina(
+    route: String,
+    arguments: List<NamedNavArgument> = emptyList(),
+    contenuto: @Composable (NavBackStackEntry) -> Unit,
+) {
+    composable(route, arguments = arguments) { e ->
+        Box(Modifier.fillMaxSize().background(Colori.Sfondo)) { contenuto(e) }
+    }
+}
+
 /** Cambio di scheda nella barra in basso: la Home resta sempre alla base della pila. */
 private fun NavHostController.vaiAScheda(rotta: String) {
     navigate(rotta) {
@@ -148,14 +180,32 @@ fun GocciaRadice(
     val conBarra = schedaCorrente in schede.map { it.rotta }
 
     Column(Modifier.fillMaxSize().background(Colori.Sfondo)) {
-        NavHost(nav, startDestination = inizio, modifier = Modifier.weight(1f)) {
-            composable(Rotte.INTRO) {
+        NavHost(
+            nav,
+            startDestination = inizio,
+            modifier = Modifier.weight(1f),
+            // mai due pagine trasparenti una sopra l'altra: tra le schede la vecchia sparisce e poi
+            // compare la nuova; le altre pagine scorrono da destra, opache, sopra quella di prima
+            enterTransition = {
+                if (traSchede()) fadeIn(tween(ENTRATA_SCHEDA, delayMillis = USCITA_SCHEDA)) else slideInHorizontally(scorrimento) { it }
+            },
+            exitTransition = {
+                if (traSchede()) fadeOut(tween(USCITA_SCHEDA)) else slideOutHorizontally(scorrimento) { -it / 4 }
+            },
+            popEnterTransition = {
+                if (traSchede()) fadeIn(tween(ENTRATA_SCHEDA, delayMillis = USCITA_SCHEDA)) else slideInHorizontally(scorrimento) { -it / 4 }
+            },
+            popExitTransition = {
+                if (traSchede()) fadeOut(tween(USCITA_SCHEDA)) else slideOutHorizontally(scorrimento) { it }
+            },
+        ) {
+            pagina(Rotte.INTRO) {
                 SchermataIntro(vm) {
                     vm.completaIntroduzione()
                     nav.navigate(Rotte.HOME) { popUpTo(Rotte.INTRO) { inclusive = true } }
                 }
             }
-            composable(Rotte.HOME) {
+            pagina(Rotte.HOME) {
                 SchermataHome(
                     vm = vm,
                     onDistributore = { nav.navigate(Rotte.dettaglio(it.provincia, it.id)) },
@@ -181,7 +231,7 @@ fun GocciaRadice(
                     onTariffa = { nav.navigate(Rotte.TARIFFA) },
                 )
             }
-            composable(Rotte.MAPPA) {
+            pagina(Rotte.MAPPA) {
                 SchermataMappa(
                     vm = vm,
                     onDistributore = { nav.navigate(Rotte.dettaglio(it.provincia, it.id)) },
@@ -189,14 +239,14 @@ fun GocciaRadice(
                     onColonnina = { nav.navigate(Rotte.colonnina(it.id)) },
                 )
             }
-            composable(Rotte.LISTA) {
+            pagina(Rotte.LISTA) {
                 SchermataLista(
                     vm = vm,
                     onDistributore = { nav.navigate(Rotte.dettaglio(it.provincia, it.id)) },
                     onMappa = { if (!nav.popBackStack(Rotte.MAPPA, inclusive = false)) nav.vaiAScheda(Rotte.MAPPA) },
                 )
             }
-            composable(Rotte.VIAGGIO) {
+            pagina(Rotte.VIAGGIO) {
                 SchermataViaggio(
                     vm = vm,
                     onDistributore = { nav.navigate(Rotte.dettaglio(it.provincia, it.id)) },
@@ -205,7 +255,7 @@ fun GocciaRadice(
                     onAutostrada = { nav.navigate(Rotte.AUTOSTRADA) { launchSingleTop = true } },
                 )
             }
-            composable(Rotte.PREFERITI) {
+            pagina(Rotte.PREFERITI) {
                 SchermataPreferiti(
                     vm = vm,
                     scheda = schedaPreferiti,
@@ -217,7 +267,7 @@ fun GocciaRadice(
                     onCerca = { nav.navigate(Rotte.LISTA) },
                 )
             }
-            composable(Rotte.PROFILO) {
+            pagina(Rotte.PROFILO) {
                 SchermataProfilo(
                     vm = vm,
                     onImpostazioni = { nav.navigate(Rotte.IMPOSTAZIONI) },
@@ -227,7 +277,7 @@ fun GocciaRadice(
                     onSostieni = { nav.navigate(Rotte.SOSTIENI) },
                 )
             }
-            composable(
+            pagina(
                 Rotte.DETTAGLIO,
                 arguments = listOf(
                     navArgument("prov") { type = NavType.StringType },
@@ -244,7 +294,7 @@ fun GocciaRadice(
                     onRifornimento = { nav.navigate(Rotte.rifornimento(provincia, id)) },
                 )
             }
-            composable(
+            pagina(
                 Rotte.RIFORNIMENTO,
                 arguments = listOf(
                     navArgument("prov") { type = NavType.StringType; defaultValue = "" },
@@ -258,7 +308,7 @@ fun GocciaRadice(
                     onChiudi = { nav.popBackStack() },
                 )
             }
-            composable(
+            pagina(
                 Rotte.AVVISO,
                 arguments = listOf(
                     navArgument("id") { type = NavType.StringType; defaultValue = "" },
@@ -273,10 +323,10 @@ fun GocciaRadice(
                     onNuovoLuogo = { nav.navigate(Rotte.luogo(tipo = "ALTRO")) },
                 )
             }
-            composable(Rotte.AUTO, arguments = listOf(navArgument("id") { type = NavType.StringType; defaultValue = "" })) { e ->
+            pagina(Rotte.AUTO, arguments = listOf(navArgument("id") { type = NavType.StringType; defaultValue = "" })) { e ->
                 SchermataAuto(vm = vm, id = e.arguments?.getString("id")?.takeIf { it.isNotBlank() }, onChiudi = { nav.popBackStack() })
             }
-            composable(Rotte.IMPOSTAZIONI) {
+            pagina(Rotte.IMPOSTAZIONI) {
                 SchermataImpostazioni(
                     vm = vm,
                     onIndietro = { nav.popBackStack() },
@@ -285,7 +335,7 @@ fun GocciaRadice(
                     onTariffa = { nav.navigate(Rotte.TARIFFA) },
                 )
             }
-            composable(
+            pagina(
                 Rotte.LUOGO,
                 arguments = listOf(
                     navArgument("id") { type = NavType.StringType; defaultValue = "" },
@@ -299,10 +349,10 @@ fun GocciaRadice(
                     onChiudi = { nav.popBackStack() },
                 )
             }
-            composable(Rotte.REGISTRO) { SchermataRegistro(vm = vm, onIndietro = { nav.popBackStack() }) }
-            composable(Rotte.STATISTICHE) { SchermataStatistiche(vm = vm, onIndietro = { nav.popBackStack() }) }
-            composable(Rotte.SOSTIENI) { SchermataSostieni(onIndietro = { nav.popBackStack() }) }
-            composable(Rotte.COLONNINA, arguments = listOf(navArgument("id") { type = NavType.StringType })) { e ->
+            pagina(Rotte.REGISTRO) { SchermataRegistro(vm = vm, onIndietro = { nav.popBackStack() }) }
+            pagina(Rotte.STATISTICHE) { SchermataStatistiche(vm = vm, onIndietro = { nav.popBackStack() }) }
+            pagina(Rotte.SOSTIENI) { SchermataSostieni(onIndietro = { nav.popBackStack() }) }
+            pagina(Rotte.COLONNINA, arguments = listOf(navArgument("id") { type = NavType.StringType })) { e ->
                 SchermataColonnina(
                     vm = vm,
                     id = e.arguments?.getString("id").orEmpty(),
@@ -310,8 +360,8 @@ fun GocciaRadice(
                     onTariffa = { nav.navigate(Rotte.TARIFFA) },
                 )
             }
-            composable(Rotte.TARIFFA) { SchermataTariffa(vm = vm, onIndietro = { nav.popBackStack() }) }
-            composable(Rotte.AUTOSTRADA) { SchermataAutostrada(vm = vm, onIndietro = { nav.popBackStack() }) }
+            pagina(Rotte.TARIFFA) { SchermataTariffa(vm = vm, onIndietro = { nav.popBackStack() }) }
+            pagina(Rotte.AUTOSTRADA) { SchermataAutostrada(vm = vm, onIndietro = { nav.popBackStack() }) }
         }
         if (conBarra) {
             BarraNavigazione(schedaCorrente) { nav.vaiAScheda(it) }

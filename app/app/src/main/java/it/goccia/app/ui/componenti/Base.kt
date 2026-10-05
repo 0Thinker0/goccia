@@ -22,6 +22,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
@@ -309,6 +310,58 @@ fun BottoneSecondario(
         Text(
             testo,
             style = Testi.Pulsante.copy(color = if (abilitato) Colori.Inchiostro else Colori.Testo3, fontSize = 14.sp),
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            textAlign = TextAlign.Center,
+        )
+    }
+}
+
+/** Chi ha fatto Goccia: lo stesso testo e anche nel README e sul sito. */
+const val CREDITI = "Creato da Gabriele Orlando, con la collaborazione di Claude Code"
+
+@Composable
+fun TestoCrediti(modifier: Modifier = Modifier) {
+    Text(
+        CREDITI,
+        style = Testi.Piccolo.copy(color = Colori.Testo3, fontWeight = FontWeight.Medium),
+        textAlign = TextAlign.Center,
+        modifier = modifier,
+    )
+}
+
+/**
+ * Pulsante che si accende: spento come [BottoneSecondario], acceso con lo sfondo tinto, il bordo
+ * e il testo del colore [accento] (per esempio "Avviso attivo", "Salvato").
+ */
+@Composable
+fun BottoneInterruttore(
+    testo: String,
+    acceso: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    icona: ImageVector? = null,
+    accento: Color = Colori.Petrolio,
+    testoAcceso: Color = Colori.PetrolioScuro,
+    sfondoAcceso: Color = Colori.PetrolioChiaro,
+    altezza: Dp = 48.dp,
+    forma: Shape = Forme.Pulsante,
+) {
+    Row(
+        modifier = modifier
+            .height(altezza)
+            .clip(forma)
+            .background(if (acceso) sfondoAcceso else Colori.Superficie)
+            .border(if (acceso) 1.5.dp else 1.dp, if (acceso) accento else Colori.BordoControllo, forma)
+            .toggleable(value = acceso, role = Role.Switch, onValueChange = { onClick() })
+            .padding(horizontal = 12.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        if (icona != null) Icon(icona, null, tint = if (acceso) accento else Colori.Inchiostro, modifier = Modifier.size(18.dp))
+        Text(
+            testo,
+            style = Testi.Pulsante.copy(color = if (acceso) testoAcceso else Colori.Inchiostro, fontSize = 14.sp),
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
             textAlign = TextAlign.Center,

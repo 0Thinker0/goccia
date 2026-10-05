@@ -729,10 +729,11 @@ class GocciaViewModel(private val c: Contenitore) : ViewModel() {
 
     fun chiudiDonazione() = modifica { it.copy(donazioneChiusaIl = System.currentTimeMillis()) }
 
-    fun preferito(d: Distributore, aggiungi: Boolean) = modifica { u ->
+    /** Salva o toglie un preferito; [conAvviso] accende anche l'avviso di calo (solo da "Avvisami"). */
+    fun preferito(d: Distributore, aggiungi: Boolean, conAvviso: Boolean = false) = modifica { u ->
         if (aggiungi) {
             if (u.ePreferito(d.id)) u
-            else u.copy(preferiti = u.preferiti + Preferito(d.id, d.provincia, d.titolo, d.lat, d.lon))
+            else u.copy(preferiti = u.preferiti + Preferito(d.id, d.provincia, d.titolo, d.lat, d.lon, avvisaCalo = conAvviso))
         } else {
             u.copy(preferiti = u.preferiti.filterNot { it.id == d.id })
         }

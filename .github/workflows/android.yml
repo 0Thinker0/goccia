@@ -35,11 +35,34 @@ jobs:
       - name: Indirizzo dei dati (GitHub Pages di questo repository)
         run: echo "GOCCIA_DATI_URL=https://${GITHUB_REPOSITORY_OWNER,,}.github.io/${GITHUB_REPOSITORY#*/}/" >> "$GITHUB_ENV"
 
+      # Chiave privata di firma (secret del repository). Senza,
+      # l'APK si firma con la chiave di prova dell'anteprima e il bundle per Google Play non si fa.
+      - name: Chiave di firma
+        env:
+          KEYSTORE_BASE64: ${{ secrets.GOCCIA_KEYSTORE_BASE64 }}
+        run: |
+          if [ -n "$KEYSTORE_BASE64" ]; then
+            echo "$KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/goccia.jks"
+            echo "GOCCIA_KEYSTORE_FILE=$RUNNER_TEMP/goccia.jks" >> "$GITHUB_ENV"
+            echo "Firma con la chiave privata del progetto"
+          else
+            echo "::notice::Nessuna chiave privata nei secret: APK firmato con la chiave di prova, niente bundle per Google Play"
+          fi
+
       - name: Test e compilazione
         id: build
+        env:
+          GOCCIA_KEYSTORE_PASSWORD: ${{ secrets.GOCCIA_KEYSTORE_PASSWORD }}
+          GOCCIA_KEY_ALIAS: ${{ secrets.GOCCIA_KEY_ALIAS }}
+          GOCCIA_KEY_PASSWORD: ${{ secrets.GOCCIA_KEY_PASSWORD }}
         run: |
           set -o pipefail
           ./gradlew --no-daemon testDebugUnitTest assembleRelease 2>&1 | tee build.log
+          # versione per Google Play: bundle con i caffe in-app e tutte le architetture
+          # (Play consegna a ogni telefono solo la sua), solo con la chiave privata
+          if [ -n "$GOCCIA_KEYSTORE_FILE" ]; then
+            ./gradlew --no-daemon bundleRelease -Pgoccia.play -Pgoccia.tutteLeAbi 2>&1 | tee -a build.log
+          fi
 
       # I log delle Actions non sono sempre consultabili da fuori: in caso di errore
       # salviamo il riassunto nel ramo ci-log (errori.txt) e come annotazioni.
@@ -59,13 +82,24 @@ jobs:
           git push -f -q "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" ci-log
 
       - name: Prepara l'APK
-        run: cp app/build/outputs/apk/release/app-release.apk goccia.apk
+        run: |
+          cp app/build/outputs/apk/release/app-release.apk goccia.apk
+          if [ -f app/build/outputs/bundle/release/app-release.aab ]; then
+            cp app/build/outputs/bundle/release/app-release.aab goccia-play.aab
+          fi
 
       - uses: actions/upload-artifact@v4
         with:
           name: goccia-apk
           path: app/goccia.apk
           retention-days: 30
+
+      - uses: actions/upload-artifact@v4
+        if: hashFiles('app/goccia-play.aab') != ''
+        with:
+          name: goccia-play-aab
+          path: app/goccia-play.aab
+          retention-days: 90
 
       - name: Pubblica l'anteprima
         if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
@@ -79,4 +113,9 @@ jobs:
             gh release create anteprima --prerelease --title "Anteprima" --notes "$NOTE"
           fi
           gh release upload anteprima goccia.apk --clobber
+          if [ -f goccia-play.aab ]; then
+            gh release upload anteprima goccia-play.aab --clobber
+            NOTE="$NOTE
+          goccia-play.aab è il pacchetto da caricare su Google Play Console (versione ${GITHUB_RUN_NUMBER})."
+          fi
           gh release edit anteprima --notes "$NOTE"

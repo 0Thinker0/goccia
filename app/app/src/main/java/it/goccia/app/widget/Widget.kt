@@ -95,14 +95,19 @@ object Widget {
 
 // ------------------------------------------------------------------ prezzi
 
-/** Il piu conveniente vicino a te: piccolo (prezzo e distributore) o largo (con altri due). */
+/**
+ * Il piu conveniente vicino a te: piccolo (prezzo e distributore), largo (con il dettaglio) o
+ * alto (con altri due, uno per riga).
+ */
 class WidgetPrezzi : GlanceAppWidget() {
-    override val sizeMode = SizeMode.Responsive(setOf(PICCOLO, LARGO))
+    override val sizeMode = SizeMode.Responsive(setOf(PICCOLO, LARGO, ALTO))
 
     override suspend fun provideGlance(context: Context, id: GlanceId) {
         val dati = DatiWidget.prezzi(context)
         provideContent {
-            val largo = LocalSize.current.width >= LARGO.width
+            val dimensione = LocalSize.current
+            val largo = dimensione.width >= LARGO.width
+            val alto = largo && dimensione.height >= ALTO.height
             Box(
                 GlanceModifier
                     .fillMaxSize()
@@ -114,7 +119,7 @@ class WidgetPrezzi : GlanceAppWidget() {
                 when {
                     dati == null -> Vuoto("Apri Goccia per trovare i distributori vicino a te.")
                     dati.voci.isEmpty() -> Vuoto("Nessun distributore con prezzi recenti ${dati.dove}.")
-                    largo -> PrezziLargo(dati)
+                    largo -> PrezziLargo(dati, conAltri = alto)
                     else -> PrezziPiccolo(dati)
                 }
             }
@@ -124,6 +129,7 @@ class WidgetPrezzi : GlanceAppWidget() {
     companion object {
         val PICCOLO = DpSize(110.dp, 110.dp)
         val LARGO = DpSize(250.dp, 110.dp)
+        val ALTO = DpSize(250.dp, 175.dp)
     }
 }
 
@@ -177,7 +183,7 @@ private fun Differenza(cent: Int?, breve: Boolean) {
 }
 
 @Composable
-private fun PrezziLargo(dati: DatiWidget.Prezzi) {
+private fun PrezziLargo(dati: DatiWidget.Prezzi, conAltri: Boolean) {
     val primo = dati.voci.first()
     Column(GlanceModifier.fillMaxSize()) {
         Row(GlanceModifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
@@ -188,7 +194,7 @@ private fun PrezziLargo(dati: DatiWidget.Prezzi) {
                 maxLines = 1,
             )
         }
-        Spacer(GlanceModifier.height(10.dp))
+        Spacer(GlanceModifier.height(8.dp))
         Row(GlanceModifier.fillMaxWidth(), verticalAlignment = Alignment.Bottom) {
             Column(GlanceModifier.defaultWeight()) {
                 Text("Il più conveniente ${dati.dove}", style = TextStyle(color = colore(Testo3), fontSize = 12.sp, fontWeight = FontWeight.Bold), maxLines = 1)
@@ -203,22 +209,28 @@ private fun PrezziLargo(dati: DatiWidget.Prezzi) {
             Text(Formati.prezzo(primo.prezzo), style = TextStyle(color = colore(Inchiostro), fontSize = 32.sp, fontWeight = FontWeight.Bold), maxLines = 1)
         }
         val altri = dati.voci.drop(1)
-        if (altri.isNotEmpty()) {
-            Spacer(GlanceModifier.height(10.dp))
-            Box(GlanceModifier.fillMaxWidth().height(1.dp).background(Divisore)) {}
+        if (conAltri && altri.isNotEmpty()) {
             Spacer(GlanceModifier.height(8.dp))
-            Row(GlanceModifier.fillMaxWidth()) {
-                altri.forEachIndexed { i, v ->
-                    if (i > 0) Spacer(GlanceModifier.width(12.dp))
-                    Row(GlanceModifier.defaultWeight().clickable(apri(v)), verticalAlignment = Alignment.CenterVertically) {
-                        Text(
-                            "${v.nome} · ${Formati.km(v.distanzaKm)}",
-                            style = TextStyle(color = colore(TestoChip), fontSize = 13.sp, fontWeight = FontWeight.Medium),
-                            maxLines = 1,
-                            modifier = GlanceModifier.defaultWeight(),
-                        )
-                        Text(Formati.prezzo(v.prezzo), style = TextStyle(color = colore(Inchiostro), fontSize = 13.sp, fontWeight = FontWeight.Bold))
-                    }
+            Box(GlanceModifier.fillMaxWidth().height(1.dp).background(Divisore)) {}
+            // gli altri due, uno per riga: posizione, distributore con la via, distanza e prezzo
+            altri.forEachIndexed { i, v ->
+                Spacer(GlanceModifier.height(6.dp))
+                Row(GlanceModifier.fillMaxWidth().clickable(apri(v)), verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        "${i + 2}",
+                        style = TextStyle(color = colore(Testo3), fontSize = 12.sp, fontWeight = FontWeight.Bold),
+                        modifier = GlanceModifier.width(16.dp),
+                    )
+                    Text(
+                        v.titolo,
+                        style = TextStyle(color = colore(TestoChip), fontSize = 13.sp, fontWeight = FontWeight.Medium),
+                        maxLines = 1,
+                        modifier = GlanceModifier.defaultWeight(),
+                    )
+                    Spacer(GlanceModifier.width(8.dp))
+                    Text(Formati.km(v.distanzaKm), style = TextStyle(color = colore(Testo3), fontSize = 12.sp), maxLines = 1)
+                    Spacer(GlanceModifier.width(10.dp))
+                    Text(Formati.prezzo(v.prezzo), style = TextStyle(color = colore(Inchiostro), fontSize = 15.sp, fontWeight = FontWeight.Bold), maxLines = 1)
                 }
             }
         }

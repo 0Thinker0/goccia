@@ -53,6 +53,7 @@ import it.goccia.app.logica.Formati
 import it.goccia.app.ui.GocciaViewModel
 import it.goccia.app.ui.apriLink
 import it.goccia.app.ui.componenti.BarraTitolo
+import it.goccia.app.ui.componenti.CREDITI
 import it.goccia.app.ui.componenti.Gruppo
 import it.goccia.app.ui.componenti.RigaInterruttore
 import it.goccia.app.ui.componenti.RigaVoce
@@ -279,7 +280,8 @@ fun SchermataImpostazioni(
             Gruppo("Info") {
                 RigaVoce("Sostieni il progetto", icona = Icone.Cuore, coloreIcona = Colori.AmbraScuro, onClick = onSostieni)
                 RigaVoce("Codice sorgente", valore = "GitHub", onClick = { apriLink(context, "https://github.com/${BuildConfig.REPO}") })
-                RigaVoce("Versione", valore = BuildConfig.VERSION_NAME, divisore = false) {}
+                RigaVoce("Versione", valore = BuildConfig.VERSION_NAME) {}
+                RigaVoce("Crediti", sottotitolo = CREDITI, divisore = false, altezza = 68.dp) {}
             }
         }
     }
