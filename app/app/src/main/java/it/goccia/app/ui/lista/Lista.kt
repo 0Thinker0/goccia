@@ -43,6 +43,7 @@ import it.goccia.app.dati.Distributore
 import it.goccia.app.logica.Convenienza
 import it.goccia.app.logica.Formati
 import it.goccia.app.logica.Ordinamento
+import it.goccia.app.ui.Centro
 import it.goccia.app.ui.GocciaViewModel
 import it.goccia.app.ui.TipoCentro
 import it.goccia.app.ui.componenti.BottoneIcona
@@ -67,8 +68,10 @@ fun SchermataLista(vm: GocciaViewModel, onDistributore: (Distributore) -> Unit, 
     LaunchedEffect(Unit) { vm.avvia() }
     val dati by vm.dati.collectAsStateWithLifecycle()
     val utente by vm.utente.collectAsStateWithLifecycle()
-    val statoVista by vm.vista.collectAsStateWithLifecycle()
+    // la lista e l'altra faccia della mappa: mostra la stessa ricerca (anche "Cerca in quest'area")
+    val statoVista by vm.vistaMappa.collectAsStateWithLifecycle()
     val vista = statoVista
+    val area by vm.areaMappa.collectAsStateWithLifecycle()
 
     var testo by rememberSaveable { mutableStateOf("") }
     var ordinamento by rememberSaveable { mutableStateOf(Ordinamento.PREZZO) }
@@ -86,20 +89,30 @@ fun SchermataLista(vm: GocciaViewModel, onDistributore: (Distributore) -> Unit, 
                     )
                 }
                 val centro = dati.centro
-                if (centro != null && testo.isEmpty()) {
+                if ((centro != null || area != null) && testo.isEmpty()) {
                     Row(
                         Modifier.padding(start = 22.dp, end = 20.dp, top = 8.dp),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(6.dp),
                     ) {
                         Icon(Icone.Segnaposto, null, tint = Colori.Petrolio, modifier = Modifier.size(15.dp))
-                        Text(centro.etichetta, style = Testi.DidascaliaForte, modifier = Modifier.weight(1f, fill = false))
-                        if (centro.tipo != TipoCentro.POSIZIONE) {
+                        if (area != null) {
+                            // zona cercata sulla mappa: si torna al centro (posizione, luogo o comune)
+                            Text("Area cercata sulla mappa", style = Testi.DidascaliaForte, modifier = Modifier.weight(1f, fill = false))
                             Text(
-                                "· vicino a me",
+                                "· " + (centro?.let { tornaA(it) } ?: "annulla"),
                                 style = Testi.DidascaliaForte.copy(color = Colori.Petrolio),
-                                modifier = Modifier.clip(RoundedCornerShape(8.dp)).clickable { vm.usaPosizione() }.padding(4.dp),
+                                modifier = Modifier.clip(RoundedCornerShape(8.dp)).clickable { vm.annullaArea() }.padding(4.dp),
                             )
+                        } else if (centro != null) {
+                            Text(centro.etichetta, style = Testi.DidascaliaForte, modifier = Modifier.weight(1f, fill = false))
+                            if (centro.tipo != TipoCentro.POSIZIONE) {
+                                Text(
+                                    "· vicino a me",
+                                    style = Testi.DidascaliaForte.copy(color = Colori.Petrolio),
+                                    modifier = Modifier.clip(RoundedCornerShape(8.dp)).clickable { vm.usaPosizione() }.padding(4.dp),
+                                )
+                            }
                         }
                     }
                 }
@@ -213,7 +226,7 @@ fun SchermataLista(vm: GocciaViewModel, onDistributore: (Distributore) -> Unit, 
                     item(key = "offline") { BannerOffline(dati.scaricatoIl, onRiprova = { vm.aggiorna() }) }
                 }
                 when {
-                    dati.centro == null && !dati.caricamento && !dati.cercoPosizione -> item(key = "posizione") {
+                    dati.centro == null && area == null && !dati.caricamento && !dati.cercoPosizione -> item(key = "posizione") {
                         PannelloPosizione(vm, dati, onLuogo = {})
                     }
                     vista == null || offerte == null || dati.caricamento -> items(6, key = { "s$it" }) { CardScheletro() }
@@ -253,4 +266,10 @@ fun SchermataLista(vm: GocciaViewModel, onDistributore: (Distributore) -> Unit, 
             }
         }
     }
+}
+
+/** Il link per tornare dalla zona cercata sulla mappa al centro: "vicino a me", "vicino a Casa", "Bologna (BO)". */
+private fun tornaA(centro: Centro): String = when (centro.tipo) {
+    TipoCentro.POSIZIONE -> "vicino a me"
+    else -> if (centro.etichetta.startsWith("Vicino")) centro.etichetta.replaceFirstChar { it.lowercase() } else centro.etichetta
 }

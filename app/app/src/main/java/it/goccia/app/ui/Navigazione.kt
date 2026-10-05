@@ -209,7 +209,11 @@ fun GocciaRadice(
                 SchermataHome(
                     vm = vm,
                     onDistributore = { nav.navigate(Rotte.dettaglio(it.provincia, it.id)) },
-                    onVediTutti = { nav.navigate(Rotte.LISTA) },
+                    onVediTutti = {
+                        // dalla Home la lista e quella attorno al centro, non una zona cercata sulla mappa
+                        vm.annullaArea()
+                        nav.navigate(Rotte.LISTA)
+                    },
                     onRifornimento = { nav.navigate(Rotte.rifornimento()) },
                     onViaggio = { nav.vaiAScheda(Rotte.VIAGGIO) },
                     onAvvisi = {
@@ -237,6 +241,7 @@ fun GocciaRadice(
                     onDistributore = { nav.navigate(Rotte.dettaglio(it.provincia, it.id)) },
                     onLista = { nav.navigate(Rotte.LISTA) { launchSingleTop = true } },
                     onColonnina = { nav.navigate(Rotte.colonnina(it.id)) },
+                    onNuovoLuogo = { tipo -> nav.navigate(Rotte.luogo(tipo = tipo)) },
                 )
             }
             pagina(Rotte.LISTA) {

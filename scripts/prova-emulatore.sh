@@ -94,6 +94,26 @@ foto home-4
 nota "mappa e lista"
 tocca "Mappa"
 foto mappa 15
+# spostando la mappa compare "Cerca in quest'area"; il mirino riporta sempre al segnaposto,
+# anche la seconda volta
+adb shell input swipe 850 900 250 900 400
+foto mappa-spostata 4
+tocca "Cerca in quest'area"
+foto mappa-area 8
+tocca --descrizione "Torna al segnaposto"
+foto mappa-mirino 5
+adb shell input swipe 300 850 800 1000 400
+foto mappa-spostata-2 4
+tocca --descrizione "Torna al segnaposto"
+foto mappa-mirino-2 5
+# da dove cercare: la posizione di adesso o un luogo salvato
+tocca "Vicino a te"
+foto mappa-partenza 2
+tocca "Casa"
+foto mappa-casa 6
+tocca "Vicino a Casa"
+tocca "Dove sei adesso"
+foto mappa-posizione 6
 tocca --descrizione "Vedi come lista"
 foto lista 5
 # per distanza si vedono prima i distributori vicini, con l'ora del loro ultimo aggiornamento
@@ -303,6 +323,7 @@ kill "$GEO" 2> /dev/null
 
 # prezzi in tempo reale (Osservaprezzi) e stato delle colonnine (PUN): risposte e tempi
 adb logcat -d -s Goccia:I | grep -E "tempo reale|pun:" > "$USCITA/tempo-reale.txt" 2>&1
+adb logcat -d -s Goccia:I | grep "mappa:" > "$USCITA/mappa.txt" 2>&1
 adb logcat -d -b crash > "$USCITA/crash.txt" 2>&1
 adb logcat -d -v time > "$USCITA/logcat-completo.txt" 2>&1
 # senza il rumore di uiautomator, che parte a ogni tocco

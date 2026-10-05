@@ -1,8 +1,18 @@
 package it.goccia.app.ui.mappa
 
+import android.Manifest
+import android.graphics.Bitmap
 import android.graphics.RectF
 import android.util.Log
 import android.view.Gravity
+import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -10,21 +20,29 @@ import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableDoubleStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
@@ -33,12 +51,25 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Canvas
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.asAndroidBitmap
+import androidx.compose.ui.graphics.drawscope.CanvasDrawScope
+import androidx.compose.ui.graphics.drawscope.translate
+import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
@@ -47,15 +78,22 @@ import it.goccia.app.dati.Carburante
 import it.goccia.app.dati.Colonnina
 import it.goccia.app.dati.Coordinate
 import it.goccia.app.dati.Distributore
+import it.goccia.app.dati.Luogo
 import it.goccia.app.dati.Presa
 import it.goccia.app.dati.StatoColonnina
+import it.goccia.app.dati.TipoLuogo
+import it.goccia.app.logica.Bandiere
 import it.goccia.app.logica.Convenienza
 import it.goccia.app.logica.Elettrico
 import it.goccia.app.logica.Formati
-import it.goccia.app.logica.Bandiere
+import it.goccia.app.logica.Geo
 import it.goccia.app.logica.Offerta
+import it.goccia.app.logica.RAGGIO_MASSIMO_KM
 import it.goccia.app.logica.Tono
+import it.goccia.app.ui.Centro
 import it.goccia.app.ui.GocciaViewModel
+import it.goccia.app.ui.ProblemaPosizione
+import it.goccia.app.ui.TipoCentro
 import it.goccia.app.ui.VistaColonnine
 import it.goccia.app.ui.VistaZona
 import it.goccia.app.ui.componenti.BadgeConvenienza
@@ -79,12 +117,16 @@ import it.goccia.app.ui.tema.Colori
 import it.goccia.app.ui.tema.Forme
 import it.goccia.app.ui.tema.Testi
 import it.goccia.app.ui.tema.ombra
+import kotlin.math.ceil
+import kotlin.math.roundToInt
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withTimeoutOrNull
+import org.maplibre.android.camera.CameraPosition
 import org.maplibre.android.camera.CameraUpdateFactory
 import org.maplibre.android.geometry.LatLng
 import org.maplibre.android.geometry.LatLngBounds
 import org.maplibre.android.maps.MapLibreMap
+import org.maplibre.android.maps.MapView
 import org.maplibre.android.maps.Style
 import org.maplibre.android.style.expressions.Expression
 import org.maplibre.android.style.layers.CircleLayer
@@ -101,7 +143,29 @@ private const val STRATO_PREZZI = "goccia-prezzi"
 private const val SORGENTE_IO = "goccia-io"
 private const val STRATO_IO_ALONE = "goccia-io-alone"
 private const val STRATO_IO = "goccia-io"
+private const val SORGENTE_LUOGO = "goccia-luogo"
+private const val STRATO_LUOGO = "goccia-luogo"
 private const val MASSIMO_PIN = 1500
+
+// icone del segnaposto quando il centro e un luogo salvato o un comune
+private const val ICONA_CASA = "io-casa"
+private const val ICONA_LAVORO = "io-lavoro"
+private const val ICONA_LUOGO = "io-luogo"
+
+/** Sotto questo zoom si vedono intere regioni: "Cerca in quest'area" prima avvicina la mappa. */
+private const val ZOOM_PREZZI = 9.0
+
+/** Lo zoom a cui portiamo la mappa quando si cerca da troppo lontano. */
+private const val ZOOM_AREA = 11.5
+
+/** Gli spostamenti della camera, letti dagli ascoltatori della mappa. */
+private class StatoCamera {
+    /** l'ultimo movimento l'ha cominciato l'utente con le dita */
+    var gesto = false
+
+    /** dov'era la camera quando sono comparsi i risultati che si vedono */
+    var base: CameraPosition? = null
+}
 
 @Composable
 fun SchermataMappa(
@@ -109,6 +173,7 @@ fun SchermataMappa(
     onDistributore: (Distributore) -> Unit,
     onLista: () -> Unit,
     onColonnina: (Colonnina) -> Unit,
+    onNuovoLuogo: (tipo: String) -> Unit,
 ) {
     LaunchedEffect(Unit) { vm.avvia() }
     val context = LocalContext.current
@@ -121,16 +186,56 @@ fun SchermataMappa(
     val colonnine by vm.mappaColonnine.collectAsStateWithLifecycle()
     val statoVistaEv by vm.vistaColonnineMappa.collectAsStateWithLifecycle()
     val vistaEv = statoVistaEv
+    // la zona cercata con "Cerca in quest'area" (null: si guarda attorno al centro)
+    val area by vm.areaMappa.collectAsStateWithLifecycle()
+    val cercoArea by vm.cercoArea.collectAsStateWithLifecycle()
     var selezionataEv by rememberSaveable { mutableStateOf<String?>(null) }
 
     var selezionato by rememberSaveable { mutableStateOf<Long?>(null) }
     var testo by rememberSaveable { mutableStateOf("") }
     var mappa by remember { mutableStateOf<MapLibreMap?>(null) }
     var stile by remember { mutableStateOf<Style?>(null) }
-    // da lontano (tutta Italia) non carichiamo i prezzi: chiediamo di avvicinarsi
-    var zoom by remember { mutableDoubleStateOf(if (vm.dati.value.centro != null) 13.0 else 5.0) }
+    // "Cerca in quest'area" compare quando l'utente sposta la mappa lontano dai risultati
+    var mostraCerca by remember { mutableStateOf(false) }
+    // ogni tocco sul mirino riporta la mappa sul segnaposto, anche se il centro non e cambiato
+    var richiestaCentra by remember { mutableIntStateOf(0) }
+    // dopo "Cerca in quest'area" la vista si allarga, se serve, fino al piu conveniente
+    var richiestaAdatta by remember { mutableIntStateOf(0) }
+    val camera = remember { StatoCamera() }
     val pin = remember { PinPrezzo(context) }
     val immaginiCaricate = remember { HashSet<String>() }
+    val iconeLuogo = mapOf(
+        ICONA_CASA to rememberVectorPainter(Icone.Casa),
+        ICONA_LAVORO to rememberVectorPainter(Icone.Lavoro),
+        ICONA_LUOGO to rememberVectorPainter(Icone.Segnaposto),
+    )
+
+    // "Dove sei adesso": serve il permesso; se la posizione non arriva lo diciamo
+    fun avvisa(problema: ProblemaPosizione) {
+        val messaggio = when (problema) {
+            ProblemaPosizione.NESSUNO -> return
+            ProblemaPosizione.PERMESSO_MANCANTE -> "Serve il permesso di usare la posizione."
+            ProblemaPosizione.GPS_SPENTO -> "La localizzazione del telefono è spenta: accendila per usare la tua posizione."
+            ProblemaPosizione.NON_TROVATA -> "Non riusciamo a trovare la tua posizione. Riprova tra poco."
+        }
+        Toast.makeText(context, messaggio, Toast.LENGTH_LONG).show()
+    }
+    val richiestaPermesso = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { esito ->
+        if (esito.values.any { it }) {
+            vm.vaiDoveSei { avvisa(it) }
+        } else {
+            Toast.makeText(context, "Senza il permesso puoi partire da un luogo salvato o cercare un comune.", Toast.LENGTH_LONG).show()
+        }
+    }
+    fun vaiDoveSei() {
+        selezionato = null
+        selezionataEv = null
+        if (vm.haPermessoPosizione()) {
+            vm.vaiDoveSei { avvisa(it) }
+        } else {
+            richiestaPermesso.launch(arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION))
+        }
+    }
 
     val vistaMappa = rememberVistaMappa { v ->
         v.getMapAsync { m ->
@@ -141,11 +246,14 @@ fun SchermataMappa(
             m.uiSettings.attributionGravity = Gravity.TOP or Gravity.END
             val margine = with(densita) { 12.dp.roundToPx() }
             m.uiSettings.setAttributionMargins(0, with(densita) { 170.dp.roundToPx() }, margine, 0)
+            // tornando sulla mappa con un'area cercata ripartiamo da li, altrimenti dal centro
+            val areaIniziale = vm.areaMappa.value
             val iniziale = vm.dati.value.centro?.coordinate
-            if (iniziale != null) {
-                m.moveCamera(CameraUpdateFactory.newLatLngZoom(LatLng(iniziale.lat, iniziale.lon), 13.0))
-            } else {
-                m.moveCamera(CameraUpdateFactory.newLatLngZoom(LatLng(42.5, 12.5), 5.0))
+            when {
+                areaIniziale != null ->
+                    m.moveCamera(CameraUpdateFactory.newLatLngZoom(LatLng(areaIniziale.centro.lat, areaIniziale.centro.lon), areaIniziale.zoom))
+                iniziale != null -> m.moveCamera(CameraUpdateFactory.newLatLngZoom(LatLng(iniziale.lat, iniziale.lon), 13.0))
+                else -> m.moveCamera(CameraUpdateFactory.newLatLngZoom(LatLng(42.5, 12.5), 5.0))
             }
             m.setStyle(Style.Builder().fromUri(STILE_MAPPA)) { s ->
                 etichetteInItaliano(s)
@@ -169,6 +277,14 @@ fun SchermataMappa(
                         PropertyFactory.circleStrokeWidth(4f),
                     ),
                 )
+                s.addSource(GeoJsonSource(SORGENTE_LUOGO, FeatureCollection.fromFeatures(emptyList<Feature>())))
+                s.addLayer(
+                    SymbolLayer(STRATO_LUOGO, SORGENTE_LUOGO).withProperties(
+                        PropertyFactory.iconImage(Expression.get("icona")),
+                        PropertyFactory.iconAllowOverlap(true),
+                        PropertyFactory.iconIgnorePlacement(true),
+                    ),
+                )
                 s.addSource(GeoJsonSource(SORGENTE_PREZZI, FeatureCollection.fromFeatures(emptyList<Feature>())))
                 s.addLayer(
                     SymbolLayer(STRATO_PREZZI, SORGENTE_PREZZI).withProperties(
@@ -180,16 +296,28 @@ fun SchermataMappa(
                 )
                 stile = s
             }
+            m.addOnCameraMoveStartedListener { motivo ->
+                camera.gesto = motivo == MapLibreMap.OnCameraMoveStartedListener.REASON_API_GESTURE
+            }
             m.addOnCameraIdleListener {
-                val bersaglio = m.cameraPosition.target ?: return@addOnCameraIdleListener
-                zoom = m.cameraPosition.zoom
-                vm.mappaSpostata(Coordinate(bersaglio.latitude, bersaglio.longitude), m.cameraPosition.zoom)
+                val posizione = m.cameraPosition
+                val bersaglio = posizione.target ?: return@addOnCameraIdleListener
+                vm.mappaFerma(Coordinate(bersaglio.latitude, bersaglio.longitude), posizione.zoom)
+                val base = camera.base
+                if (!camera.gesto || base == null) {
+                    // movimento nostro (mirino, ricerca, adattamento della vista): i risultati sono di qui
+                    camera.base = posizione
+                    mostraCerca = false
+                } else {
+                    val raggio = if (vm.mappaColonnine.value) vm.vistaColonnineMappa.value?.zona?.raggioKm else vm.vistaMappa.value?.zona?.raggioUsatoKm
+                    mostraCerca = spostataLontano(m, base, posizione, raggio)
+                }
             }
             m.addOnMapClickListener { punto ->
                 val schermo = m.projection.toScreenLocation(punto)
                 val raggio = with(densita) { 14.dp.toPx() }
-                val area = RectF(schermo.x - raggio, schermo.y - raggio * 2, schermo.x + raggio, schermo.y + raggio / 2)
-                val trovato = m.queryRenderedFeatures(area, STRATO_PREZZI).firstOrNull()
+                val zona = RectF(schermo.x - raggio, schermo.y - raggio * 2, schermo.x + raggio, schermo.y + raggio / 2)
+                val trovato = m.queryRenderedFeatures(zona, STRATO_PREZZI).firstOrNull()
                 val colonnina = trovato?.getStringProperty("colonnina")
                 val id = trovato?.getStringProperty("id")?.toLongOrNull()
                 when {
@@ -208,38 +336,35 @@ fun SchermataMappa(
         }
     }
 
-    // la posizione (o il comune cercato) cambia: spostiamo la mappa e, appena arrivano i prezzi,
-    // allarghiamo la vista quanto basta per vedere i distributori piu vicini
+    // il centro (posizione, luogo o comune) cambia, o si tocca il mirino: la mappa va sul segnaposto
+    // e, appena arrivano i prezzi, si allarga quanto basta per vedere i distributori piu vicini
     val centro = dati.centro
-    LaunchedEffect(mappa, centro) {
+    LaunchedEffect(mappa, centro, richiestaCentra) {
         val m = mappa ?: return@LaunchedEffect
         val c = centro ?: return@LaunchedEffect
+        // tornando sulla mappa con un'area cercata restiamo li: la camera parte gia dall'area
+        if (vm.areaMappa.value != null) return@LaunchedEffect
         m.animateCamera(CameraUpdateFactory.newLatLngZoom(LatLng(c.coordinate.lat, c.coordinate.lon), 13.0), 600)
-        val vicini: List<LatLng> = if (vm.mappaColonnine.value) {
-            val attorno = withTimeoutOrNull(20_000) { vm.vistaColonnine.first { it != null && it.centro == c && it.zona.vicine.isNotEmpty() } }
-            attorno?.zona?.vicine.orEmpty().take(4).map { LatLng(it.colonnina.lat, it.colonnina.lon) }
-        } else {
-            val attorno = withTimeoutOrNull(20_000) { vm.vista.first { it != null && it.centro == c } }
-            // i piu vicini e il piu conveniente, che il foglio in basso descrive: deve stare nella vista
-            val zona = attorno?.zona
-            val consigliato = zona?.let { Convenienza.consigliati(it, 1) }.orEmpty()
-            (zona?.offerte.orEmpty().sortedBy { it.distanzaKm }.take(4) + consigliato)
-                .map { LatLng(it.distributore.lat, it.distributore.lon) }
-        }
-        Log.i("Goccia", "mappa: adatto la vista a ${vicini.size} punti vicini")
-        if (vicini.isEmpty()) return@LaunchedEffect
-        val limiti = LatLngBounds.Builder()
-            .include(LatLng(c.coordinate.lat + 0.004, c.coordinate.lon + 0.005))
-            .include(LatLng(c.coordinate.lat - 0.004, c.coordinate.lon - 0.005))
-        vicini.forEach { limiti.include(it) }
-        fun px(valore: Int) = with(densita) { valore.dp.roundToPx() }
-        m.animateCamera(CameraUpdateFactory.newLatLngBounds(limiti.build(), px(48), px(190), px(48), px(260)), 700)
+        adattaVista(m, vistaMappa, vm, c.coordinate, densita, soloSeServe = false)
     }
-    LaunchedEffect(stile, centro) {
+    LaunchedEffect(mappa, richiestaAdatta) {
+        val m = mappa ?: return@LaunchedEffect
+        if (richiestaAdatta == 0) return@LaunchedEffect
+        val a = vm.areaMappa.value ?: return@LaunchedEffect
+        adattaVista(m, vistaMappa, vm, a.centro, densita, soloSeServe = true)
+    }
+    // il segnaposto del centro: un puntino con l'alone per la posizione, un'icona per luoghi e comuni
+    LaunchedEffect(stile, centro, utente.luoghi) {
         val s = stile ?: return@LaunchedEffect
-        val c = centro?.coordinate
-        val punti = if (c != null) listOf(Feature.fromGeometry(Point.fromLngLat(c.lon, c.lat))) else emptyList()
-        s.getSourceAs<GeoJsonSource>(SORGENTE_IO)?.setGeoJson(FeatureCollection.fromFeatures(punti))
+        val c = centro
+        val icona = c?.let { chiaveSegnaposto(it, utente.luoghi) }
+        val punto = c?.let { Feature.fromGeometry(Point.fromLngLat(it.coordinate.lon, it.coordinate.lat)) }
+        s.getSourceAs<GeoJsonSource>(SORGENTE_IO)?.setGeoJson(FeatureCollection.fromFeatures(listOfNotNull(punto.takeIf { icona == null })))
+        if (icona != null && immaginiCaricate.add(icona)) {
+            iconeLuogo[icona]?.let { s.addImage(icona, disegnaSegnaposto(it, densita)) }
+        }
+        val luogo = if (icona != null && punto != null) listOf(punto.apply { addStringProperty("icona", icona) }) else emptyList()
+        s.getSourceAs<GeoJsonSource>(SORGENTE_LUOGO)?.setGeoJson(FeatureCollection.fromFeatures(luogo))
     }
     // prezzi (o colonnine) sulla mappa
     LaunchedEffect(stile, vista, selezionato, colonnine, vistaEv, selezionataEv) {
@@ -292,111 +417,396 @@ fun SchermataMappa(
         Log.i("Goccia", "mappa: ${elementi.size} prezzi, sorgente ${if (sorgente != null) "ok" else "assente"}")
     }
 
+    // "Cerca in quest'area": i risultati diventano quelli attorno al centro della mappa
+    fun cercaQui() {
+        val m = mappa ?: return
+        val posizione = m.cameraPosition
+        val bersaglio = posizione.target ?: return
+        selezionato = null
+        selezionataEv = null
+        mostraCerca = false
+        val punto = Coordinate(bersaglio.latitude, bersaglio.longitude)
+        if (posizione.zoom < ZOOM_PREZZI) {
+            // da cosi lontano si vedono intere regioni: avviciniamo la mappa a una zona di qualche km
+            m.animateCamera(CameraUpdateFactory.newLatLngZoom(bersaglio, ZOOM_AREA), 700)
+            vm.cercaInArea(punto, ZOOM_AREA, 10)
+        } else {
+            camera.base = posizione
+            vm.cercaInArea(punto, posizione.zoom, raggioVisibile(m))
+        }
+        Log.i("Goccia", "mappa: cerco in quest'area (zoom ${"%.1f".format(posizione.zoom)})")
+        richiestaAdatta++
+    }
+
+    // il mirino riporta sempre al segnaposto; se e la posizione, la aggiorna
+    fun tornaAlSegnaposto() {
+        selezionato = null
+        selezionataEv = null
+        vm.annullaArea()
+        mostraCerca = false
+        richiestaCentra++
+        val c = dati.centro
+        if (c == null || c.tipo == TipoCentro.POSIZIONE || c.tipo == TipoCentro.ULTIMA) vaiDoveSei()
+        Log.i("Goccia", "mappa: torno al segnaposto (${c?.etichetta ?: "nessun centro"})")
+    }
+
     Box(Modifier.fillMaxSize().background(Colori.Sfondo)) {
         AndroidView(factory = { vistaMappa }, modifier = Modifier.fillMaxSize())
 
-        // intestazione con ricerca e carburanti
-        Column(
-            Modifier
-                .fillMaxWidth()
-                .ombra(RoundedCornerShape(0.dp), 4.dp)
-                .background(Colori.Sfondo.copy(alpha = 0.94f))
-                .statusBarsPadding()
-                .padding(bottom = 12.dp),
-        ) {
-            Row(Modifier.padding(start = 20.dp, end = 20.dp, top = 6.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                CampoRicerca(testo, { testo = it }, Modifier.weight(1f), segnaposto = "Cerca un comune")
-                if (!colonnine) {
-                    BottoneIcona(
-                        Icone.Lista, "Vedi come lista", onLista,
-                        colore = Color.White, sfondo = Colori.Inchiostro, dimensione = 52.dp, forma = RoundedCornerShape(16.dp),
+        Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
+            // intestazione con ricerca e carburanti
+            Column(
+                Modifier
+                    .fillMaxWidth()
+                    .ombra(RoundedCornerShape(0.dp), 4.dp)
+                    .background(Colori.Sfondo.copy(alpha = 0.94f))
+                    .statusBarsPadding()
+                    .padding(bottom = 12.dp),
+            ) {
+                Row(Modifier.padding(start = 20.dp, end = 20.dp, top = 6.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    CampoRicerca(testo, { testo = it }, Modifier.weight(1f), segnaposto = "Cerca un comune")
+                    if (!colonnine) {
+                        BottoneIcona(
+                            Icone.Lista, "Vedi come lista", onLista,
+                            colore = Color.White, sfondo = Colori.Inchiostro, dimensione = 52.dp, forma = RoundedCornerShape(16.dp),
+                        )
+                    }
+                }
+                if (testo.isNotBlank()) {
+                    SuggerimentiComuni(
+                        vm.cercaComuni(testo),
+                        onScelto = {
+                            testo = ""
+                            selezionato = null
+                            selezionataEv = null
+                            vm.centraSu(it)
+                        },
+                        modifier = Modifier.padding(start = 20.dp, end = 20.dp, top = 8.dp),
                     )
                 }
-            }
-            if (testo.isNotBlank()) {
-                SuggerimentiComuni(
-                    vm.cercaComuni(testo),
-                    onScelto = {
-                        testo = ""
-                        selezionato = null
-                        selezionataEv = null
-                        vm.centraSu(it)
-                    },
-                    modifier = Modifier.padding(start = 20.dp, end = 20.dp, top = 8.dp),
-                )
-            }
-            Row(
-                Modifier.horizontalScroll(rememberScrollState()).padding(start = 20.dp, end = 20.dp, top = 10.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                ChipScelta(
-                    "Colonnine",
-                    colonnine,
-                    onClick = {
-                        selezionataEv = null
-                        vm.mostraColonnine(!colonnine)
-                    },
-                    icona = Icone.Fulmine,
-                    altezza = 38.dp,
-                )
-                if (colonnine) {
-                    val prese = utente.prese
-                    Presa.filtrabili.forEach { p ->
-                        ChipScelta(p.etichetta, p in prese, onClick = { vm.scegliPrese(if (p in prese) prese - p else prese + p) }, altezza = 38.dp)
-                    }
-                    val potenze = listOf(0, 50, 150)
-                    val attuale = utente.impostazioni.potenzaMinima
+                Row(
+                    Modifier.horizontalScroll(rememberScrollState()).padding(start = 20.dp, end = 20.dp, top = 10.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
                     ChipScelta(
-                        if (attuale == 0) "Tutte le potenze" else "≥ $attuale kW",
-                        attuale > 0,
-                        onClick = { vm.scegliPotenzaMinima(potenze[(potenze.indexOf(attuale).coerceAtLeast(0) + 1) % potenze.size]) },
+                        "Colonnine",
+                        colonnine,
+                        onClick = {
+                            selezionataEv = null
+                            vm.mostraColonnine(!colonnine)
+                        },
+                        icona = Icone.Fulmine,
                         altezza = 38.dp,
                     )
-                } else {
-                    Carburante.entries.forEach { c ->
-                        ChipScelta(c.etichetta, c == utente.carburante, onClick = { vm.scegliCarburante(c) }, altezza = 38.dp)
+                    if (colonnine) {
+                        val prese = utente.prese
+                        Presa.filtrabili.forEach { p ->
+                            ChipScelta(p.etichetta, p in prese, onClick = { vm.scegliPrese(if (p in prese) prese - p else prese + p) }, altezza = 38.dp)
+                        }
+                        val potenze = listOf(0, 50, 150)
+                        val attuale = utente.impostazioni.potenzaMinima
+                        ChipScelta(
+                            if (attuale == 0) "Tutte le potenze" else "≥ $attuale kW",
+                            attuale > 0,
+                            onClick = { vm.scegliPotenzaMinima(potenze[(potenze.indexOf(attuale).coerceAtLeast(0) + 1) % potenze.size]) },
+                            altezza = 38.dp,
+                        )
+                    } else {
+                        Carburante.entries.forEach { c ->
+                            ChipScelta(c.etichetta, c == utente.carburante, onClick = { vm.scegliCarburante(c) }, altezza = 38.dp)
+                        }
                     }
                 }
+                Legenda(colonnine, Modifier.padding(start = 20.dp, end = 20.dp, top = 10.dp))
             }
-            Legenda(colonnine, Modifier.padding(start = 20.dp, end = 20.dp, top = 10.dp))
+            AnimatedVisibility(
+                visible = mostraCerca && testo.isBlank(),
+                enter = fadeIn() + slideInVertically { -it / 2 },
+                exit = fadeOut() + slideOutVertically { -it / 2 },
+            ) {
+                BottoneCercaQui(onClick = { cercaQui() }, modifier = Modifier.padding(top = 12.dp))
+            }
         }
 
         Column(Modifier.align(Alignment.BottomCenter).fillMaxWidth()) {
-            Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp), verticalAlignment = Alignment.Bottom) {
-                Text(
-                    "© OpenStreetMap · OpenFreeMap" + if (colonnine && vm.colonnineDaPun) " · Colonnine: GSE – PUN" else "",
-                    style = Testi.Minimo.copy(color = Colori.Testo2, fontWeight = FontWeight.SemiBold, fontSize = 10.sp),
-                    modifier = Modifier.clip(RoundedCornerShape(6.dp)).background(Color.White.copy(alpha = 0.8f)).padding(horizontal = 6.dp, vertical = 2.dp),
-                )
-                Box(Modifier.weight(1f))
+            Row(
+                Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 10.dp),
+                verticalAlignment = Alignment.Bottom,
+            ) {
+                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    SceltaPartenza(
+                        centro = centro,
+                        luoghi = utente.luoghi,
+                        onPosizione = {
+                            vaiDoveSei()
+                            if (centro?.tipo == TipoCentro.POSIZIONE) richiestaCentra++
+                        },
+                        onLuogo = { luogo ->
+                            selezionato = null
+                            selezionataEv = null
+                            vm.centraSu(luogo)
+                            // lo stesso luogo di prima: il centro non cambia, ma la mappa ci torna
+                            if (centro?.luogoId == luogo.id) richiestaCentra++
+                        },
+                        onNuovoLuogo = onNuovoLuogo,
+                    )
+                    Text(
+                        "© OpenStreetMap · OpenFreeMap" + if (colonnine && vm.colonnineDaPun) " · Colonnine: GSE – PUN" else "",
+                        style = Testi.Minimo.copy(color = Colori.Testo2, fontWeight = FontWeight.SemiBold, fontSize = 10.sp),
+                        modifier = Modifier.clip(RoundedCornerShape(6.dp)).background(Color.White.copy(alpha = 0.8f)).padding(horizontal = 6.dp, vertical = 2.dp),
+                    )
+                }
+                Spacer(Modifier.width(12.dp))
                 BottoneIcona(
-                    Icone.Mirino, "Centra sulla mia posizione", {
-                        selezionato = null
-                        selezionataEv = null
-                        vm.usaPosizione()
-                    },
+                    Icone.Mirino, "Torna al segnaposto", { tornaAlSegnaposto() },
                     Modifier.ombra(CircleShape, 4.dp),
                     colore = Colori.Petrolio, sfondo = Colori.Superficie,
                 )
             }
+            val senzaCentro = centro == null && area == null
+            val attesa = dati.caricamento || dati.cercoPosizione
             if (colonnine) {
-                SchedaColonnina(vm, vistaEv, selezionataEv, zoom < ZOOM_PREZZI, onColonnina)
+                SchedaColonnina(vm, vistaEv, selezionataEv, senzaCentro, attesa, area != null, cercoArea, onColonnina)
             } else {
-                SchedaSelezione(vm, vista, selezionato, zoom < ZOOM_PREZZI, onDistributore, onLista)
+                SchedaSelezione(vm, vista, selezionato, senzaCentro, attesa, area != null, cercoArea, onDistributore, onLista)
             }
         }
     }
 }
 
-/** Sotto questo zoom la mappa mostra troppa Italia per caricare i prezzi (vedi GocciaViewModel.mappaSpostata). */
-private const val ZOOM_PREZZI = 9.0
+/** Il pulsante che compare sotto l'intestazione quando la mappa si sposta. */
+@Composable
+private fun BottoneCercaQui(onClick: () -> Unit, modifier: Modifier = Modifier) {
+    val forma = RoundedCornerShape(20.dp)
+    Row(
+        modifier
+            .height(40.dp)
+            .ombra(forma, 6.dp)
+            .clip(forma)
+            .background(Colori.Petrolio)
+            .clickable(role = Role.Button, onClick = onClick)
+            .padding(start = 14.dp, end = 16.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        Icon(Icone.Cerca, null, tint = Color.White, modifier = Modifier.size(17.dp))
+        Text("Cerca in quest'area", style = Testi.ChipAttivo.copy(color = Color.White))
+    }
+}
+
+/**
+ * Da dove cerchiamo: la posizione di adesso, un luogo salvato o il comune cercato. Il pulsante
+ * dice qual e; il menu permette di cambiarlo o di salvare un luogo nuovo.
+ */
+@Composable
+private fun SceltaPartenza(
+    centro: Centro?,
+    luoghi: List<Luogo>,
+    onPosizione: () -> Unit,
+    onLuogo: (Luogo) -> Unit,
+    onNuovoLuogo: (tipo: String) -> Unit,
+) {
+    var aperto by remember { mutableStateOf(false) }
+    val forma = RoundedCornerShape(20.dp)
+    Box {
+        Row(
+            Modifier
+                .height(40.dp)
+                .ombra(forma, 4.dp)
+                .clip(forma)
+                .background(Colori.Superficie)
+                .clickable(role = Role.Button, onClickLabel = "Cambia") { aperto = true }
+                .padding(start = 12.dp, end = 10.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(7.dp),
+        ) {
+            Icon(iconaCentro(centro, luoghi), null, tint = Colori.Petrolio, modifier = Modifier.size(17.dp))
+            Text(
+                centro?.etichetta ?: "Scegli da dove cercare",
+                style = Testi.ChipAttivo,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.widthIn(max = 200.dp),
+            )
+            Icon(Icone.ChevronGiu, null, tint = Colori.Testo3, modifier = Modifier.size(16.dp))
+        }
+        DropdownMenu(expanded = aperto, onDismissRequest = { aperto = false }) {
+            Text(
+                "Cerca vicino a",
+                style = Testi.Piccolo.copy(color = Colori.Testo3),
+                modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 4.dp, bottom = 6.dp),
+            )
+            VocePartenza("Dove sei adesso", Icone.Mirino, scelta = centro?.tipo == TipoCentro.POSIZIONE) {
+                aperto = false
+                onPosizione()
+            }
+            luoghi.forEach { luogo ->
+                VocePartenza(luogo.nome, iconaLuogo(luogo.tipo), scelta = centro?.luogoId == luogo.id) {
+                    aperto = false
+                    onLuogo(luogo)
+                }
+            }
+            if (centro != null && centro.tipo == TipoCentro.COMUNE) {
+                VocePartenza(centro.etichetta, Icone.Segnaposto, scelta = true) { aperto = false }
+            }
+            val (tipo, etichetta) = when {
+                luoghi.none { it.tipo == TipoLuogo.CASA } -> "CASA" to "Aggiungi Casa"
+                luoghi.none { it.tipo == TipoLuogo.LAVORO } -> "LAVORO" to "Aggiungi Lavoro"
+                else -> "ALTRO" to "Aggiungi un luogo"
+            }
+            VocePartenza(etichetta, Icone.Piu, scelta = false) {
+                aperto = false
+                onNuovoLuogo(tipo)
+            }
+        }
+    }
+}
+
+@Composable
+private fun VocePartenza(testo: String, icona: ImageVector, scelta: Boolean, onClick: () -> Unit) {
+    DropdownMenuItem(
+        text = {
+            Text(
+                testo,
+                style = if (scelta) Testi.ChipAttivo.copy(color = Colori.PetrolioScuro) else Testi.Chip,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+        },
+        onClick = onClick,
+        leadingIcon = { Icon(icona, null, tint = Colori.Petrolio, modifier = Modifier.size(18.dp)) },
+        trailingIcon = if (scelta) {
+            { Icon(Icone.Spunta, null, tint = Colori.Petrolio, modifier = Modifier.size(18.dp)) }
+        } else {
+            null
+        },
+    )
+}
+
+private fun luogoDi(c: Centro, luoghi: List<Luogo>): Luogo? = c.luogoId?.let { id -> luoghi.firstOrNull { it.id == id } }
+
+/** L'icona del segnaposto del centro; null per la posizione, che e un puntino con l'alone. */
+private fun chiaveSegnaposto(c: Centro, luoghi: List<Luogo>): String? = when (c.tipo) {
+    TipoCentro.POSIZIONE, TipoCentro.ULTIMA -> null
+    TipoCentro.LUOGO -> when (luogoDi(c, luoghi)?.tipo) {
+        TipoLuogo.CASA -> ICONA_CASA
+        TipoLuogo.LAVORO -> ICONA_LAVORO
+        else -> ICONA_LUOGO
+    }
+    else -> ICONA_LUOGO
+}
+
+private fun iconaCentro(c: Centro?, luoghi: List<Luogo>): ImageVector = when (c?.let { chiaveSegnaposto(it, luoghi) }) {
+    ICONA_CASA -> Icone.Casa
+    ICONA_LAVORO -> Icone.Lavoro
+    ICONA_LUOGO -> Icone.Segnaposto
+    else -> Icone.Mirino
+}
+
+private fun iconaLuogo(tipo: TipoLuogo): ImageVector = when (tipo) {
+    TipoLuogo.CASA -> Icone.Casa
+    TipoLuogo.LAVORO -> Icone.Lavoro
+    TipoLuogo.ALTRO -> Icone.Segnaposto
+}
+
+/** Il segnaposto di un luogo o di un comune: un tondo petrolio con il bordo bianco e l'icona. */
+private fun disegnaSegnaposto(icona: Painter, densita: Density): Bitmap {
+    val lato = with(densita) { 34.dp.toPx() }
+    val bordo = with(densita) { 3.dp.toPx() }
+    val glifo = with(densita) { 18.dp.toPx() }
+    val immagine = ImageBitmap(ceil(lato).toInt(), ceil(lato).toInt())
+    CanvasDrawScope().draw(densita, LayoutDirection.Ltr, Canvas(immagine), Size(lato, lato)) {
+        drawCircle(Colori.Inchiostro.copy(alpha = 0.18f), radius = lato / 2)
+        drawCircle(Color.White, radius = lato / 2 - bordo / 3)
+        drawCircle(Colori.Petrolio, radius = lato / 2 - bordo)
+        translate((lato - glifo) / 2, (lato - glifo) / 2) {
+            with(icona) { draw(Size(glifo, glifo), colorFilter = ColorFilter.tint(Color.White)) }
+        }
+    }
+    return immagine.asAndroidBitmap()
+}
+
+/** Larghezza della mappa visibile, in km. */
+private fun larghezzaVisibileKm(m: MapLibreMap): Double {
+    val r = m.projection.visibleRegion
+    val sinistra = r.nearLeft ?: return 0.0
+    val destra = r.nearRight ?: return 0.0
+    return Geo.distanzaKm(sinistra.latitude, sinistra.longitude, destra.latitude, destra.longitude)
+}
+
+/** Il raggio di "Cerca in quest'area": quello che si vede, tra 2 e 30 km. */
+private fun raggioVisibile(m: MapLibreMap): Int = (larghezzaVisibileKm(m) / 2).roundToInt().coerceIn(2, RAGGIO_MASSIMO_KM)
+
+/**
+ * L'utente ha spostato la mappa abbastanza da meritare una nuova ricerca: lontano da dove
+ * erano i risultati, oppure si vede molto piu in largo del raggio cercato.
+ */
+private fun spostataLontano(m: MapLibreMap, base: CameraPosition, adesso: CameraPosition, raggioKm: Int?): Boolean {
+    val da = base.target ?: return true
+    val a = adesso.target ?: return false
+    val larghezza = larghezzaVisibileKm(m)
+    val spostamento = Geo.distanzaKm(da.latitude, da.longitude, a.latitude, a.longitude)
+    return spostamento > maxOf(0.5, larghezza * 0.25) || (raggioKm != null && larghezza / 2 > raggioKm * 1.8)
+}
+
+/**
+ * Quando arrivano i risultati attorno a [punto] allarga la vista quanto basta per vedere i piu
+ * vicini e il piu conveniente (o le colonnine piu vicine). Con [soloSeServe] la mappa si muove
+ * solo se il piu conveniente resterebbe fuori, o sotto l'intestazione o il foglio in basso.
+ */
+private suspend fun adattaVista(
+    m: MapLibreMap,
+    vistaMappa: MapView,
+    vm: GocciaViewModel,
+    punto: Coordinate,
+    densita: Density,
+    soloSeServe: Boolean,
+) {
+    val vicini: List<LatLng>
+    val principale: LatLng?
+    if (vm.mappaColonnine.value) {
+        val attorno = withTimeoutOrNull(20_000) {
+            vm.cercoArea.first { !it }
+            vm.vistaColonnineMappa.first { it != null && it.centro.coordinate == punto && it.zona.vicine.isNotEmpty() }
+        }
+        vicini = attorno?.zona?.vicine.orEmpty().take(4).map { LatLng(it.colonnina.lat, it.colonnina.lon) }
+        principale = vicini.firstOrNull()
+    } else {
+        val attorno = withTimeoutOrNull(20_000) {
+            vm.cercoArea.first { !it }
+            vm.vistaMappa.first { it != null && it.centro.coordinate == punto && it.zona.offerte.isNotEmpty() }
+        }
+        // i piu vicini e il piu conveniente, che il foglio in basso descrive: deve stare nella vista
+        val zona = attorno?.zona
+        val consigliato = zona?.let { Convenienza.consigliati(it, 1) }.orEmpty().map { LatLng(it.distributore.lat, it.distributore.lon) }
+        vicini = zona?.offerte.orEmpty().sortedBy { it.distanzaKm }.take(4).map { LatLng(it.distributore.lat, it.distributore.lon) } + consigliato
+        principale = consigliato.firstOrNull() ?: vicini.firstOrNull()
+    }
+    Log.i("Goccia", "mappa: adatto la vista a ${vicini.size} punti vicini")
+    if (vicini.isEmpty()) return
+    fun px(valore: Int) = with(densita) { valore.dp.roundToPx() }
+    if (soloSeServe && principale != null) {
+        val schermo = m.projection.toScreenLocation(principale)
+        val visibile = schermo.x >= px(24) && schermo.x <= vistaMappa.width - px(24) &&
+            schermo.y >= px(210) && schermo.y <= vistaMappa.height - px(290)
+        if (visibile) return
+    }
+    val limiti = LatLngBounds.Builder()
+        .include(LatLng(punto.lat + 0.004, punto.lon + 0.005))
+        .include(LatLng(punto.lat - 0.004, punto.lon - 0.005))
+    vicini.forEach { limiti.include(it) }
+    m.animateCamera(CameraUpdateFactory.newLatLngBounds(limiti.build(), px(48), px(210), px(48), px(290)), 700)
+}
 
 /** Colori di un segnaposto: riempimento, testo e bordo (ARGB). */
 private data class StilePin(val fondo: Int, val testo: Int, val bordo: Int)
 
 private const val BIANCO = android.graphics.Color.WHITE
 
-/** Verde i convenienti, blu scuro gli altri, bianco con il bordo grigio i prezzi vecchi; il scelto ha il bordo scuro. */
+/**
+ * Verde i convenienti (almeno 3 centesimi sotto la media della zona), blu scuro quelli nella media
+ * o sopra, bianco con il bordo grigio i prezzi vecchi; il scelto ha il bordo scuro.
+ */
 private fun stilePrezzo(o: Offerta, scelto: Boolean): StilePin {
     val base = when {
         o.vecchio -> StilePin(BIANCO, Colori.Testo3.toArgb(), Colori.Linea.toArgb())
@@ -413,20 +823,21 @@ private fun stileColonnina(c: Colonnina, scelta: Boolean): StilePin {
     return if (scelta) base.copy(bordo = Colori.Inchiostro.toArgb()) else base
 }
 
-/** Cosa vogliono dire i colori dei segnaposto, sempre visibile sotto i filtri. */
+/** Cosa vogliono dire i colori dei segnaposto, sempre visibile sotto i filtri (va a capo se non ci sta). */
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun Legenda(colonnine: Boolean, modifier: Modifier = Modifier) {
-    Row(
-        modifier.horizontalScroll(rememberScrollState()),
-        horizontalArrangement = Arrangement.spacedBy(14.dp),
-        verticalAlignment = Alignment.CenterVertically,
+    FlowRow(
+        modifier,
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        verticalArrangement = Arrangement.spacedBy(6.dp),
     ) {
         if (colonnine) {
             VoceLegenda(Colori.Petrolio, null, "Veloci (in continua)")
             VoceLegenda(Color.White, Colori.Petrolio, "Lente (in alternata)")
         } else {
             VoceLegenda(Colori.VerdeTesto, null, "Convenienti")
-            VoceLegenda(Colori.PinAltri, null, "Altri prezzi")
+            VoceLegenda(Colori.PinAltri, null, "Nella media o sopra")
             VoceLegenda(Color.White, Colori.Linea, "Prezzo vecchio")
         }
     }
@@ -452,7 +863,10 @@ private fun SchedaSelezione(
     vm: GocciaViewModel,
     vista: VistaZona?,
     selezionato: Long?,
-    lontano: Boolean,
+    senzaCentro: Boolean,
+    attesa: Boolean,
+    inArea: Boolean,
+    cercando: Boolean,
     onDistributore: (Distributore) -> Unit,
     onLista: () -> Unit,
 ) {
@@ -468,13 +882,12 @@ private fun SchedaSelezione(
         verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
         Box(Modifier.align(Alignment.CenterHorizontally).size(width = 40.dp, height = 4.dp).clip(RoundedCornerShape(2.dp)).background(Colori.InterruttoreSpento))
-        if (lontano && selezionato == null) {
-            Text("Avvicina la mappa per vedere i prezzi", style = Testi.CorpoForte)
-            Text("Oppure cerca un comune qui sopra, o tocca il mirino per andare dove sei.", style = Testi.Didascalia.copy(color = Colori.Testo3))
+        if (senzaCentro && selezionato == null) {
+            SenzaCentro(attesa)
             return@Column
         }
-        if (vista == null) {
-            Text("Carico i distributori…", style = Testi.Didascalia.copy(color = Colori.Testo3))
+        if (vista == null || (cercando && vista.zona.offerte.isEmpty())) {
+            Text(if (inArea) "Cerco i distributori in quest'area…" else "Carico i distributori…", style = Testi.Didascalia.copy(color = Colori.Testo3))
             return@Column
         }
         val vicine = vista.zona.offerte
@@ -499,7 +912,7 @@ private fun SchedaSelezione(
         }
         if (selezionato == null) {
             Text(
-                "Il più conveniente qui vicino · evidenziato sulla mappa",
+                (if (inArea) "Il più conveniente in quest'area" else "Il più conveniente qui vicino") + " · evidenziato sulla mappa",
                 style = Testi.Piccolo.copy(color = Colori.Petrolio, fontWeight = FontWeight.Bold),
             )
         }
@@ -533,7 +946,10 @@ private fun SchedaColonnina(
     vm: GocciaViewModel,
     vista: VistaColonnine?,
     selezionata: String?,
-    lontano: Boolean,
+    senzaCentro: Boolean,
+    attesa: Boolean,
+    inArea: Boolean,
+    cercando: Boolean,
     onColonnina: (Colonnina) -> Unit,
 ) {
     val context = LocalContext.current
@@ -549,9 +965,8 @@ private fun SchedaColonnina(
         verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
         Box(Modifier.align(Alignment.CenterHorizontally).size(width = 40.dp, height = 4.dp).clip(RoundedCornerShape(2.dp)).background(Colori.InterruttoreSpento))
-        if (lontano && selezionata == null) {
-            Text("Avvicina la mappa per vedere le colonnine", style = Testi.CorpoForte)
-            Text("Oppure cerca un comune qui sopra, o tocca il mirino per andare dove sei.", style = Testi.Didascalia.copy(color = Colori.Testo3))
+        if (senzaCentro && selezionata == null) {
+            SenzaCentro(attesa)
             return@Column
         }
         if (stato.nonDisponibili && stato.tutte.isEmpty()) {
@@ -560,8 +975,8 @@ private fun SchedaColonnina(
             return@Column
         }
         val vicine = vista?.zona?.vicine.orEmpty()
-        if (vista == null || (vicine.isEmpty() && stato.caricamento)) {
-            Text("Carico le colonnine…", style = Testi.Didascalia.copy(color = Colori.Testo3))
+        if (vista == null || (vicine.isEmpty() && (stato.caricamento || cercando))) {
+            Text(if (inArea) "Cerco le colonnine in quest'area…" else "Carico le colonnine…", style = Testi.Didascalia.copy(color = Colori.Testo3))
             return@Column
         }
         val massima = vicine.mapNotNull { it.colonnina.kw }.maxOrNull()
@@ -581,7 +996,7 @@ private fun SchedaColonnina(
         val statoPunti by produceState<StatoColonnina?>(null, c.id) { value = vm.statoColonnina(c) }
         if (selezionata == null) {
             Text(
-                "La più vicina · evidenziata sulla mappa",
+                if (inArea) "La più vicina al centro dell'area · evidenziata sulla mappa" else "La più vicina · evidenziata sulla mappa",
                 style = Testi.Piccolo.copy(color = Colori.Petrolio, fontWeight = FontWeight.Bold),
             )
         }
@@ -622,4 +1037,18 @@ private fun SchedaColonnina(
             BottoneSecondario("Dettagli e costi", { onColonnina(c) }, Modifier.weight(1f))
         }
     }
+}
+
+/** Il foglio in basso quando non c'e ancora un punto da cui cercare. */
+@Composable
+private fun SenzaCentro(attesa: Boolean) {
+    if (attesa) {
+        Text("Cerco la tua posizione…", style = Testi.Didascalia.copy(color = Colori.Testo3))
+        return
+    }
+    Text("Scegli dove cercare", style = Testi.CorpoForte)
+    Text(
+        "Tocca il mirino per andare dove sei, cerca un comune qui sopra oppure sposta la mappa e tocca «Cerca in quest'area».",
+        style = Testi.Didascalia.copy(color = Colori.Testo3),
+    )
 }

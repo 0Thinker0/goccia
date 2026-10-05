@@ -78,10 +78,17 @@ import kotlinx.coroutines.withContext
 
 private const val DIECI_MINUTI = 10 * 60_000L
 
-enum class TipoCentro { POSIZIONE, LUOGO, COMUNE, ULTIMA }
+/** [AREA] e solo della mappa: la zona di "Cerca in quest'area", mai il centro dell'app. */
+enum class TipoCentro { POSIZIONE, LUOGO, COMUNE, ULTIMA, AREA }
 
-/** Il punto attorno a cui cerchiamo i distributori. */
-data class Centro(val coordinate: Coordinate, val tipo: TipoCentro, val etichetta: String)
+/** Il punto attorno a cui cerchiamo i distributori; [luogoId] se e un luogo salvato. */
+data class Centro(val coordinate: Coordinate, val tipo: TipoCentro, val etichetta: String, val luogoId: String? = null)
+
+/**
+ * Una zona cercata sulla mappa con "Cerca in quest'area": il centro della mappa, il suo zoom e
+ * un raggio che copre quello che si vedeva.
+ */
+data class AreaMappa(val centro: Coordinate, val zoom: Double, val raggioKm: Int)
 
 enum class ProblemaPosizione { NESSUNO, PERMESSO_MANCANTE, GPS_SPENTO, NON_TROVATA }
 
@@ -109,6 +116,8 @@ data class StatoDati(
     /** ultima lettura in tempo reale riuscita (millisecondi) e attorno a dove */
     val tempoRealeIl: Long? = null,
     val tempoRealeCentro: Coordinate? = null,
+    /** le ultime letture in tempo reale riuscite: dove e quando (millisecondi) */
+    val tempoRealeZone: List<Pair<Coordinate, Long>> = emptyList(),
     /** l'ultima richiesta in tempo reale non e andata: restano i prezzi del file */
     val tempoRealeErrore: Boolean = false,
 )
@@ -212,7 +221,18 @@ class GocciaViewModel(private val c: Contenitore) : ViewModel() {
     private val _dati = MutableStateFlow(StatoDati())
     val dati: StateFlow<StatoDati> = _dati.asStateFlow()
 
-    private val _centroMappa = MutableStateFlow<Coordinate?>(null)
+    private val _areaMappa = MutableStateFlow<AreaMappa?>(null)
+
+    /** La zona cercata sulla mappa; null quando mappa e lista guardano attorno al centro. */
+    val areaMappa: StateFlow<AreaMappa?> = _areaMappa.asStateFlow()
+
+    private val _cercoArea = MutableStateFlow(false)
+
+    /** Stiamo caricando i distributori della zona appena cercata sulla mappa. */
+    val cercoArea: StateFlow<Boolean> = _cercoArea.asStateFlow()
+    private var lavoroArea: Job? = null
+    // l'ultima ricerca nella zona: solo lei dice quando il caricamento e finito
+    private var turnoArea = 0
 
     private val caricamentoProvince = Mutex()
     private var avviato = false
@@ -223,10 +243,9 @@ class GocciaViewModel(private val c: Contenitore) : ViewModel() {
         .flowOn(Dispatchers.Default)
         .stateIn(viewModelScope, SharingStarted.Eagerly, null)
 
-    /** Per la mappa: gli stessi calcoli ma attorno al centro della mappa. */
-    val vistaMappa: StateFlow<VistaZona?> = combine(_dati, utente, _centroMappa) { d, u, m ->
-        val centro = m?.let { Centro(it, TipoCentro.COMUNE, "Mappa") } ?: d.centro
-        calcolaVista(d, u, centro)
+    /** Per la mappa e la sua lista: gli stessi calcoli, attorno alla zona cercata sulla mappa o al centro. */
+    val vistaMappa: StateFlow<VistaZona?> = combine(_dati, utente, _areaMappa) { d, u, a ->
+        calcolaVista(d, u, centroDellaMappa(d, a), a?.raggioKm)
     }
         .flowOn(Dispatchers.Default)
         .stateIn(viewModelScope, SharingStarted.Eagerly, null)
@@ -244,16 +263,19 @@ class GocciaViewModel(private val c: Contenitore) : ViewModel() {
         .flowOn(Dispatchers.Default)
         .stateIn(viewModelScope, SharingStarted.Eagerly, null)
 
-    /** Colonnine attorno al centro della mappa. */
-    val vistaColonnineMappa: StateFlow<VistaColonnine?> = combine(_dati, utente, _colonnine, _centroMappa) { d, u, c, m ->
-        val centro = m?.let { Centro(it, TipoCentro.COMUNE, "Mappa") } ?: d.centro ?: return@combine null
-        VistaColonnine(centro, zonaColonnine(c, u, centro.coordinate))
+    /** Colonnine attorno alla zona cercata sulla mappa o al centro. */
+    val vistaColonnineMappa: StateFlow<VistaColonnine?> = combine(_dati, utente, _colonnine, _areaMappa) { d, u, c, a ->
+        val centro = centroDellaMappa(d, a) ?: return@combine null
+        VistaColonnine(centro, zonaColonnine(c, u, centro.coordinate, a?.raggioKm))
     }
         .flowOn(Dispatchers.Default)
         .stateIn(viewModelScope, SharingStarted.Eagerly, null)
 
-    private fun zonaColonnine(c: StatoColonnine, u: DatiUtente, punto: Coordinate): ZonaColonnine =
-        Elettrico.zona(c.tutte, punto, u.impostazioni.raggioKm, u.prese, u.impostazioni.potenzaMinima)
+    private fun centroDellaMappa(d: StatoDati, a: AreaMappa?): Centro? =
+        a?.let { Centro(it.centro, TipoCentro.AREA, "Area cercata sulla mappa") } ?: d.centro
+
+    private fun zonaColonnine(c: StatoColonnine, u: DatiUtente, punto: Coordinate, raggioKm: Int? = null): ZonaColonnine =
+        Elettrico.zona(c.tutte, punto, raggioKm ?: u.impostazioni.raggioKm, u.prese, u.impostazioni.potenzaMinima)
 
     /** La mappa mostra le colonnine invece dei distributori: di serie per le auto elettriche. */
     private val _sceltaMappaColonnine = MutableStateFlow<Boolean?>(null)
@@ -262,7 +284,7 @@ class GocciaViewModel(private val c: Contenitore) : ViewModel() {
 
     fun mostraColonnine(si: Boolean) {
         _sceltaMappaColonnine.value = si
-        if (si) (_centroMappa.value ?: _dati.value.centro?.coordinate)?.let { caricaColonnineAttornoA(it, 15.0) }
+        if (si) (_areaMappa.value?.centro ?: _dati.value.centro?.coordinate)?.let { caricaColonnineAttornoA(it, 15.0) }
     }
 
     /** Le colonnine vengono dalla Piattaforma Unica Nazionale (altrimenti da OpenStreetMap). */
@@ -334,7 +356,8 @@ class GocciaViewModel(private val c: Contenitore) : ViewModel() {
         } else if (carburante == Carburante.METANO) 12.0 else 40.0
     }
 
-    private fun calcolaVista(d: StatoDati, u: DatiUtente, centro: Centro?): VistaZona? {
+    /** [raggioKm] al posto di quello delle impostazioni (le zone cercate sulla mappa). */
+    private fun calcolaVista(d: StatoDati, u: DatiUtente, centro: Centro?, raggioKm: Int? = null): VistaZona? {
         if (centro == null || d.indice == null) return null
         val adesso = System.currentTimeMillis()
         val carburante = u.carburante
@@ -348,7 +371,7 @@ class GocciaViewModel(private val c: Contenitore) : ViewModel() {
             carburante = carburante,
             preferisciSelf = u.impostazioni.preferisciSelf,
             centro = centro.coordinate,
-            raggioKm = u.impostazioni.raggioKm,
+            raggioKm = raggioKm ?: u.impostazioni.raggioKm,
             escludiAutostrade = u.impostazioni.escludiAutostrade,
             litri = litriPieno(u, carburante, adesso),
             consumoPer100 = auto?.consumo ?: 6.0,
@@ -384,6 +407,8 @@ class GocciaViewModel(private val c: Contenitore) : ViewModel() {
         viewModelScope.launch {
             _dati.update { it.copy(aggiornando = true) }
             carica(forza = true, nuovaPosizione = _dati.value.centro?.tipo != TipoCentro.COMUNE && _dati.value.centro?.tipo != TipoCentro.LUOGO)
+            // anche la zona cercata sulla mappa, se la lista la sta mostrando
+            _areaMappa.value?.let { aggiornaInTempoReale(it.centro, Osservaprezzi.RAGGIO_MASSIMO_KM, forza = true) }
             _dati.update { it.copy(aggiornando = false) }
         }
     }
@@ -445,12 +470,14 @@ class GocciaViewModel(private val c: Contenitore) : ViewModel() {
             problema = ProblemaPosizione.PERMESSO_MANCANTE
         }
         _dati.update { it.copy(problemaPosizione = problema) }
-        u.casa?.let { return Centro(it.coordinate, TipoCentro.LUOGO, "Vicino a Casa") }
+        u.casa?.let { return Centro(it.coordinate, TipoCentro.LUOGO, "Vicino a Casa", luogoId = it.id) }
         u.ultimaPosizione?.let { return Centro(it.coordinate, TipoCentro.ULTIMA, "Ultima posizione nota") }
         return null
     }
 
     private suspend fun impostaCentroInterno(centro: Centro?, forzaTempoReale: Boolean = false) {
+        // un centro nuovo (anche una posizione aggiornata) riporta mappa e lista attorno a lui
+        if (_dati.value.centro != centro) annullaArea()
         _dati.update { it.copy(centro = centro) }
         if (centro == null) {
             _dati.update { it.copy(caricamento = false) }
@@ -479,6 +506,7 @@ class GocciaViewModel(private val c: Contenitore) : ViewModel() {
     /** L'utente ha concesso la posizione (o vuole tornare a "vicino a me"). */
     fun usaPosizione() {
         lavoroCentro?.cancel()
+        annullaArea()
         lavoroCentro = viewModelScope.launch {
             if (_dati.value.indice == null) {
                 carica(forza = false, nuovaPosizione = true)
@@ -488,8 +516,46 @@ class GocciaViewModel(private val c: Contenitore) : ViewModel() {
         }
     }
 
+    /**
+     * "Dove sei adesso" dalla mappa: cerca la posizione e la usa come centro. Se non si puo
+     * (permesso mancante, localizzazione spenta, posizione non trovata) il centro resta quello
+     * di prima e [esito] dice perche; altrimenti riceve [ProblemaPosizione.NESSUNO].
+     */
+    fun vaiDoveSei(esito: (ProblemaPosizione) -> Unit = {}) {
+        lavoroCentro?.cancel()
+        annullaArea()
+        lavoroCentro = viewModelScope.launch {
+            if (!posizione.haPermesso()) {
+                esito(ProblemaPosizione.PERMESSO_MANCANTE)
+                return@launch
+            }
+            _dati.update { it.copy(cercoPosizione = true) }
+            val trovata = try {
+                posizione.attuale()
+            } finally {
+                _dati.update { it.copy(cercoPosizione = false) }
+            }
+            if (trovata == null) {
+                esito(if (posizione.localizzazioneAttiva()) ProblemaPosizione.NON_TROVATA else ProblemaPosizione.GPS_SPENTO)
+                return@launch
+            }
+            _dati.update { it.copy(problemaPosizione = ProblemaPosizione.NESSUNO) }
+            archivio.aggiorna { it.copy(ultimaPosizione = PosizioneSalvata(trovata.lat, trovata.lon, System.currentTimeMillis())) }
+            val centro = Centro(trovata, TipoCentro.POSIZIONE, "Vicino a te")
+            if (_dati.value.indice == null) {
+                // i dati non sono ancora arrivati: li carichiamo attorno alla posizione trovata
+                _dati.update { it.copy(centro = centro) }
+                carica(forza = false, nuovaPosizione = false)
+            } else {
+                impostaCentroInterno(centro)
+            }
+            esito(ProblemaPosizione.NESSUNO)
+        }
+    }
+
     fun centraSu(comune: Comune) {
         lavoroCentro?.cancel()
+        annullaArea()
         lavoroCentro = viewModelScope.launch {
             impostaCentroInterno(Centro(comune.coordinate, TipoCentro.COMUNE, comune.etichetta))
         }
@@ -497,13 +563,14 @@ class GocciaViewModel(private val c: Contenitore) : ViewModel() {
 
     fun centraSu(luogo: Luogo) {
         lavoroCentro?.cancel()
+        annullaArea()
         lavoroCentro = viewModelScope.launch {
             val etichetta = when (luogo.tipo) {
                 TipoLuogo.CASA -> "Vicino a Casa"
                 TipoLuogo.LAVORO -> "Vicino al Lavoro"
                 TipoLuogo.ALTRO -> "Vicino a ${luogo.nome}"
             }
-            impostaCentroInterno(Centro(luogo.coordinate, TipoCentro.LUOGO, etichetta))
+            impostaCentroInterno(Centro(luogo.coordinate, TipoCentro.LUOGO, etichetta, luogoId = luogo.id))
         }
     }
 
@@ -580,16 +647,45 @@ class GocciaViewModel(private val c: Contenitore) : ViewModel() {
         viewModelScope.launch { caricaProvince(sigle) }
     }
 
-    /** La mappa si e fermata qui: carichiamo i distributori (o le colonnine) della zona se serve. */
-    fun mappaSpostata(punto: Coordinate, zoom: Double) {
-        _centroMappa.value = punto
-        if (zoom >= 9.0) {
-            viewModelScope.launch { caricaAttorno(punto, 15.0) }
-            if (mappaColonnine.value) caricaColonnineAttornoA(punto, 15.0)
+    /**
+     * La mappa si e fermata qui: prepariamo i distributori (o le colonnine) della zona, cosi
+     * "Cerca in quest'area" e subito pronto. La ricerca mostrata non cambia.
+     */
+    fun mappaFerma(punto: Coordinate, zoom: Double) {
+        if (zoom < 9.0) return
+        viewModelScope.launch { caricaAttorno(punto, 15.0) }
+        if (mappaColonnine.value) caricaColonnineAttornoA(punto, 15.0)
+    }
+
+    /**
+     * "Cerca in quest'area": mappa e lista mostrano i distributori (o le colonnine) entro
+     * [raggioKm] da [punto], il centro della mappa.
+     */
+    fun cercaInArea(punto: Coordinate, zoom: Double, raggioKm: Int) {
+        _areaMappa.value = AreaMappa(punto, zoom, raggioKm)
+        val km = maxOf(20.0, raggioKm + 5.0)
+        val turno = ++turnoArea
+        lavoroArea?.cancel()
+        lavoroArea = viewModelScope.launch {
+            _cercoArea.value = true
+            try {
+                coroutineScope {
+                    launch { caricaAttorno(punto, km) }
+                    if (mappaColonnine.value) launch { caricaColonnineAttorno(punto, km) }
+                }
+            } finally {
+                if (turno == turnoArea) _cercoArea.value = false
+            }
         }
-        if (zoom >= 10.5 && !mappaColonnine.value) {
-            viewModelScope.launch { aggiornaInTempoReale(punto, Osservaprezzi.RAGGIO_MASSIMO_KM) }
-        }
+        if (!mappaColonnine.value) viewModelScope.launch { aggiornaInTempoReale(punto, raggioKm) }
+    }
+
+    /** Mappa e lista tornano a guardare attorno al centro (la posizione, il luogo o il comune scelti). */
+    fun annullaArea() {
+        turnoArea++
+        lavoroArea?.cancel()
+        _cercoArea.value = false
+        _areaMappa.value = null
     }
 
     // ------------------------------------------------------------------ prezzi in tempo reale
@@ -633,16 +729,18 @@ class GocciaViewModel(private val c: Contenitore) : ViewModel() {
                 distributori = TempoReale.applica(s.perProvincia.values.flatten(), live),
                 tempoRealeIl = adesso,
                 tempoRealeCentro = centro,
+                tempoRealeZone = (s.tempoRealeZone + (centro to adesso)).takeLast(8),
                 tempoRealeErrore = false,
             )
         }
     }
 
-    /** I prezzi sono in tempo reale attorno a [punto] (letti da poco, li vicino). */
+    /** I prezzi attorno a [punto] sono stati letti in tempo reale da meno di mezz'ora (anche prima di una zona cercata altrove). */
     fun inTempoReale(d: StatoDati, punto: Coordinate): Boolean {
-        val quando = d.tempoRealeIl ?: return false
-        val dove = d.tempoRealeCentro ?: return false
-        return System.currentTimeMillis() - quando < 30 * 60_000L && Geo.distanzaKm(dove, punto) <= Osservaprezzi.RAGGIO_MASSIMO_KM
+        val adesso = System.currentTimeMillis()
+        return d.tempoRealeZone.any { (dove, quando) ->
+            adesso - quando < 30 * 60_000L && Geo.distanzaKm(dove, punto) <= Osservaprezzi.RAGGIO_MASSIMO_KM
+        }
     }
 
     private val _schede = MutableStateFlow<Map<Long, SchedaImpianto>>(emptyMap())
@@ -754,16 +852,23 @@ class GocciaViewModel(private val c: Contenitore) : ViewModel() {
 
     fun eliminaAvviso(id: String) = modifica { u -> u.copy(avvisi = u.avvisi.filterNot { it.id == id }) }
 
-    fun salvaLuogo(luogo: Luogo) = modifica { u ->
-        val esiste = u.luoghi.any { it.id == luogo.id }
-        u.copy(luoghi = if (esiste) u.luoghi.map { if (it.id == luogo.id) luogo else it } else u.luoghi + luogo)
+    fun salvaLuogo(luogo: Luogo) {
+        modifica { u ->
+            val esiste = u.luoghi.any { it.id == luogo.id }
+            u.copy(luoghi = if (esiste) u.luoghi.map { if (it.id == luogo.id) luogo else it } else u.luoghi + luogo)
+        }
+        // il luogo modificato e quello attorno a cui stiamo cercando: lo seguiamo
+        if (_dati.value.centro?.luogoId == luogo.id) centraSu(luogo)
     }
 
-    fun eliminaLuogo(id: String) = modifica { u ->
-        u.copy(
-            luoghi = u.luoghi.filterNot { it.id == id },
-            avvisi = u.avvisi.map { if (it.luogoId == id) it.copy(luogoId = null) else it },
-        )
+    fun eliminaLuogo(id: String) {
+        modifica { u ->
+            u.copy(
+                luoghi = u.luoghi.filterNot { it.id == id },
+                avvisi = u.avvisi.map { if (it.luogoId == id) it.copy(luogoId = null) else it },
+            )
+        }
+        if (_dati.value.centro?.luogoId == id) usaPosizione()
     }
 
     fun salvaAuto(auto: Auto, attiva: Boolean = false) = modifica { u ->
