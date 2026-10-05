@@ -6,7 +6,7 @@ App Android gratuita per trovare il distributore di carburante più conveniente 
 
 - **Home**: i distributori più convenienti vicino a te, autonomia stimata della tua auto, risparmio del mese e andamento dei prezzi in provincia.
 - **Prezzi in tempo reale**: quelli in vigore adesso, letti dal servizio pubblico del Ministero, con l'ora dell'ultimo aggiornamento di ogni distributore. Chi non comunica i prezzi da oltre un mese non compare.
-- **Mappa e lista**: segnaposto con bandiera e prezzo (verdi i convenienti, blu gli altri, bianchi i prezzi vecchi) e lista ordinabile per prezzo, distanza o convenienza reale.
+- **Mappa e lista**: segnaposto con bandiera e prezzo (verdi i convenienti, blu quelli nella media o sopra, bianchi i prezzi vecchi); si cerca vicino a te, a un luogo salvato o in qualunque zona con «Cerca in quest'area»; lista ordinabile per prezzo, distanza o convenienza reale.
 - **Viaggio**: calcola il percorso e dice dove e quanto fare rifornimento (o ricaricare) in base all'auto e al livello di partenza, confrontando le aree di servizio con i distributori a pochi minuti dall'autostrada.
 - **Modalità autostrada**: durante il viaggio segue la posizione con una notifica fissa, aggiorna km, autonomia e sosta consigliata, avvisa 10 km prima e chiede se hai fatto il pieno quando ti fermi a un distributore.
 - **Preferiti e avvisi**: notifiche quando un preferito abbassa il prezzo o in zona si scende sotto la tua soglia, controllate circa ogni tre ore con i prezzi in vigore.
