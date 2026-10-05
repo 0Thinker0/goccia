@@ -96,6 +96,9 @@ tocca "Mappa"
 foto mappa 15
 tocca --descrizione "Vedi come lista"
 foto lista 5
+# per distanza si vedono prima i distributori vicini, con l'ora del loro ultimo aggiornamento
+tocca "Distanza"
+foto lista-distanza 3
 
 nota "dettaglio e rifornimento"
 tocca "cent vs media" || tocca "Nella media"
@@ -135,6 +138,12 @@ adb shell input swipe 540 2000 540 1300 500
 foto viaggio-risultato-2 2
 
 nota "modalita autostrada"
+# registrazione dello schermo della modalità autostrada (si vede l'avvio, la notifica fissa,
+# il preavviso e la domanda)
+adb shell rm -f /sdcard/autostrada.mp4
+( adb shell screenrecord --size 720x1600 --bit-rate 1200000 --time-limit 180 /sdcard/autostrada.mp4 >> "$PASSI" 2>&1 ) &
+REGISTRA=$!
+sleep 2
 trova "Modalità autostrada"
 foto autostrada 10
 # simuliamo il viaggio: i punti del percorso e della sosta consigliata li scrive l'app nel log
@@ -172,6 +181,10 @@ sleep 3
 ( while true; do adb emu geo fix 11.3426 44.4938 > /dev/null 2>&1; sleep 2; done ) &
 GEO=$!
 foto autostrada-fine 3
+adb shell pkill -INT screenrecord > /dev/null 2>&1
+sleep 4
+kill "$REGISTRA" 2> /dev/null || true
+adb pull /sdcard/autostrada.mp4 "$USCITA/autostrada.mp4" >> "$PASSI" 2>&1 || nota "registrazione non riuscita"
 
 indietro
 for _ in 1 2 3; do esiste "Preferiti" && break; indietro; done

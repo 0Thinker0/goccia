@@ -1,24 +1,25 @@
 # Goccia
 
-App Android gratuita per trovare il distributore di carburante più conveniente: prezzi ufficiali di oggi, mappa, preferiti, avvisi di prezzo e consigli su quando e dove fare il pieno. Per le auto elettriche: colonnine vicine, costo di ogni ricarica con la propria tariffa, confronto con la ricarica a casa e soste di ricarica nei viaggi. Niente account, niente pubblicità, niente abbonamenti.
+App Android gratuita per trovare il distributore di carburante più conveniente in Italia: prezzi ufficiali in tempo reale, mappa, viaggi con la sosta consigliata, avvisi di prezzo e, per le auto elettriche, colonnine con i punti liberi. Niente account, niente pubblicità, niente abbonamenti.
 
-Cosa fa:
+## Cosa fa
 
 - **Home**: i distributori più convenienti vicino a te, autonomia stimata della tua auto, risparmio del mese e andamento dei prezzi in provincia.
-- **Mappa e lista**: prezzi di oggi per benzina, gasolio, GPL e metano, oppure le colonnine con i filtri per presa e potenza.
+- **Prezzi in tempo reale**: quelli in vigore adesso, letti dal servizio pubblico del Ministero, con l'ora dell'ultimo aggiornamento di ogni distributore. Chi non comunica i prezzi da oltre un mese non compare.
+- **Mappa e lista**: segnaposto con bandiera e prezzo (verdi i convenienti, blu gli altri, bianchi i prezzi vecchi) e lista ordinabile per prezzo, distanza o convenienza reale.
 - **Viaggio**: calcola il percorso e dice dove e quanto fare rifornimento (o ricaricare) in base all'auto e al livello di partenza, confrontando le aree di servizio con i distributori a pochi minuti dall'autostrada.
 - **Modalità autostrada**: durante il viaggio segue la posizione con una notifica fissa, aggiorna km, autonomia e sosta consigliata, avvisa 10 km prima e chiede se hai fatto il pieno quando ti fermi a un distributore.
-- **Preferiti e avvisi**: notifiche quando un preferito abbassa il prezzo o in zona si scende sotto la tua soglia, controllate ogni tre ore circa con i prezzi in vigore.
-- **Auto elettriche**: tariffa di casa (prezzo, bolletta o stima, fasce, fotovoltaico, perdite), tariffe delle colonnine, costi e tempi di ricarica.
-- **Widget** per la schermata Home: il più conveniente vicino a te e il livello stimato della tua auto.
+- **Preferiti e avvisi**: notifiche quando un preferito abbassa il prezzo o in zona si scende sotto la tua soglia, controllate circa ogni tre ore con i prezzi in vigore.
+- **Auto elettriche**: colonnine dalla Piattaforma Unica Nazionale con i punti liberi in questo momento, prezzo dichiarato dal gestore, tariffa di casa (bolletta, fasce, fotovoltaico, perdite), costi e tempi di ricarica.
+- **Widget** per la schermata Home: il più conveniente vicino a te (con altri due) e il livello stimato della tua auto.
 
-## Installare l'anteprima
+## Scaricarla
 
-Ogni modifica all'app produce una nuova versione di prova:
+- **Anteprima**: ogni modifica all'app produce una versione di prova. Dal telefono apri <https://github.com/0Thinker0/goccia/releases/tag/anteprima>, scarica **goccia.apk** e aprilo (Android chiede di consentire l'installazione da questa fonte). Le versioni successive si installano sopra la precedente senza perdere i dati.
 
-1. Dal telefono apri <https://github.com/0Thinker0/goccia/releases/tag/anteprima>.
-2. Scarica **goccia.apk** e aprilo. Android chiede di consentire l'installazione da questa fonte: accetta.
-3. Le versioni successive si installano sopra la precedente senza perdere i dati.
+## Sostenere il progetto
+
+Goccia è gratis per tutti e lo resta. Nella versione del Play Store si può offrire un caffè da 1, 3 o 5 euro con Google Play (Profilo > Sostieni il progetto); non sblocca nulla. Si aiuta anche facendola conoscere, segnalando problemi e idee nelle [issue](https://github.com/0Thinker0/goccia/issues) o mettendo una stella al repository.
 
 ## Come funziona
 
@@ -52,6 +53,7 @@ Tutto gira su servizi gratuiti: GitHub Actions per elaborare i dati e compilare 
 
 - Pipeline: `cd pipeline && npm test`
 - App: `cd app && ./gradlew testDebugUnitTest assembleDebug` (serve JDK 17 e l'SDK Android)
+- Versione per Google Play: `./gradlew bundleRelease -Pgoccia.play -Pgoccia.tutteLeAbi`. Con `-Pgoccia.play` i caffè passano da Google Play Billing (prodotti `caffe_1`, `caffe_3`, `caffe_5`) e non c'è nessun link esterno per donare; senza, la versione di GitHub mostra il link di `goccia.donazioni` (`app/gradle.properties`) se c'è. La firma usa la chiave privata indicata da `GOCCIA_KEYSTORE_FILE` e dalle variabili `GOCCIA_KEYSTORE_PASSWORD`, `GOCCIA_KEY_ALIAS`, `GOCCIA_KEY_PASSWORD` (su GitHub arrivano dai secret del repository).
 - Prova sull'emulatore: il workflow "Prova sull'emulatore" installa l'APK, attraversa le schermate (compresi widget e modalità autostrada con un viaggio simulato) e pubblica screenshot e log nel ramo `ci-prova`. Usa il rendering SwANGLE: con il vecchio SwiftShader MapLibre non disegna segnaposto ed etichette.
 
 Nella build su GitHub l'indirizzo dei dati viene preso dalle Pages del repository; in locale da `app/gradle.properties` (`goccia.datiUrl`).
@@ -65,3 +67,7 @@ Nella build su GitHub l'indirizzo dei dati viene preso dalle Pages del repositor
 - **Percorsi**: [OSRM](https://project-osrm.org/) sul servizio pubblico di [FOSSGIS](https://routing.openstreetmap.de/).
 - **Carattere**: Plus Jakarta Sans, SIL Open Font License (`app/FONT_LICENSE_OFL.txt`).
 - **Codice**: licenza MIT (`LICENSE`).
+
+## Crediti
+
+Creato da Gabriele Orlando, con la collaborazione di Claude Code.
