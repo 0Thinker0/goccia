@@ -303,6 +303,10 @@ foto ev-home-3
 nota "auto elettrica: colonnine"
 tocca "Mappa"
 foto ev-mappa 15
+# il foglio parte chiuso: cercando in quest'area si apre la colonnina piu vicina
+adb shell input swipe 800 900 300 900 400
+tocca "Cerca in quest'area"
+foto ev-mappa-area 6
 tocca "Dettagli e costi"
 foto ev-colonnina 5
 scorri
