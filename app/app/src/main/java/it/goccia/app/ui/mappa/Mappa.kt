@@ -906,7 +906,8 @@ private fun spostataLontano(m: MapLibreMap, base: CameraPosition, adesso: Camera
     val a = adesso.target ?: return false
     val larghezza = larghezzaVisibileKm(m)
     val spostamento = Geo.distanzaKm(da.latitude, da.longitude, a.latitude, a.longitude)
-    return spostamento > maxOf(0.5, larghezza * 0.25) || (raggioKm != null && larghezza / 2 > raggioKm * 1.8)
+    // un quarto di schermo, a qualunque zoom: da vicino anche poche centinaia di metri contano
+    return spostamento > maxOf(0.05, larghezza * 0.25) || (raggioKm != null && larghezza / 2 > raggioKm * 1.8)
 }
 
 /**
