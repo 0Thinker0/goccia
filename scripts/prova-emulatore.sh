@@ -93,15 +93,27 @@ foto home-4
 
 nota "mappa e lista"
 tocca "Mappa"
+# all'apertura il foglio in basso e chiuso: la mappa ha tutto lo spazio
 foto mappa 15
-# spostando la mappa compare "Cerca in quest'area"; il mirino riporta sempre al segnaposto,
-# anche la seconda volta
+# spostando la mappa compare "Cerca in quest'area": il piu conveniente dell'area si apre nel
+# foglio, in piccolo
 adb shell input swipe 850 900 250 900 400
 foto mappa-spostata 4
 tocca "Cerca in quest'area"
 foto mappa-area 8
+# dalla linguetta il foglio si espande e si riduce
+python3 "$QUI/tocca.py" --descrizione --trascina=-800 "Espandi i dettagli" >> "$PASSI" 2>&1
+foto mappa-foglio-espanso 3
+python3 "$QUI/tocca.py" --descrizione --trascina=500 "Riduci i dettagli" >> "$PASSI" 2>&1
+foto mappa-foglio-piccolo 3
+# il mirino chiude il foglio e riporta sempre al segnaposto, anche la seconda volta
 tocca --descrizione "Torna al segnaposto"
 foto mappa-mirino 5
+# un segnaposto toccato apre il foglio; un tocco a vuoto sulla mappa lo chiude
+adb shell input tap 948 925
+foto mappa-segnaposto 3
+adb shell input tap 560 760
+foto mappa-tocco-vuoto 3
 adb shell input swipe 300 850 800 1000 400
 foto mappa-spostata-2 4
 tocca --descrizione "Torna al segnaposto"
@@ -149,6 +161,17 @@ tocca "Cerca un comune"
 scrivi "Roma"
 foto viaggio-cerca 3
 tocca "Roma (RM)"
+# la partenza scelta sulla mappa: puntatore al centro, conferma, e la tappa diventa le coordinate
+tocca "Partenza"
+tocca "Scegli sulla mappa"
+foto viaggio-mappa 6
+adb shell input swipe 700 1150 420 1000 400
+foto viaggio-mappa-spostata 3
+tocca "Conferma il punto"
+foto viaggio-coordinate 2
+# si torna a partire da dove si e, come nel resto della prova
+tocca "Partenza"
+tocca "La tua posizione"
 # con un quarto di serbatoio serve una sosta: cosi la modalita autostrada ha qualcosa da consigliare
 tocca "1/4"
 foto viaggio-pronto

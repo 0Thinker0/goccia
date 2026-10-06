@@ -6,6 +6,7 @@ import android.graphics.RectF
 import android.util.Log
 import android.view.Gravity
 import android.widget.Toast
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
@@ -27,6 +28,8 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -35,10 +38,16 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.BottomSheetScaffold
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.SheetValue
 import androidx.compose.material3.Text
+import androidx.compose.material3.rememberBottomSheetScaffoldState
+import androidx.compose.material3.rememberStandardBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -46,8 +55,10 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -63,12 +74,17 @@ import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -120,6 +136,7 @@ import it.goccia.app.ui.tema.ombra
 import kotlin.math.ceil
 import kotlin.math.roundToInt
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
 import org.maplibre.android.camera.CameraPosition
 import org.maplibre.android.camera.CameraUpdateFactory
@@ -167,6 +184,12 @@ private class StatoCamera {
     var base: CameraPosition? = null
 }
 
+/** Il foglio in basso si sta aprendo: finche non e aperto, il suo stato "chiuso" non azzera la scelta. */
+private class Apertura {
+    var inCorso = false
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SchermataMappa(
     vm: GocciaViewModel,
@@ -178,6 +201,7 @@ fun SchermataMappa(
     LaunchedEffect(Unit) { vm.avvia() }
     val context = LocalContext.current
     val densita = LocalDensity.current
+    val scope = rememberCoroutineScope()
     val dati by vm.dati.collectAsStateWithLifecycle()
     val utente by vm.utente.collectAsStateWithLifecycle()
     val statoVista by vm.vistaMappa.collectAsStateWithLifecycle()
@@ -186,12 +210,14 @@ fun SchermataMappa(
     val colonnine by vm.mappaColonnine.collectAsStateWithLifecycle()
     val statoVistaEv by vm.vistaColonnineMappa.collectAsStateWithLifecycle()
     val vistaEv = statoVistaEv
+    val statoColonnine by vm.colonnine.collectAsStateWithLifecycle()
     // la zona cercata con "Cerca in quest'area" (null: si guarda attorno al centro)
     val area by vm.areaMappa.collectAsStateWithLifecycle()
     val cercoArea by vm.cercoArea.collectAsStateWithLifecycle()
-    var selezionataEv by rememberSaveable { mutableStateOf<String?>(null) }
 
+    // il distributore (o la colonnina) aperto nel foglio in basso; nessuno all'apertura della mappa
     var selezionato by rememberSaveable { mutableStateOf<Long?>(null) }
+    var selezionataEv by rememberSaveable { mutableStateOf<String?>(null) }
     var testo by rememberSaveable { mutableStateOf("") }
     var mappa by remember { mutableStateOf<MapLibreMap?>(null) }
     var stile by remember { mutableStateOf<Style?>(null) }
@@ -199,7 +225,7 @@ fun SchermataMappa(
     var mostraCerca by remember { mutableStateOf(false) }
     // ogni tocco sul mirino riporta la mappa sul segnaposto, anche se il centro non e cambiato
     var richiestaCentra by remember { mutableIntStateOf(0) }
-    // dopo "Cerca in quest'area" la vista si allarga, se serve, fino al piu conveniente
+    // dopo "Cerca in quest'area" la vista si allarga, se serve, e il piu conveniente si apre nel foglio
     var richiestaAdatta by remember { mutableIntStateOf(0) }
     val camera = remember { StatoCamera() }
     val pin = remember { PinPrezzo(context) }
@@ -209,6 +235,44 @@ fun SchermataMappa(
         ICONA_LAVORO to rememberVectorPainter(Icone.Lavoro),
         ICONA_LUOGO to rememberVectorPainter(Icone.Segnaposto),
     )
+
+    // foglio in basso: chiuso, piccolo (si apre toccando un segnaposto) o espanso (tirando su la linguetta)
+    val foglio = rememberStandardBottomSheetState(initialValue = SheetValue.Hidden, skipHiddenState = false)
+    val impalcatura = rememberBottomSheetScaffoldState(bottomSheetState = foglio)
+    val apertura = remember { Apertura() }
+    var altezzaPiccola by remember { mutableIntStateOf(0) }
+    var altezzaContenuto by remember { mutableIntStateOf(0) }
+    val fogliochiuso = foglio.currentValue == SheetValue.Hidden && foglio.targetValue == SheetValue.Hidden
+    val espanso = foglio.targetValue == SheetValue.Expanded
+
+    fun apriFoglio() {
+        apertura.inCorso = true
+        scope.launch {
+            try {
+                if (foglio.currentValue == SheetValue.Hidden || foglio.targetValue == SheetValue.Hidden) foglio.partialExpand()
+            } finally {
+                apertura.inCorso = false
+            }
+        }
+    }
+    fun chiudiFoglio() {
+        if (foglio.currentValue == SheetValue.Hidden && foglio.targetValue == SheetValue.Hidden) {
+            selezionato = null
+            selezionataEv = null
+            return
+        }
+        scope.launch { foglio.hide() }
+    }
+    // chiuso il foglio (anche trascinandolo giu), nessun segnaposto resta scelto
+    LaunchedEffect(foglio) {
+        snapshotFlow { foglio.currentValue to foglio.targetValue }.collect { (attuale, destinazione) ->
+            if (attuale == SheetValue.Hidden && destinazione == SheetValue.Hidden && !apertura.inCorso) {
+                selezionato = null
+                selezionataEv = null
+            }
+        }
+    }
+    BackHandler(enabled = !fogliochiuso) { chiudiFoglio() }
 
     // "Dove sei adesso": serve il permesso; se la posizione non arriva lo diciamo
     fun avvisa(problema: ProblemaPosizione) {
@@ -228,8 +292,7 @@ fun SchermataMappa(
         }
     }
     fun vaiDoveSei() {
-        selezionato = null
-        selezionataEv = null
+        chiudiFoglio()
         if (vm.haPermessoPosizione()) {
             vm.vaiDoveSei { avvisa(it) }
         } else {
@@ -323,13 +386,19 @@ fun SchermataMappa(
                 when {
                     colonnina != null -> {
                         selezionataEv = colonnina
+                        apriFoglio()
                         true
                     }
                     id != null -> {
                         selezionato = id
+                        apriFoglio()
                         true
                     }
-                    else -> false
+                    else -> {
+                        // un tocco a vuoto chiude il foglio
+                        chiudiFoglio()
+                        false
+                    }
                 }
             }
             mappa = m
@@ -345,13 +414,28 @@ fun SchermataMappa(
         // tornando sulla mappa con un'area cercata restiamo li: la camera parte gia dall'area
         if (vm.areaMappa.value != null) return@LaunchedEffect
         m.animateCamera(CameraUpdateFactory.newLatLngZoom(LatLng(c.coordinate.lat, c.coordinate.lon), 13.0), 600)
-        adattaVista(m, vistaMappa, vm, c.coordinate, densita, soloSeServe = false)
+        adattaVista(m, vistaMappa, vm, c.coordinate, densita, soloSeServe = false, fondoDp = 120)
     }
     LaunchedEffect(mappa, richiestaAdatta) {
         val m = mappa ?: return@LaunchedEffect
         if (richiestaAdatta == 0) return@LaunchedEffect
         val a = vm.areaMappa.value ?: return@LaunchedEffect
-        adattaVista(m, vistaMappa, vm, a.centro, densita, soloSeServe = true)
+        adattaVista(m, vistaMappa, vm, a.centro, densita, soloSeServe = true, fondoDp = 330)
+        if (vm.areaMappa.value != a) return@LaunchedEffect
+        // la risposta a "Cerca in quest'area": il piu conveniente (o la colonnina piu vicina) si apre nel foglio
+        if (vm.mappaColonnine.value) {
+            val prima = vm.vistaColonnineMappa.value?.takeIf { it.centro.coordinate == a.centro }?.zona?.vicine?.firstOrNull()
+            if (prima != null) {
+                selezionataEv = prima.colonnina.id
+                apriFoglio()
+            }
+        } else {
+            val migliore = vm.vistaMappa.value?.takeIf { it.centro.coordinate == a.centro }?.let { Convenienza.consigliati(it.zona, 1).firstOrNull() }
+            if (migliore != null) {
+                selezionato = migliore.distributore.id
+                apriFoglio()
+            }
+        }
     }
     // il segnaposto del centro: un puntino con l'alone per la posizione, un'icona per luoghi e comuni
     LaunchedEffect(stile, centro, utente.luoghi) {
@@ -370,11 +454,10 @@ fun SchermataMappa(
     LaunchedEffect(stile, vista, selezionato, colonnine, vistaEv, selezionataEv) {
         val s = stile ?: return@LaunchedEffect
         if (colonnine) {
-            // la colonnina descritta nel foglio in basso (scelta, o la piu vicina) e evidenziata
-            val evidenziata = selezionataEv ?: vistaEv?.zona?.vicine?.firstOrNull()?.colonnina?.id
+            // la colonnina aperta nel foglio ha il bordo scuro
             val elementi = vistaEv?.zona?.vicine.orEmpty().take(MASSIMO_PIN).map { cv ->
                 val c = cv.colonnina
-                val sel = c.id == evidenziata
+                val sel = c.id == selezionataEv
                 // senza potenza nota il segnaposto mostra solo il fulmine
                 val testo = c.kw?.let { Formati.kw(it) } ?: ""
                 val aspetto = stileColonnina(c, sel)
@@ -395,35 +478,42 @@ fun SchermataMappa(
         }
         val v = vista ?: return@LaunchedEffect
         val offerte = v.zona.tutte.sortedBy { it.distanzaKm }.take(MASSIMO_PIN)
-        // il distributore descritto nel foglio in basso (scelto, o il piu conveniente) e evidenziato
-        val evidenziato = selezionato ?: Convenienza.consigliati(v.zona, 1).firstOrNull()?.distributore?.id
+        // il piu conveniente e piu grande degli altri; quello aperto nel foglio ha anche il bordo scuro
+        val migliore = Convenienza.consigliati(v.zona, 1).firstOrNull()?.distributore?.id
         val elementi = offerte.map { o ->
-            val sel = o.distributore.id == evidenziato
+            val sel = o.distributore.id == selezionato
+            val grande = sel || o.distributore.id == migliore
             val prezzo = Formati.prezzo(o.prezzo.millesimi)
             val aspetto = stilePrezzo(o, sel)
             val nome = Bandiere.breve(o.distributore)
-            val chiave = "p-$prezzo-$nome-${aspetto.fondo}-${aspetto.bordo}-$sel"
+            val chiave = "p-$prezzo-$nome-${aspetto.fondo}-${aspetto.bordo}-$grande"
             if (immaginiCaricate.add(chiave)) {
-                s.addImage(chiave, pin.disegna(prezzo, aspetto.fondo, sel, aspetto.testo, aspetto.bordo, etichetta = nome))
+                s.addImage(chiave, pin.disegna(prezzo, aspetto.fondo, grande, aspetto.testo, aspetto.bordo, etichetta = nome))
             }
             Feature.fromGeometry(Point.fromLngLat(o.distributore.lon, o.distributore.lat)).apply {
                 addStringProperty("id", o.distributore.id.toString())
                 addStringProperty("icona", chiave)
-                addNumberProperty("ordine", if (sel) -1 else o.prezzo.millesimi)
+                addNumberProperty("ordine", if (sel) -2 else if (grande) -1 else o.prezzo.millesimi)
             }
         }
         val sorgente = s.getSourceAs<GeoJsonSource>(SORGENTE_PREZZI)
         sorgente?.setGeoJson(FeatureCollection.fromFeatures(elementi))
         Log.i("Goccia", "mappa: ${elementi.size} prezzi, sorgente ${if (sorgente != null) "ok" else "assente"}")
     }
+    // il distributore aperto non c'e piu (altro carburante, altre prese): il foglio si chiude
+    val sceltaSparita = if (colonnine) {
+        selezionataEv != null && vistaEv != null && vistaEv.zona.vicine.none { it.colonnina.id == selezionataEv }
+    } else {
+        selezionato != null && vista != null && vista.zona.tutte.none { it.distributore.id == selezionato }
+    }
+    LaunchedEffect(sceltaSparita) { if (sceltaSparita) chiudiFoglio() }
 
     // "Cerca in quest'area": i risultati diventano quelli attorno al centro della mappa
     fun cercaQui() {
         val m = mappa ?: return
         val posizione = m.cameraPosition
         val bersaglio = posizione.target ?: return
-        selezionato = null
-        selezionataEv = null
+        chiudiFoglio()
         mostraCerca = false
         val punto = Coordinate(bersaglio.latitude, bersaglio.longitude)
         if (posizione.zoom < ZOOM_PREZZI) {
@@ -440,8 +530,7 @@ fun SchermataMappa(
 
     // il mirino riporta sempre al segnaposto; se e la posizione, la aggiorna
     fun tornaAlSegnaposto() {
-        selezionato = null
-        selezionataEv = null
+        chiudiFoglio()
         vm.annullaArea()
         mostraCerca = false
         richiestaCentra++
@@ -450,87 +539,166 @@ fun SchermataMappa(
         Log.i("Goccia", "mappa: torno al segnaposto (${c?.etichetta ?: "nessun centro"})")
     }
 
-    Box(Modifier.fillMaxSize().background(Colori.Sfondo)) {
-        AndroidView(factory = { vistaMappa }, modifier = Modifier.fillMaxSize())
+    // cosa dire sotto l'intestazione: il pulsante per cercare, un caricamento o un avviso
+    val avviso: Pair<String, Boolean>? = when {
+        cercoArea -> "Cerco in quest'area…" to true
+        centro == null && area == null -> null
+        colonnine && statoColonnine.nonDisponibili && statoColonnine.tutte.isEmpty() ->
+            "Colonnine non disponibili: controlla la connessione" to false
+        colonnine && (vistaEv == null || (vistaEv.zona.vicine.isEmpty() && statoColonnine.caricamento)) -> "Carico le colonnine…" to true
+        colonnine && vistaEv != null && vistaEv.zona.vicine.isEmpty() -> "Nessuna colonnina compatibile: prova altre prese" to false
+        !colonnine && (vista == null || dati.caricamento) -> "Carico i distributori…" to true
+        !colonnine && vista != null && vista.zona.offerte.isEmpty() ->
+            "Nessun distributore con ${vista.carburante.etichetta.lowercase()} qui" to false
+        else -> null
+    }
+    val mostraBottone = mostraCerca && !cercoArea
 
-        Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
-            // intestazione con ricerca e carburanti
-            Column(
-                Modifier
-                    .fillMaxWidth()
-                    .ombra(RoundedCornerShape(0.dp), 4.dp)
-                    .background(Colori.Sfondo.copy(alpha = 0.94f))
-                    .statusBarsPadding()
-                    .padding(bottom = 12.dp),
-            ) {
-                Row(Modifier.padding(start = 20.dp, end = 20.dp, top = 6.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    CampoRicerca(testo, { testo = it }, Modifier.weight(1f), segnaposto = "Cerca un comune")
-                    if (!colonnine) {
-                        BottoneIcona(
-                            Icone.Lista, "Vedi come lista", onLista,
-                            colore = Color.White, sfondo = Colori.Inchiostro, dimensione = 52.dp, forma = RoundedCornerShape(16.dp),
+    BottomSheetScaffold(
+        sheetContent = {
+            val toccaLinguetta: () -> Unit = {
+                scope.launch { if (foglio.currentValue == SheetValue.Expanded) foglio.partialExpand() else foglio.expand() }
+            }
+            if (colonnine) {
+                FoglioColonnina(
+                    vm = vm,
+                    vista = vistaEv,
+                    selezionata = selezionataEv,
+                    inArea = area != null,
+                    espanso = espanso,
+                    onLinguetta = toccaLinguetta,
+                    onAltezzaPiccola = { altezzaPiccola = it },
+                    onColonnina = onColonnina,
+                )
+            } else {
+                FoglioDistributore(
+                    vm = vm,
+                    vista = vista,
+                    selezionato = selezionato,
+                    inArea = area != null,
+                    espanso = espanso,
+                    onLinguetta = toccaLinguetta,
+                    onAltezzaPiccola = { altezzaPiccola = it },
+                    onDistributore = onDistributore,
+                    onLista = onLista,
+                )
+            }
+        },
+        scaffoldState = impalcatura,
+        sheetPeekHeight = if (altezzaPiccola > 0) with(densita) { altezzaPiccola.toDp() } else 190.dp,
+        sheetShape = Forme.Foglio,
+        sheetContainerColor = Colori.Superficie,
+        sheetContentColor = Colori.Inchiostro,
+        // chiuso, il foglio sta sotto il bordo: senza ombra non lascia una riga in fondo alla mappa
+        sheetShadowElevation = if (fogliochiuso) 0.dp else 10.dp,
+        sheetDragHandle = null,
+        containerColor = Colori.Sfondo,
+        contentColor = Colori.Inchiostro,
+    ) { _ ->
+        Box(Modifier.fillMaxSize().background(Colori.Sfondo).onSizeChanged { altezzaContenuto = it.height }) {
+            AndroidView(factory = { vistaMappa }, modifier = Modifier.fillMaxSize())
+
+            Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
+                // intestazione con ricerca e carburanti
+                Column(
+                    Modifier
+                        .fillMaxWidth()
+                        .ombra(RoundedCornerShape(0.dp), 4.dp)
+                        .background(Colori.Sfondo.copy(alpha = 0.94f))
+                        .statusBarsPadding()
+                        .padding(bottom = 12.dp),
+                ) {
+                    Row(Modifier.padding(start = 20.dp, end = 20.dp, top = 6.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        CampoRicerca(testo, { testo = it }, Modifier.weight(1f), segnaposto = "Cerca un comune")
+                        if (!colonnine) {
+                            BottoneIcona(
+                                Icone.Lista, "Vedi come lista", onLista,
+                                colore = Color.White, sfondo = Colori.Inchiostro, dimensione = 52.dp, forma = RoundedCornerShape(16.dp),
+                            )
+                        }
+                    }
+                    if (testo.isNotBlank()) {
+                        SuggerimentiComuni(
+                            vm.cercaComuni(testo),
+                            onScelto = {
+                                testo = ""
+                                chiudiFoglio()
+                                vm.centraSu(it)
+                            },
+                            modifier = Modifier.padding(start = 20.dp, end = 20.dp, top = 8.dp),
                         )
                     }
-                }
-                if (testo.isNotBlank()) {
-                    SuggerimentiComuni(
-                        vm.cercaComuni(testo),
-                        onScelto = {
-                            testo = ""
-                            selezionato = null
-                            selezionataEv = null
-                            vm.centraSu(it)
-                        },
-                        modifier = Modifier.padding(start = 20.dp, end = 20.dp, top = 8.dp),
-                    )
-                }
-                Row(
-                    Modifier.horizontalScroll(rememberScrollState()).padding(start = 20.dp, end = 20.dp, top = 10.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    ChipScelta(
-                        "Colonnine",
-                        colonnine,
-                        onClick = {
-                            selezionataEv = null
-                            vm.mostraColonnine(!colonnine)
-                        },
-                        icona = Icone.Fulmine,
-                        altezza = 38.dp,
-                    )
-                    if (colonnine) {
-                        val prese = utente.prese
-                        Presa.filtrabili.forEach { p ->
-                            ChipScelta(p.etichetta, p in prese, onClick = { vm.scegliPrese(if (p in prese) prese - p else prese + p) }, altezza = 38.dp)
-                        }
-                        val potenze = listOf(0, 50, 150)
-                        val attuale = utente.impostazioni.potenzaMinima
+                    Row(
+                        Modifier.horizontalScroll(rememberScrollState()).padding(start = 20.dp, end = 20.dp, top = 10.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
                         ChipScelta(
-                            if (attuale == 0) "Tutte le potenze" else "≥ $attuale kW",
-                            attuale > 0,
-                            onClick = { vm.scegliPotenzaMinima(potenze[(potenze.indexOf(attuale).coerceAtLeast(0) + 1) % potenze.size]) },
+                            "Colonnine",
+                            colonnine,
+                            onClick = {
+                                // il foglio aperto e di un distributore (o di una colonnina): prima si chiude
+                                val dopo = !colonnine
+                                if (fogliochiuso) {
+                                    vm.mostraColonnine(dopo)
+                                } else {
+                                    scope.launch {
+                                        try {
+                                            foglio.hide()
+                                        } finally {
+                                            vm.mostraColonnine(dopo)
+                                        }
+                                    }
+                                }
+                            },
+                            icona = Icone.Fulmine,
                             altezza = 38.dp,
                         )
-                    } else {
-                        Carburante.entries.forEach { c ->
-                            ChipScelta(c.etichetta, c == utente.carburante, onClick = { vm.scegliCarburante(c) }, altezza = 38.dp)
+                        if (colonnine) {
+                            val prese = utente.prese
+                            Presa.filtrabili.forEach { p ->
+                                ChipScelta(p.etichetta, p in prese, onClick = { vm.scegliPrese(if (p in prese) prese - p else prese + p) }, altezza = 38.dp)
+                            }
+                            val potenze = listOf(0, 50, 150)
+                            val attuale = utente.impostazioni.potenzaMinima
+                            ChipScelta(
+                                if (attuale == 0) "Tutte le potenze" else "≥ $attuale kW",
+                                attuale > 0,
+                                onClick = { vm.scegliPotenzaMinima(potenze[(potenze.indexOf(attuale).coerceAtLeast(0) + 1) % potenze.size]) },
+                                altezza = 38.dp,
+                            )
+                        } else {
+                            Carburante.entries.forEach { c ->
+                                ChipScelta(c.etichetta, c == utente.carburante, onClick = { vm.scegliCarburante(c) }, altezza = 38.dp)
+                            }
                         }
                     }
+                    Legenda(colonnine, Modifier.padding(start = 20.dp, end = 20.dp, top = 10.dp))
                 }
-                Legenda(colonnine, Modifier.padding(start = 20.dp, end = 20.dp, top = 10.dp))
+                AnimatedVisibility(
+                    visible = testo.isBlank() && (mostraBottone || avviso != null),
+                    enter = fadeIn() + slideInVertically { -it / 2 },
+                    exit = fadeOut() + slideOutVertically { -it / 2 },
+                ) {
+                    val a = avviso
+                    when {
+                        mostraBottone -> BottoneCercaQui(onClick = { cercaQui() }, modifier = Modifier.padding(top = 12.dp))
+                        a != null -> AvvisoMappa(a.first, a.second, Modifier.padding(start = 24.dp, end = 24.dp, top = 12.dp))
+                    }
+                }
             }
-            AnimatedVisibility(
-                visible = mostraCerca && testo.isBlank(),
-                enter = fadeIn() + slideInVertically { -it / 2 },
-                exit = fadeOut() + slideOutVertically { -it / 2 },
-            ) {
-                BottoneCercaQui(onClick = { cercaQui() }, modifier = Modifier.padding(top = 12.dp))
-            }
-        }
 
-        Column(Modifier.align(Alignment.BottomCenter).fillMaxWidth()) {
+            // da dove si cerca, attribuzione e mirino: stanno sempre sopra il foglio, anche mentre si muove
             Row(
-                Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 10.dp),
+                Modifier
+                    .align(Alignment.BottomCenter)
+                    .offset {
+                        val cima = runCatching { foglio.requireOffset() }.getOrNull()
+                        val su = if (cima == null || cima.isNaN() || altezzaContenuto == 0) 0
+                        else (altezzaContenuto - cima).roundToInt().coerceIn(0, altezzaContenuto)
+                        IntOffset(0, -su)
+                    }
+                    .fillMaxWidth()
+                    .padding(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 12.dp),
                 verticalAlignment = Alignment.Bottom,
             ) {
                 Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -542,8 +710,7 @@ fun SchermataMappa(
                             if (centro?.tipo == TipoCentro.POSIZIONE) richiestaCentra++
                         },
                         onLuogo = { luogo ->
-                            selezionato = null
-                            selezionataEv = null
+                            chiudiFoglio()
                             vm.centraSu(luogo)
                             // lo stesso luogo di prima: il centro non cambia, ma la mappa ci torna
                             if (centro?.luogoId == luogo.id) richiestaCentra++
@@ -562,13 +729,6 @@ fun SchermataMappa(
                     Modifier.ombra(CircleShape, 4.dp),
                     colore = Colori.Petrolio, sfondo = Colori.Superficie,
                 )
-            }
-            val senzaCentro = centro == null && area == null
-            val attesa = dati.caricamento || dati.cercoPosizione
-            if (colonnine) {
-                SchedaColonnina(vm, vistaEv, selezionataEv, senzaCentro, attesa, area != null, cercoArea, onColonnina)
-            } else {
-                SchedaSelezione(vm, vista, selezionato, senzaCentro, attesa, area != null, cercoArea, onDistributore, onLista)
             }
         }
     }
@@ -752,7 +912,8 @@ private fun spostataLontano(m: MapLibreMap, base: CameraPosition, adesso: Camera
 /**
  * Quando arrivano i risultati attorno a [punto] allarga la vista quanto basta per vedere i piu
  * vicini e il piu conveniente (o le colonnine piu vicine). Con [soloSeServe] la mappa si muove
- * solo se il piu conveniente resterebbe fuori, o sotto l'intestazione o il foglio in basso.
+ * solo se il piu conveniente resterebbe fuori, o sotto l'intestazione o quello che c'e in basso
+ * ([fondoDp]: il mirino, e il foglio se si aprira).
  */
 private suspend fun adattaVista(
     m: MapLibreMap,
@@ -761,19 +922,21 @@ private suspend fun adattaVista(
     punto: Coordinate,
     densita: Density,
     soloSeServe: Boolean,
+    fondoDp: Int,
 ) {
     val vicini: List<LatLng>
     val principale: LatLng?
+    withTimeoutOrNull(20_000) { vm.cercoArea.first { !it } }
+    // una zona cercata sulla mappa e gia caricata: se resta vuota non aspettiamo oltre
+    val attesa = if (soloSeServe) 6_000L else 20_000L
     if (vm.mappaColonnine.value) {
-        val attorno = withTimeoutOrNull(20_000) {
-            vm.cercoArea.first { !it }
+        val attorno = withTimeoutOrNull(attesa) {
             vm.vistaColonnineMappa.first { it != null && it.centro.coordinate == punto && it.zona.vicine.isNotEmpty() }
         }
         vicini = attorno?.zona?.vicine.orEmpty().take(4).map { LatLng(it.colonnina.lat, it.colonnina.lon) }
         principale = vicini.firstOrNull()
     } else {
-        val attorno = withTimeoutOrNull(20_000) {
-            vm.cercoArea.first { !it }
+        val attorno = withTimeoutOrNull(attesa) {
             vm.vistaMappa.first { it != null && it.centro.coordinate == punto && it.zona.offerte.isNotEmpty() }
         }
         // i piu vicini e il piu conveniente, che il foglio in basso descrive: deve stare nella vista
@@ -788,14 +951,14 @@ private suspend fun adattaVista(
     if (soloSeServe && principale != null) {
         val schermo = m.projection.toScreenLocation(principale)
         val visibile = schermo.x >= px(24) && schermo.x <= vistaMappa.width - px(24) &&
-            schermo.y >= px(210) && schermo.y <= vistaMappa.height - px(290)
+            schermo.y >= px(210) && schermo.y <= vistaMappa.height - px(fondoDp)
         if (visibile) return
     }
     val limiti = LatLngBounds.Builder()
         .include(LatLng(punto.lat + 0.004, punto.lon + 0.005))
         .include(LatLng(punto.lat - 0.004, punto.lon - 0.005))
     vicini.forEach { limiti.include(it) }
-    m.animateCamera(CameraUpdateFactory.newLatLngBounds(limiti.build(), px(48), px(210), px(48), px(290)), 700)
+    m.animateCamera(CameraUpdateFactory.newLatLngBounds(limiti.build(), px(48), px(210), px(48), px(fondoDp)), 700)
 }
 
 /** Colori di un segnaposto: riempimento, testo e bordo (ARGB). */
@@ -858,197 +1021,232 @@ private fun VoceLegenda(fondo: Color, bordo: Color?, testo: String) {
     }
 }
 
+/** La linguetta in cima al foglio: si trascina, o si tocca per espandere e ridurre. */
 @Composable
-private fun SchedaSelezione(
+private fun Linguetta(espanso: Boolean, onClick: () -> Unit) {
+    val descrizione = if (espanso) "Riduci i dettagli" else "Espandi i dettagli"
+    Box(
+        Modifier
+            .fillMaxWidth()
+            .height(28.dp)
+            .clip(RoundedCornerShape(8.dp))
+            .clickable(role = Role.Button, onClickLabel = descrizione, onClick = onClick)
+            .semantics { contentDescription = descrizione },
+        contentAlignment = Alignment.Center,
+    ) {
+        Box(Modifier.size(width = 40.dp, height = 4.dp).clip(RoundedCornerShape(2.dp)).background(Colori.InterruttoreSpento))
+    }
+}
+
+/** Sotto l'intestazione: un caricamento in corso o un avviso sulla zona. */
+@Composable
+private fun AvvisoMappa(testo: String, caricamento: Boolean, modifier: Modifier = Modifier) {
+    val forma = RoundedCornerShape(20.dp)
+    Row(
+        modifier
+            .heightIn(min = 40.dp)
+            .ombra(forma, 4.dp)
+            .clip(forma)
+            .background(Colori.Superficie)
+            .padding(horizontal = 16.dp, vertical = 9.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
+        if (caricamento) {
+            CircularProgressIndicator(color = Colori.Petrolio, strokeWidth = 2.dp, modifier = Modifier.size(16.dp))
+        } else {
+            Icon(Icone.Info, null, tint = Colori.Testo3, modifier = Modifier.size(17.dp))
+        }
+        Text(testo, style = Testi.Chip.copy(color = Colori.TestoChip))
+    }
+}
+
+/**
+ * Il foglio di un distributore. Piccolo: chi e, quanto costa, Naviga e Dettagli. Espanso: tutti
+ * i suoi prezzi e quanti distributori ci sono nell'area. [onAltezzaPiccola] riceve l'altezza
+ * della parte piccola, che e quella mostrata quando il foglio si apre.
+ */
+@Composable
+private fun FoglioDistributore(
     vm: GocciaViewModel,
     vista: VistaZona?,
     selezionato: Long?,
-    senzaCentro: Boolean,
-    attesa: Boolean,
     inArea: Boolean,
-    cercando: Boolean,
+    espanso: Boolean,
+    onLinguetta: () -> Unit,
+    onAltezzaPiccola: (Int) -> Unit,
     onDistributore: (Distributore) -> Unit,
     onLista: () -> Unit,
 ) {
     val context = LocalContext.current
     val utente by vm.utente.collectAsStateWithLifecycle()
-    Column(
-        Modifier
-            .fillMaxWidth()
-            .ombra(Forme.Foglio, 8.dp)
-            .clip(Forme.Foglio)
-            .background(Colori.Superficie)
-            .padding(start = 20.dp, end = 20.dp, top = 10.dp, bottom = 16.dp),
-        verticalArrangement = Arrangement.spacedBy(10.dp),
-    ) {
-        Box(Modifier.align(Alignment.CenterHorizontally).size(width = 40.dp, height = 4.dp).clip(RoundedCornerShape(2.dp)).background(Colori.InterruttoreSpento))
-        if (senzaCentro && selezionato == null) {
-            SenzaCentro(attesa)
-            return@Column
-        }
-        if (vista == null || (cercando && vista.zona.offerte.isEmpty())) {
-            Text(if (inArea) "Cerco i distributori in quest'area…" else "Carico i distributori…", style = Testi.Didascalia.copy(color = Colori.Testo3))
-            return@Column
-        }
-        val vicine = vista.zona.offerte
-        val offerta: Offerta? = vista.zona.tutte.firstOrNull { it.distributore.id == selezionato }
-            ?: Convenienza.consigliati(vista.zona, 1).firstOrNull()
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            val minimo = vicine.filter { !it.vecchio }.minOfOrNull { it.prezzo.millesimi }
-            Text(
-                "${vicine.size} distributori nell'area" + (minimo?.let { " · da ${Formati.prezzo(it)} ${vista.carburante.unita}" } ?: ""),
-                style = Testi.Didascalia.copy(color = Colori.Testo3, fontWeight = FontWeight.SemiBold),
-                modifier = Modifier.weight(1f),
-            )
-            Text(
-                "Vedi lista",
-                style = Testi.DidascaliaForte.copy(color = Colori.Petrolio),
-                modifier = Modifier.clip(RoundedCornerShape(8.dp)).clickable(onClick = onLista).padding(6.dp),
-            )
-        }
-        if (offerta == null) {
-            Text("Nessun distributore con ${vista.carburante.etichetta.lowercase()} in quest'area.", style = Testi.Corpo)
-            return@Column
-        }
-        if (selezionato == null) {
-            Text(
-                (if (inArea) "Il più conveniente in quest'area" else "Il più conveniente qui vicino") + " · evidenziato sulla mappa",
-                style = Testi.Piccolo.copy(color = Colori.Petrolio, fontWeight = FontWeight.Bold),
-            )
-        }
-        val d = offerta.distributore
-        Row(
-            Modifier.clip(RoundedCornerShape(12.dp)).clickable { onDistributore(d) },
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            LogoBandiera(d.bandiera, d.pompaBianca, dimensione = 48.dp, angolo = 14.dp, testo = 15.sp)
-            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
-                Text(d.titolo, style = Testi.Sottosezione, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                Text(metaOfferta(offerta, vista.adessoMillis), style = Testi.Didascalia.copy(color = Colori.Testo3), maxLines = 1)
-                BadgeConvenienza(offerta.differenzaCent, offerta.tono)
-            }
-            Column(horizontalAlignment = Alignment.End) {
-                Text(Formati.prezzo(offerta.prezzo.millesimi), style = Testi.PrezzoMappa)
-                Text(vista.carburante.unitaCon(offerta.self), style = Testi.Piccolo.copy(color = Colori.Testo3))
+    val offerta = vista?.zona?.tutte?.firstOrNull { it.distributore.id == selezionato }
+    Column(Modifier.fillMaxWidth().padding(start = 20.dp, end = 20.dp, bottom = 20.dp)) {
+        Column(Modifier.onSizeChanged { onAltezzaPiccola(it.height) }, verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Linguetta(espanso, onLinguetta)
+            if (vista != null && offerta != null) {
+                val d = offerta.distributore
+                if (d.id == Convenienza.consigliati(vista.zona, 1).firstOrNull()?.distributore?.id) {
+                    Text(
+                        if (inArea) "Il più conveniente in quest'area" else "Il più conveniente qui vicino",
+                        style = Testi.Piccolo.copy(color = Colori.Petrolio, fontWeight = FontWeight.Bold),
+                    )
+                }
+                Row(
+                    Modifier.clip(RoundedCornerShape(12.dp)).clickable { onDistributore(d) },
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    LogoBandiera(d.bandiera, d.pompaBianca, dimensione = 48.dp, angolo = 14.dp, testo = 15.sp)
+                    Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                        Text(d.titolo, style = Testi.Sottosezione, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        Text(metaOfferta(offerta, vista.adessoMillis), style = Testi.Didascalia.copy(color = Colori.Testo3), maxLines = 1)
+                        BadgeConvenienza(offerta.differenzaCent, offerta.tono)
+                    }
+                    Column(horizontalAlignment = Alignment.End) {
+                        Text(Formati.prezzo(offerta.prezzo.millesimi), style = Testi.PrezzoMappa)
+                        Text(vista.carburante.unitaCon(offerta.self), style = Testi.Piccolo.copy(color = Colori.Testo3))
+                    }
+                }
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    BottonePrimario("Naviga", { naviga(context, d, utente.impostazioni.navigazione) }, Modifier.weight(1f), icona = Icone.Naviga, altezza = 46.dp)
+                    BottoneSecondario("Dettagli", { onDistributore(d) }, Modifier.weight(1f), altezza = 46.dp)
+                }
+                Spacer(Modifier.height(6.dp))
             }
         }
-        Row(Modifier.padding(top = 4.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            BottonePrimario("Naviga", { naviga(context, d, utente.impostazioni.navigazione) }, Modifier.weight(1f), icona = Icone.Naviga)
-            BottoneSecondario("Dettagli", { onDistributore(d) }, Modifier.weight(1f))
+        if (vista != null && offerta != null) {
+            // quello che si vede tirando su la linguetta
+            Column(Modifier.padding(top = 6.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Box(Modifier.fillMaxWidth().height(1.dp).background(Colori.Divisore))
+                Text("Prezzi di questo distributore", style = Testi.DidascaliaForte.copy(color = Colori.Testo3))
+                PrezziDistributore(offerta.distributore, vista.carburante)
+                Box(Modifier.fillMaxWidth().height(1.dp).background(Colori.Divisore))
+                val vicine = vista.zona.offerte
+                val minimo = vicine.filter { !it.vecchio }.minOfOrNull { it.prezzo.millesimi }
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        "${vicine.size} distributori nell'area" + (minimo?.let { " · da ${Formati.prezzo(it)} ${vista.carburante.unita}" } ?: ""),
+                        style = Testi.Didascalia.copy(color = Colori.Testo3, fontWeight = FontWeight.SemiBold),
+                        modifier = Modifier.weight(1f),
+                    )
+                    Text(
+                        "Vedi lista",
+                        style = Testi.DidascaliaForte.copy(color = Colori.Petrolio),
+                        modifier = Modifier.clip(RoundedCornerShape(8.dp)).clickable(onClick = onLista).padding(6.dp),
+                    )
+                }
+            }
         }
     }
 }
 
-/** Foglio in basso con la colonnina scelta (o la piu vicina), come nel design "Colonnine". */
+/** Tutti i prezzi di un distributore, self e servito; in grassetto il carburante scelto. */
 @Composable
-private fun SchedaColonnina(
+private fun PrezziDistributore(d: Distributore, attivo: Carburante) {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Row {
+            Box(Modifier.weight(1f))
+            Text("Self", style = Testi.Piccolo.copy(color = Colori.Testo3), textAlign = TextAlign.End, modifier = Modifier.width(86.dp))
+            Text("Servito", style = Testi.Piccolo.copy(color = Colori.Testo3), textAlign = TextAlign.End, modifier = Modifier.width(86.dp))
+        }
+        Carburante.entries.forEach { c ->
+            val p = d.prezzi[c]
+            if (p == null || (p.self == null && p.servito == null)) return@forEach
+            val stile = if (c == attivo) Testi.CorpoForte else Testi.Corpo.copy(color = Colori.Testo2)
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(c.etichetta, style = stile, modifier = Modifier.weight(1f))
+                Text(p.self?.let { Formati.prezzo(it.millesimi) } ?: "—", style = stile, textAlign = TextAlign.End, modifier = Modifier.width(86.dp))
+                Text(p.servito?.let { Formati.prezzo(it.millesimi) } ?: "—", style = stile, textAlign = TextAlign.End, modifier = Modifier.width(86.dp))
+            }
+        }
+    }
+}
+
+/**
+ * Il foglio di una colonnina. Piccolo: chi e, potenza e tariffa, punti liberi adesso, Naviga e
+ * Dettagli. Espanso: quanto costa una ricarica con la tua auto e quante colonnine ci sono attorno.
+ */
+@Composable
+private fun FoglioColonnina(
     vm: GocciaViewModel,
     vista: VistaColonnine?,
     selezionata: String?,
-    senzaCentro: Boolean,
-    attesa: Boolean,
     inArea: Boolean,
-    cercando: Boolean,
+    espanso: Boolean,
+    onLinguetta: () -> Unit,
+    onAltezzaPiccola: (Int) -> Unit,
     onColonnina: (Colonnina) -> Unit,
 ) {
     val context = LocalContext.current
     val utente by vm.utente.collectAsStateWithLifecycle()
-    val stato by vm.colonnine.collectAsStateWithLifecycle()
-    Column(
-        Modifier
-            .fillMaxWidth()
-            .ombra(Forme.Foglio, 8.dp)
-            .clip(Forme.Foglio)
-            .background(Colori.Superficie)
-            .padding(start = 20.dp, end = 20.dp, top = 10.dp, bottom = 16.dp),
-        verticalArrangement = Arrangement.spacedBy(10.dp),
-    ) {
-        Box(Modifier.align(Alignment.CenterHorizontally).size(width = 40.dp, height = 4.dp).clip(RoundedCornerShape(2.dp)).background(Colori.InterruttoreSpento))
-        if (senzaCentro && selezionata == null) {
-            SenzaCentro(attesa)
-            return@Column
-        }
-        if (stato.nonDisponibili && stato.tutte.isEmpty()) {
-            Text("Colonnine non disponibili", style = Testi.CorpoForte)
-            Text("Non riusciamo a scaricare l'elenco: controlla la connessione e riprova.", style = Testi.Didascalia.copy(color = Colori.Testo3))
-            return@Column
-        }
-        val vicine = vista?.zona?.vicine.orEmpty()
-        if (vista == null || (vicine.isEmpty() && (stato.caricamento || cercando))) {
-            Text(if (inArea) "Cerco le colonnine in quest'area…" else "Carico le colonnine…", style = Testi.Didascalia.copy(color = Colori.Testo3))
-            return@Column
-        }
-        val massima = vicine.mapNotNull { it.colonnina.kw }.maxOrNull()
-        Text(
-            "${vicine.size} ${if (vicine.size == 1) "colonnina" else "colonnine"} entro ${vista.zona.raggioKm} km" +
-                (massima?.let { " · fino a ${Formati.kw(it)}" } ?: ""),
-            style = Testi.Didascalia.copy(color = Colori.Testo3, fontWeight = FontWeight.SemiBold),
-        )
-        val scelta = vicine.firstOrNull { it.colonnina.id == selezionata } ?: vicine.firstOrNull()
-        if (scelta == null) {
-            Text("Nessuna colonnina compatibile in quest'area: prova a cambiare prese o potenza qui sopra.", style = Testi.Corpo)
-            return@Column
-        }
-        val c = scelta.colonnina
-        val usata = vm.tariffaUsata(c)
-        val tariffa = usata.euroKwh
-        val statoPunti by produceState<StatoColonnina?>(null, c.id) { value = vm.statoColonnina(c) }
-        if (selezionata == null) {
-            Text(
-                if (inArea) "La più vicina al centro dell'area · evidenziata sulla mappa" else "La più vicina · evidenziata sulla mappa",
-                style = Testi.Piccolo.copy(color = Colori.Petrolio, fontWeight = FontWeight.Bold),
-            )
-        }
-        Row(
-            Modifier.clip(RoundedCornerShape(12.dp)).clickable { onColonnina(c) },
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            IconaColonnina(c, 48)
-            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
-                Text(titoloColonnina(c), style = Testi.Sottosezione, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                Text(metaColonnina(c, scelta.distanzaKm), style = Testi.Didascalia.copy(color = Colori.Testo3), maxLines = 1, overflow = TextOverflow.Ellipsis)
-            }
-            Column(horizontalAlignment = Alignment.End) {
-                Text(potenzaColonnina(c), style = Testi.PrezzoMedio)
-                Text(testoTariffa(c, usata), style = Testi.Piccolo.copy(color = Colori.Testo3))
-            }
-        }
-        RigaStatoPunti(statoPunti)
-        val auto = utente.autoCorrente?.takeIf { it.alimentazione.elettrica }
-        if (auto != null) {
-            val kwh = 0.6 * auto.capienza
-            val erogazione = Elettrico.erogazione(c, utente.prese, auto.acKw, auto.dcKw)
-            Text(
-                buildString {
-                    append("Dal 20% all'80% (${Formati.numero(kwh, 0)} kWh): circa ${Formati.euro(if (c.gratuita) 0.0 else kwh * tariffa)}")
-                    if (erogazione != null) {
-                        append(" e ${Formati.durata(Elettrico.minutiRicarica(auto.capienza, 0.2, 0.8, erogazione))}")
-                        if (!erogazione.continua) append(" (${Formati.kw(erogazione.kw)} di bordo)")
+    val vicine = vista?.zona?.vicine.orEmpty()
+    val scelta = vicine.firstOrNull { it.colonnina.id == selezionata }
+    Column(Modifier.fillMaxWidth().padding(start = 20.dp, end = 20.dp, bottom = 20.dp)) {
+        Column(Modifier.onSizeChanged { onAltezzaPiccola(it.height) }, verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Linguetta(espanso, onLinguetta)
+            if (scelta != null) {
+                val c = scelta.colonnina
+                val usata = vm.tariffaUsata(c)
+                val statoPunti by produceState<StatoColonnina?>(null, c.id) { value = vm.statoColonnina(c) }
+                if (c.id == vicine.firstOrNull()?.colonnina?.id) {
+                    Text(
+                        if (inArea) "La più vicina al centro dell'area" else "La più vicina",
+                        style = Testi.Piccolo.copy(color = Colori.Petrolio, fontWeight = FontWeight.Bold),
+                    )
+                }
+                Row(
+                    Modifier.clip(RoundedCornerShape(12.dp)).clickable { onColonnina(c) },
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    IconaColonnina(c, 48)
+                    Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                        Text(titoloColonnina(c), style = Testi.Sottosezione, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        Text(metaColonnina(c, scelta.distanzaKm), style = Testi.Didascalia.copy(color = Colori.Testo3), maxLines = 1, overflow = TextOverflow.Ellipsis)
                     }
-                    append(".")
-                },
-                style = Testi.Didascalia.copy(color = Colori.TestoChip),
-            )
+                    Column(horizontalAlignment = Alignment.End) {
+                        Text(potenzaColonnina(c), style = Testi.PrezzoMedio)
+                        Text(testoTariffa(c, usata), style = Testi.Piccolo.copy(color = Colori.Testo3))
+                    }
+                }
+                RigaStatoPunti(statoPunti)
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    BottonePrimario("Naviga", { naviga(context, c.lat, c.lon, c.titolo, utente.impostazioni.navigazione) }, Modifier.weight(1f), icona = Icone.Naviga, altezza = 46.dp)
+                    BottoneSecondario("Dettagli e costi", { onColonnina(c) }, Modifier.weight(1f), altezza = 46.dp)
+                }
+                Spacer(Modifier.height(6.dp))
+            }
         }
-        Row(Modifier.padding(top = 4.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            BottonePrimario("Naviga", { naviga(context, c.lat, c.lon, c.titolo, utente.impostazioni.navigazione) }, Modifier.weight(1f), icona = Icone.Naviga)
-            BottoneSecondario("Dettagli e costi", { onColonnina(c) }, Modifier.weight(1f))
+        if (vista != null && scelta != null) {
+            // quello che si vede tirando su la linguetta
+            val c = scelta.colonnina
+            Column(Modifier.padding(top = 6.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Box(Modifier.fillMaxWidth().height(1.dp).background(Colori.Divisore))
+                val auto = utente.autoCorrente?.takeIf { it.alimentazione.elettrica }
+                if (auto != null) {
+                    val tariffa = vm.tariffaUsata(c).euroKwh
+                    val kwh = 0.6 * auto.capienza
+                    val erogazione = Elettrico.erogazione(c, utente.prese, auto.acKw, auto.dcKw)
+                    Text(
+                        buildString {
+                            append("Dal 20% all'80% (${Formati.numero(kwh, 0)} kWh): circa ${Formati.euro(if (c.gratuita) 0.0 else kwh * tariffa)}")
+                            if (erogazione != null) {
+                                append(" e ${Formati.durata(Elettrico.minutiRicarica(auto.capienza, 0.2, 0.8, erogazione))}")
+                                if (!erogazione.continua) append(" (${Formati.kw(erogazione.kw)} di bordo)")
+                            }
+                            append(".")
+                        },
+                        style = Testi.Didascalia.copy(color = Colori.TestoChip),
+                    )
+                }
+                val massima = vicine.mapNotNull { it.colonnina.kw }.maxOrNull()
+                Text(
+                    "${vicine.size} ${if (vicine.size == 1) "colonnina" else "colonnine"} entro ${vista.zona.raggioKm} km" +
+                        (massima?.let { " · fino a ${Formati.kw(it)}" } ?: ""),
+                    style = Testi.Didascalia.copy(color = Colori.Testo3, fontWeight = FontWeight.SemiBold),
+                )
+            }
         }
     }
-}
-
-/** Il foglio in basso quando non c'e ancora un punto da cui cercare. */
-@Composable
-private fun SenzaCentro(attesa: Boolean) {
-    if (attesa) {
-        Text("Cerco la tua posizione…", style = Testi.Didascalia.copy(color = Colori.Testo3))
-        return
-    }
-    Text("Scegli dove cercare", style = Testi.CorpoForte)
-    Text(
-        "Tocca il mirino per andare dove sei, cerca un comune qui sopra oppure sposta la mappa e tocca «Cerca in quest'area».",
-        style = Testi.Didascalia.copy(color = Colori.Testo3),
-    )
 }

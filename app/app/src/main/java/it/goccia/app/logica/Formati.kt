@@ -38,6 +38,12 @@ object Formati {
 
     fun decimale(valore: Double, cifre: Int = 1): String = numero(valore, cifre)
 
+    /**
+     * Coordinate di un punto scelto sulla mappa, come le scrivono le mappe: "44.49380, 11.34260".
+     * Qui il punto decimale e voluto: con le virgole latitudine e longitudine si confonderebbero.
+     */
+    fun coordinate(lat: Double, lon: Double): String = String.format(Locale.US, "%.5f, %.5f", lat, lon)
+
     fun km(valore: Double): String = when {
         valore < 10 -> numero(valore, 1) + " km"
         else -> numero(valore, 0) + " km"

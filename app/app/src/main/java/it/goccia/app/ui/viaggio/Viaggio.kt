@@ -79,6 +79,7 @@ import it.goccia.app.ui.componenti.Scheda
 import it.goccia.app.ui.icone.Icone
 import it.goccia.app.ui.mappa.PinPrezzo
 import it.goccia.app.ui.mappa.STILE_MAPPA
+import it.goccia.app.ui.mappa.ScegliSullaMappa
 import it.goccia.app.ui.mappa.etichetteInItaliano
 import it.goccia.app.ui.mappa.rememberVistaMappa
 import it.goccia.app.ui.stati.SuggerimentiComuni
@@ -180,7 +181,9 @@ private fun Pianifica(vm: GocciaViewModel, stato: StatoViaggio, onAuto: () -> Un
 
     if (cercaPer != null) {
         BackHandler { cercaPer = null }
-        Scelta(vm, utente, cercaPer == Campo.PARTENZA, posizione, onScelta = { t ->
+        // sulla mappa si parte dalla tappa gia scelta, altrimenti da dove si cerca
+        val daQui = (if (cercaPer == Campo.PARTENZA) partenzaEffettiva else arrivo)?.coordinate ?: dati.centro?.coordinate
+        Scelta(vm, utente, cercaPer == Campo.PARTENZA, posizione, daQui, onScelta = { t ->
             if (cercaPer == Campo.PARTENZA) partenza = t else arrivo = t
             cercaPer = null
         }, onChiudi = { cercaPer = null })
@@ -382,17 +385,35 @@ private fun RigaTappa(etichetta: String, valore: String, colore: Color, pieno: B
     }
 }
 
-/** Scelta di partenza o arrivo: posizione, luoghi salvati o un comune. */
+/**
+ * Scelta di partenza o arrivo: posizione, luoghi salvati, un comune o un punto qualsiasi scelto
+ * sulla mappa (che diventa una tappa con le sue coordinate). [daQui] e dove parte la mappa.
+ */
 @Composable
 private fun Scelta(
     vm: GocciaViewModel,
     utente: DatiUtente,
     perPartenza: Boolean,
     posizione: Tappa?,
+    daQui: Coordinate?,
     onScelta: (Tappa) -> Unit,
     onChiudi: () -> Unit,
 ) {
     var testo by remember { mutableStateOf("") }
+    var sullaMappa by remember { mutableStateOf(false) }
+    if (sullaMappa) {
+        BackHandler { sullaMappa = false }
+        // se si stava scrivendo un comune, la mappa parte da li
+        val comune = if (testo.isNotBlank()) vm.cercaComuni(testo).firstOrNull()?.coordinate else null
+        ScegliSullaMappa(
+            vm = vm,
+            titolo = if (perPartenza) "Partenza sulla mappa" else "Destinazione sulla mappa",
+            iniziale = comune ?: daQui,
+            onConferma = { c -> onScelta(Tappa(Formati.coordinate(c.lat, c.lon), c)) },
+            onChiudi = { sullaMappa = false },
+        )
+        return
+    }
     // si apre gia pronto per scrivere
     val focus = remember { FocusRequester() }
     LaunchedEffect(Unit) { runCatching { focus.requestFocus() } }
@@ -405,6 +426,14 @@ private fun Scelta(
             Text(if (perPartenza) "Da dove parti?" else "Dove vai?", style = Testi.Titolo)
         }
         CampoRicerca(testo, { testo = it }, Modifier.fillMaxWidth(), segnaposto = "Cerca un comune", focus = focus)
+        BottoneSecondario(
+            "Scegli sulla mappa",
+            { sullaMappa = true },
+            Modifier.fillMaxWidth(),
+            icona = Icone.Mappa,
+            coloreIcona = Colori.Petrolio,
+            altezza = 48.dp,
+        )
         if (testo.isBlank()) {
             if (perPartenza && posizione != null) {
                 ChipScelta("La tua posizione", false, onClick = { onScelta(posizione) }, icona = Icone.Mirino, altezza = 44.dp)

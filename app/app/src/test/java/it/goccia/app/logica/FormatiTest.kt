@@ -29,6 +29,8 @@ class FormatiTest {
         assertEquals("1,2 km", Formati.km(1.234))
         assertEquals("15 km", Formati.km(14.6))
         assertEquals("37,5 l", Formati.litri(37.5))
+        assertEquals("44.49380, 11.34260", Formati.coordinate(44.4938, 11.3426))
+        assertEquals("-33.86880, 151.20930", Formati.coordinate(-33.8688, 151.2093))
     }
 
     @Test

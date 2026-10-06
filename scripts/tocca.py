@@ -7,6 +7,8 @@
     python3 tocca.py --solo-dialoghi        chiude solo gli eventuali dialoghi di sistema
     python3 tocca.py --elenco               scrive i testi visibili sullo schermo
     --subito                                un solo tentativo, senza aspettare che compaia
+    --trascina=-800                         invece di toccare, trascina in verticale di tanti pixel
+                                            (negativo: verso l'alto), partendo dall'elemento
 
 Se l'elemento non si trova, salva la schermata letta (xml e testi visibili) nella cartella
 indicata da PROVA_USCITA, per capire cosa c'era al suo posto.
@@ -147,6 +149,7 @@ def main():
         return 0
     solo_descrizione = "--descrizione" in args
     verifica = "--esiste" in args
+    trascina = next((int(a.split("=", 1)[1]) for a in args if a.startswith("--trascina=")), None)
     tentativi = 1 if "--subito" in args else 12
     args = [a for a in args if not a.startswith("--")]
     testo = args[0]
@@ -159,6 +162,10 @@ def main():
             if verifica:
                 return 0
             x, y = centro(nodo)
+            if trascina is not None:
+                subprocess.run(["adb", "shell", "input", "swipe", str(x), str(y), str(x), str(y + trascina), "450"], timeout=30)
+                print(f"trascinato '{testo}' da {x},{y} di {trascina}")
+                return 0
             tap(x, y)
             print(f"toccato '{testo}' in {x},{y}")
             return 0
