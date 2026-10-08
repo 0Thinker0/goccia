@@ -78,7 +78,7 @@ jobs:
           cd /tmp/ci-log
           git init -q -b ci-log
           git add .
-          git -c user.name=goccia-ci -c user.email=ci@users.noreply.github.com commit -q -m "Errori della build ${GITHUB_RUN_NUMBER} (${GITHUB_SHA::7})"
+          git -c "user.name=github-actions[bot]" -c "user.email=41898282+github-actions[bot]@users.noreply.github.com" commit -q -m "Errori della build ${GITHUB_RUN_NUMBER} (${GITHUB_SHA::7})"
           git push -f -q "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" ci-log
 
       - name: Prepara l'APK

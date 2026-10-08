@@ -32,5 +32,5 @@ jobs:
           cd /tmp/sonde
           git init -q -b ci-sonde
           git add .
-          git -c user.name=goccia-ci -c user.email=ci@users.noreply.github.com commit -q -m "Sonde ${GITHUB_RUN_NUMBER}"
+          git -c "user.name=github-actions[bot]" -c "user.email=41898282+github-actions[bot]@users.noreply.github.com" commit -q -m "Sonde ${GITHUB_RUN_NUMBER}"
           git push -f -q "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" ci-sonde
