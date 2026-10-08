@@ -2,7 +2,10 @@ package it.goccia.app.logica
 
 import it.goccia.app.dati.Distributore
 
-/** Nomi brevi delle bandiere, per riconoscere un distributore sulla mappa a colpo d'occhio. */
+/**
+ * Nomi brevi delle bandiere, per riconoscere un distributore sulla mappa a colpo d'occhio,
+ * e i gruppi tra cui scegliere le soste dei viaggi.
+ */
 object Bandiere {
     private const val MASSIMO = 9
 
@@ -36,6 +39,25 @@ object Bandiere {
     }
 
     fun breve(d: Distributore): String? = breve(d.bandiera, d.nome)
+
+    /** Le bandiere tra cui scegliere le soste dei viaggi: le piu diffuse in Italia. */
+    val PER_VIAGGI = listOf("Eni", "IP", "Q8", "Esso", "Tamoil", "Shell")
+    const val POMPE_BIANCHE = "Pompe bianche"
+    const val ALTRE = "Altre bandiere"
+
+    /** Le voci del filtro dei viaggi, nell'ordine in cui si mostrano. */
+    val SCELTE_VIAGGI = PER_VIAGGI + POMPE_BIANCHE + ALTRE
+
+    /** Il gruppo di un distributore per il filtro dei viaggi: una delle [SCELTE_VIAGGI]. */
+    fun gruppo(bandiera: String): String {
+        val minuscolo = bandiera.trim().lowercase()
+        if (minuscolo.isBlank() || minuscolo.startsWith("pomp")) return POMPE_BIANCHE
+        val nota = note.firstOrNull { (chiave, _) -> parola(minuscolo, chiave) }?.second ?: "IP".takeIf { minuscolo == "ip" }
+        return nota?.takeIf { it in PER_VIAGGI } ?: ALTRE
+    }
+
+    /** Vero se il distributore e di una delle bandiere [scelte] (gruppi di [gruppo]); nessuna scelta = tutte. */
+    fun ammesso(d: Distributore, scelte: Set<String>): Boolean = scelte.isEmpty() || gruppo(d.bandiera) in scelte
 
     /** La chiave compare come parola intera (o come "api-ip"), non dentro un'altra parola. */
     private fun parola(testo: String, chiave: String): Boolean =

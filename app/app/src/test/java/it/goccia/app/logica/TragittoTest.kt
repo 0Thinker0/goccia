@@ -6,6 +6,7 @@ import it.goccia.app.logica.Esempi.ADESSO_SECONDI
 import it.goccia.app.logica.Esempi.distributore
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -108,5 +109,83 @@ class TragittoTest {
         assertEquals(listOf(2L, 4L), lungoRitorno.map { it.distributore.id }.sorted())
         assertEquals(270.0, Tragitto.latoDalNome("Cantagallo Ovest") ?: 0.0, 1e-9)
         assertEquals(null, Tragitto.latoDalNome("Area Secchia"))
+    }
+
+    /** 400 km verso est con un quarto di serbatoio: 50 l, 5 l/100 km, si arriva al km 150 tenendo la riserva. */
+    private fun lungoConBandiere(): List<LungoIlPercorso> {
+        val campioni = Tragitto.campiona(rettilineo(400.0))
+        val (lat, _) = Esempi.estDi(0.0)
+        fun a(km: Double, id: Long, prezzo: Int, bandiera: String) =
+            distributore(id, lat, Esempi.estDi(km).second, gasolioSelf = prezzo, bandiera = bandiera)
+        val lista = listOf(
+            a(50.0, 1, 1750, "Agip Eni"),
+            a(120.0, 2, 1650, "Q8"), // il piu conveniente prima del limite
+            a(140.0, 3, 1720, "IP"),
+            a(300.0, 4, 1700, "IP"),
+            a(320.0, 5, 1600, "Pompa bianca"),
+        )
+        return Tragitto.lungoIlPercorso(lista, Carburante.GASOLIO, true, campioni, 1.0, ADESSO_SECONDI)
+    }
+
+    @Test
+    fun sosteSoloDalleBandiereScelte() {
+        val lungo = lungoConBandiere()
+        val tutte = Tragitto.pianifica(lungo, 400.0, 50.0, 5.0, 0.25, pienoCompleto = true)
+        assertEquals(2L, tutte.soste.single().punto.distributore.id)
+
+        val soloIp = Tragitto.pianifica(lungo, 400.0, 50.0, 5.0, 0.25, pienoCompleto = true, bandiere = setOf("IP"))
+        assertTrue(soloIp.raggiungibile)
+        assertFalse(soloIp.bandiereIgnorate)
+        assertEquals(3L, soloIp.soste.single().punto.distributore.id)
+        // anche le alternative e il piu conveniente sono delle bandiere scelte
+        assertTrue(soloIp.alternative.all { it.distributore.bandiera == "IP" })
+        assertEquals("IP", soloIp.migliore?.distributore?.bandiera)
+    }
+
+    @Test
+    fun conBandiereCheNonBastanoSiFermaDaUnAltra() {
+        val lungo = lungoConBandiere()
+        // nessun Tamoil lungo la strada: con un quarto di serbatoio si resterebbe a secco
+        val piano = Tragitto.pianifica(lungo, 400.0, 50.0, 5.0, 0.25, pienoCompleto = true, bandiere = setOf("Tamoil"))
+        assertTrue(piano.bandiereIgnorate)
+        assertTrue(piano.raggiungibile)
+        assertEquals(2L, piano.soste.single().punto.distributore.id)
+        // con il pieno non serve fermarsi: le bandiere scelte valgono anche se non ce ne sono
+        val pieno = Tragitto.pianifica(lungo, 400.0, 50.0, 5.0, 1.0, pienoCompleto = true, bandiere = setOf("Tamoil"))
+        assertTrue(pieno.senzaSoste)
+        assertFalse(pieno.bandiereIgnorate)
+        assertNull(pieno.migliore)
+    }
+
+    @Test
+    fun senzaDistributoriNonSiArriva() {
+        val piano = Tragitto.pianifica(emptyList(), 400.0, 50.0, 5.0, 0.25, pienoCompleto = true)
+        assertTrue(piano.senzaSoste)
+        assertFalse(piano.raggiungibile)
+        assertTrue(piano.margineArrivoKm < 0)
+        // l'unico distributore e oltre l'autonomia (250 km)
+        val lontano = lungoConBandiere().filter { it.distributore.id == 4L }
+        val oltre = Tragitto.pianifica(lontano, 400.0, 50.0, 5.0, 0.25, pienoCompleto = true)
+        assertEquals(4L, oltre.soste.single().punto.distributore.id)
+        assertFalse(oltre.raggiungibile)
+    }
+
+    @Test
+    fun gruppiDelleBandiere() {
+        assertEquals("Eni", Bandiere.gruppo("Agip Eni"))
+        assertEquals("IP", Bandiere.gruppo("IP"))
+        assertEquals("IP", Bandiere.gruppo("Api-Ip"))
+        assertEquals("Q8", Bandiere.gruppo("Q8"))
+        assertEquals("Esso", Bandiere.gruppo("Esso"))
+        assertEquals(Bandiere.POMPE_BIANCHE, Bandiere.gruppo("Pompa bianca"))
+        assertEquals(Bandiere.POMPE_BIANCHE, Bandiere.gruppo(""))
+        assertEquals(Bandiere.ALTRE, Bandiere.gruppo("Europam"))
+        // nota ma poco diffusa: tra le altre
+        assertEquals(Bandiere.ALTRE, Bandiere.gruppo("Total"))
+        assertTrue(Bandiere.SCELTE_VIAGGI.containsAll(listOf("Eni", "IP", Bandiere.POMPE_BIANCHE, Bandiere.ALTRE)))
+        val ip = distributore(1, bandiera = "IP")
+        assertTrue(Bandiere.ammesso(ip, emptySet()))
+        assertTrue(Bandiere.ammesso(ip, setOf("Q8", "IP")))
+        assertFalse(Bandiere.ammesso(ip, setOf("Q8")))
     }
 }

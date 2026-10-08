@@ -24,6 +24,8 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -307,6 +309,7 @@ private fun Pianifica(vm: GocciaViewModel, stato: StatoViaggio, onAuto: () -> Un
             ChipScelta("Deviazione max ${DEVIAZIONI[deviazione]} min", false, onClick = { deviazione = (deviazione + 1) % DEVIAZIONI.size }, icona = Icone.Orologio)
             if (elettrica == null) {
                 ChipScelta(if (pienoCompleto) "Pieno completo" else "Solo quanto basta", false, onClick = { pienoCompleto = !pienoCompleto }, icona = Icone.Pompa)
+                SceltaBandiere(utente.impostazioni.bandiereViaggio, vm::scegliBandiereViaggio)
             }
         }
 
@@ -362,6 +365,59 @@ private fun Pianifica(vm: GocciaViewModel, stato: StatoViaggio, onAuto: () -> Un
             style = Testi.Piccolo.copy(color = Colori.Testo3, fontWeight = FontWeight.Medium),
         )
     }
+}
+
+/**
+ * Le bandiere tra cui scegliere le soste. Scelta multipla: il menu resta aperto mentre si spunta,
+ * "Tutte le bandiere" azzera e lo chiude.
+ */
+@Composable
+private fun SceltaBandiere(salvate: List<String>, onScelta: (Set<String>) -> Unit) {
+    var aperto by remember { mutableStateOf(false) }
+    // risponde subito al tocco, senza aspettare il salvataggio
+    var scelte by remember(salvate) { mutableStateOf(salvate.toSet()) }
+    fun scegli(nuove: Set<String>) {
+        scelte = nuove
+        onScelta(nuove)
+    }
+    Box {
+        val ordinate = Bandiere.SCELTE_VIAGGI.filter { it in scelte }
+        val etichetta = when (ordinate.size) {
+            0 -> "Tutte le bandiere"
+            1 -> ordinate[0]
+            2 -> "${ordinate[0]} e ${ordinate[1]}"
+            else -> "${ordinate.size} bandiere"
+        }
+        ChipScelta(etichetta, ordinate.isNotEmpty(), onClick = { aperto = true }, icona = Icone.Bandiera)
+        DropdownMenu(expanded = aperto, onDismissRequest = { aperto = false }) {
+            Text(
+                "Fermati solo da",
+                style = Testi.DidascaliaForte.copy(color = Colori.Testo3),
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp),
+            )
+            DropdownMenuItem(
+                text = { Text("Tutte le bandiere", style = Testi.Chip) },
+                onClick = {
+                    scegli(emptySet())
+                    aperto = false
+                },
+                leadingIcon = { Spunta(scelte.isEmpty()) },
+            )
+            Bandiere.SCELTE_VIAGGI.forEach { b ->
+                val scelta = b in scelte
+                DropdownMenuItem(
+                    text = { Text(b, style = Testi.Chip) },
+                    onClick = { scegli(if (scelta) scelte - b else scelte + b) },
+                    leadingIcon = { Spunta(scelta) },
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun Spunta(attiva: Boolean) {
+    if (attiva) Icon(Icone.Spunta, null, tint = Colori.Petrolio, modifier = Modifier.size(18.dp)) else Box(Modifier.size(18.dp))
 }
 
 @Composable
@@ -490,7 +546,12 @@ private fun Risultato(vm: GocciaViewModel, s: StatoViaggio.Pronto, onDistributor
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Column(Modifier.weight(1f)) {
                     Text("${s.partenza.nome} → ${s.arrivo.nome}", style = Testi.Titolo, maxLines = 2)
-                    Text("${Formati.numero(s.percorso.distanzaKm, 0)} km · ${durata(s.percorso.durataMin)}", style = Testi.Didascalia.copy(color = Colori.Testo2, fontWeight = FontWeight.SemiBold))
+                    val bandiere = Bandiere.SCELTE_VIAGGI.filter { it in s.bandiere }.takeIf { it.isNotEmpty() && !piano.bandiereIgnorate }
+                    Text(
+                        "${Formati.numero(s.percorso.distanzaKm, 0)} km · ${durata(s.percorso.durataMin)}" +
+                            (bandiere?.let { " · soste da ${it.joinToString(", ")}" } ?: ""),
+                        style = Testi.Didascalia.copy(color = Colori.Testo2, fontWeight = FontWeight.SemiBold),
+                    )
                 }
                 if (autostrada) {
                     // come nel design: la targhetta porta alla modalita autostrada
@@ -504,12 +565,31 @@ private fun Risultato(vm: GocciaViewModel, s: StatoViaggio.Pronto, onDistributor
                 }
             }
 
-            if (piano.senzaSoste) {
-                Riquadro(Modifier.fillMaxWidth(), sfondo = Colori.VerdeChiaro, icona = Icone.Spunta, coloreIcona = Colori.VerdeTesto) {
+            if (!piano.raggiungibile) {
+                Riquadro(Modifier.fillMaxWidth(), sfondo = Colori.RossoChiaro, icona = Icone.Attenzione, coloreIcona = Colori.Rosso) {
                     Text(
-                        "Arrivi senza fermarti: all'arrivo ti restano circa ${piano.margineArrivoKm} km di autonomia.",
-                        style = Testi.Testo14.copy(color = Colori.VerdeScuro, fontWeight = FontWeight.SemiBold),
+                        "Con il carburante che hai e i distributori lungo la strada rischi di restare a secco: fai rifornimento prima di partire.",
+                        style = Testi.Didascalia.copy(color = Colori.Rosso, fontWeight = FontWeight.SemiBold),
                     )
+                }
+            }
+            if (piano.bandiereIgnorate) {
+                Riquadro(Modifier.fillMaxWidth(), icona = Icone.Bandiera) {
+                    Text(
+                        "Con le sole bandiere scelte non arrivi a destinazione: le soste sono scelte tra tutti i distributori.",
+                        style = Testi.Didascalia.copy(color = Color(0xFF1F3A4A)),
+                    )
+                }
+            }
+
+            if (piano.senzaSoste) {
+                if (piano.raggiungibile) {
+                    Riquadro(Modifier.fillMaxWidth(), sfondo = Colori.VerdeChiaro, icona = Icone.Spunta, coloreIcona = Colori.VerdeTesto) {
+                        Text(
+                            "Arrivi senza fermarti: all'arrivo ti restano circa ${piano.margineArrivoKm} km di autonomia.",
+                            style = Testi.Testo14.copy(color = Colori.VerdeScuro, fontWeight = FontWeight.SemiBold),
+                        )
+                    }
                 }
                 piano.migliore?.let { m ->
                     Text("Se vuoi fare il pieno lungo la strada", style = Testi.DidascaliaForte.copy(color = Colori.Testo3))
@@ -691,24 +771,23 @@ data class PinViaggio(
     }
 }
 
-private fun pinCarburante(s: StatoViaggio.Pronto): List<PinViaggio> {
-    val sosteId = s.piano.soste.map { it.punto.distributore.id }.toSet()
-    val mostrati = (s.piano.soste.map { it.punto } + s.piano.alternative + listOfNotNull(s.piano.migliore)).distinctBy { it.distributore.id }
-    // come sulla mappa: verde la sosta consigliata (con il bordo scuro), blu le alternative
-    return mostrati.map { p ->
-        val scelto = p.distributore.id in sosteId || (s.piano.senzaSoste && p == s.piano.migliore)
+/**
+ * Sulla mappa del viaggio solo le soste consigliate (o, se non serve fermarsi, il distributore
+ * suggerito): niente altri prezzi a distrarre. Verdi con il bordo scuro, come la scelta sulla mappa.
+ */
+private fun pinCarburante(s: StatoViaggio.Pronto): List<PinViaggio> =
+    s.piano.soste.map { it.punto }.ifEmpty { listOfNotNull(s.piano.migliore) }.map { p ->
         PinViaggio(
             p.distributore.lat,
             p.distributore.lon,
             Formati.prezzo(p.prezzo.millesimi),
-            (if (scelto) Colori.VerdeTesto else Colori.PinAltri).toArgb(),
-            scelto,
-            if (scelto) PinViaggio.SCELTO else p.prezzo.millesimi.toDouble(),
-            coloreBordo = if (scelto) Colori.Inchiostro.toArgb() else android.graphics.Color.WHITE,
+            Colori.VerdeTesto.toArgb(),
+            true,
+            PinViaggio.SCELTO,
+            coloreBordo = Colori.Inchiostro.toArgb(),
             etichetta = Bandiere.breve(p.distributore),
         )
     }
-}
 
 @Composable
 internal fun MappaViaggio(campioni: List<PuntoPercorso>, pin: List<PinViaggio>) {

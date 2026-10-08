@@ -127,6 +127,20 @@ class GuidaTest {
     }
 
     @Test
+    fun soloLeBandiereScelte() {
+        // il distributore 4 (km 200) e IP, gli altri no: si consiglia lui e la lista mostra solo lui
+        val base = percorso()
+        val p = base.copy(
+            lungo = base.lungo.map { if (it.distributore.id == 4L) it.copy(distributore = it.distributore.copy(bandiera = "IP")) else it },
+            bandiere = setOf("IP"),
+        )
+        val (lat, lon) = Esempi.estDi(20.0)
+        val s = Guida.situazione(p, Guida.sulPercorso(p.campioni, lat, lon)!!, Guida.energiaIniziale(p, 0.25))
+        assertEquals("d4", s.consigliata?.id)
+        assertEquals(listOf("d4"), s.prossime.map { it.id })
+    }
+
+    @Test
     fun autonomiaScarsa() {
         val p = percorso()
         // parte con pochissimo: la sosta consigliata e oltre l'autonomia

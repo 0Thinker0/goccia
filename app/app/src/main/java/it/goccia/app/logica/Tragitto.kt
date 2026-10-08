@@ -59,6 +59,10 @@ data class PianoViaggio(
     val mediaPercorso: Int?,
     /** chilometri di autonomia rimasti all'arrivo */
     val margineArrivoKm: Int,
+    /** falso se non si arriva a una sosta o a destinazione nemmeno usando la riserva */
+    val raggiungibile: Boolean = true,
+    /** vero se con le sole bandiere scelte non si arrivava: le soste sono scelte tra tutti i distributori */
+    val bandiereIgnorate: Boolean = false,
 )
 
 /** Calcoli del navigatore: percorso, distributori lungo la strada e soste consigliate. */
@@ -230,9 +234,32 @@ object Tragitto {
      * Le soste: con il carburante di partenza si arriva fino a [PianoViaggio.kmLimite] (tenendo una riserva);
      * prima di quel punto scegliamo il distributore con il prezzo effettivo piu basso, preferendo a parita
      * quello piu avanti. Poi si riparte con il pieno (o con quanto basta) e si ripete.
+     *
+     * Con [bandiere] (gruppi di [Bandiere.gruppo]) le soste si scelgono solo tra quelle bandiere; se cosi
+     * non si arriva, si sceglie tra tutti i distributori e il piano lo dice ([PianoViaggio.bandiereIgnorate]).
      */
     fun pianifica(
         lungo: List<LungoIlPercorso>,
+        lunghezzaKm: Double,
+        capienza: Double,
+        consumoPer100: Double,
+        livelloIniziale: Double,
+        pienoCompleto: Boolean,
+        bandiere: Set<String> = emptySet(),
+    ): PianoViaggio {
+        fun tra(candidati: List<LungoIlPercorso>) =
+            pianificaTra(candidati, lungo, lunghezzaKm, capienza, consumoPer100, livelloIniziale, pienoCompleto)
+        if (bandiere.isEmpty()) return tra(lungo)
+        val piano = tra(lungo.filter { Bandiere.ammesso(it.distributore, bandiere) })
+        if (piano.raggiungibile) return piano
+        // con le sole bandiere scelte resteresti a secco: meglio fermarsi da un'altra
+        return tra(lungo).copy(bandiereIgnorate = true)
+    }
+
+    /** Le soste scelte tra [lungo]; le medie del percorso si calcolano su [tutti]. */
+    private fun pianificaTra(
+        lungo: List<LungoIlPercorso>,
+        tutti: List<LungoIlPercorso>,
         lunghezzaKm: Double,
         capienza: Double,
         consumoPer100: Double,
@@ -244,13 +271,14 @@ object Tragitto {
         val riservaKm = max(40.0, autonomiaPieno * 0.1)
         val autonomia = capienza * livelloIniziale * kmPerUnita
 
-        val autostrade = lungo.filter { it.distributore.autostradale }.map { it.prezzo.millesimi }
+        val autostrade = tutti.filter { it.distributore.autostradale }.map { it.prezzo.millesimi }
         val mediaAutostrada = autostrade.takeIf { it.size >= 2 }?.average()?.roundToInt()
-        val mediaPercorso = lungo.filter { !it.distributore.autostradale }.map { it.prezzo.millesimi }.takeIf { it.size >= 3 }?.average()?.roundToInt()
+        val mediaPercorso = tutti.filter { !it.distributore.autostradale }.map { it.prezzo.millesimi }.takeIf { it.size >= 3 }?.average()?.roundToInt()
 
         val soste = ArrayList<Sosta>()
         var partenzaKm = 0.0
         var carburanteKm = autonomia
+        var raggiungibile = true
         var sicurezza = 0
         while (partenzaKm + carburanteKm - riservaKm < lunghezzaKm && sicurezza++ < 6) {
             val limite = partenzaKm + carburanteKm - riservaKm
@@ -266,6 +294,8 @@ object Tragitto {
                     (prezzoEffettivo(p, quantita, consumoPer100) * 200).roundToInt()
                 }.thenByDescending { it.km },
             )
+            // il primo distributore dopo la riserva puo essere oltre l'autonomia
+            if (carburanteKm < scelta.km - partenzaKm) raggiungibile = false
             val livelloArrivo = ((carburanteKm - (scelta.km - partenzaKm)) / autonomiaPieno).coerceIn(0.0, 1.0)
             val quantita = if (pienoCompleto) {
                 capienza * (1 - livelloArrivo)
@@ -280,6 +310,7 @@ object Tragitto {
         }
         val ultimaPartenza = soste.lastOrNull()?.punto?.km ?: 0.0
         val margine = (carburanteKm - (lunghezzaKm - ultimaPartenza)).roundToInt()
+        if (margine < 0) raggiungibile = false
         val migliore = lungo.filter { it.km <= lunghezzaKm }.minWithOrNull(
             compareBy<LungoIlPercorso> { (prezzoEffettivo(it, capienza * 0.6, consumoPer100) * 200).roundToInt() }.thenBy { it.km },
         )
@@ -301,6 +332,7 @@ object Tragitto {
             mediaAutostrada = mediaAutostrada,
             mediaPercorso = mediaPercorso,
             margineArrivoKm = margine,
+            raggiungibile = raggiungibile,
         )
     }
 }

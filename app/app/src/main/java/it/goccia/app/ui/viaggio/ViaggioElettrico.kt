@@ -53,30 +53,23 @@ import it.goccia.app.ui.tema.Testi
 import it.goccia.app.ui.tema.ombra
 import kotlin.math.roundToInt
 
-private fun pinElettrici(s: StatoViaggio.ProntoElettrico): List<PinViaggio> {
-    val scelte = s.piano.soste.map { it.punto.colonnina.id }.toSet()
-    val mostrate = (s.piano.soste.map { it.punto } + s.piano.alternative).distinctBy { it.colonnina.id }
-    return mostrate.map { p ->
-        val scelta = p.colonnina.id in scelte
+/** Sulla mappa del viaggio solo le soste di ricarica consigliate, niente altre colonnine a distrarre. */
+private fun pinElettrici(s: StatoViaggio.ProntoElettrico): List<PinViaggio> =
+    s.piano.soste.map { it.punto }.distinctBy { it.colonnina.id }.map { p ->
         // senza potenza nota il segnaposto mostra solo il fulmine
         val testo = p.colonnina.kw?.let { Formati.kw(it) } ?: ""
-        // come sulla mappa: petrolio le veloci, bianche le lente; la sosta scelta e piu grande, con il bordo scuro
+        // come sulla mappa: petrolio le veloci, bianche le lente; piu grandi e con il bordo scuro perche scelte
         val bianco = android.graphics.Color.WHITE
         val veloce = p.colonnina.continua
         PinViaggio(
             p.colonnina.lat, p.colonnina.lon, testo,
             if (veloce) Colori.Petrolio.toArgb() else bianco,
-            scelta,
-            if (scelta) PinViaggio.SCELTO else -(p.colonnina.kw ?: 0.0),
+            true,
+            PinViaggio.SCELTO,
             coloreTesto = if (veloce) bianco else Colori.PetrolioScuro.toArgb(),
-            coloreBordo = when {
-                scelta -> Colori.Inchiostro.toArgb()
-                veloce -> bianco
-                else -> Colori.Petrolio.toArgb()
-            },
+            coloreBordo = Colori.Inchiostro.toArgb(),
         )
     }
-}
 
 @Composable
 internal fun RisultatoElettrico(vm: GocciaViewModel, s: StatoViaggio.ProntoElettrico, onColonnina: (Colonnina) -> Unit, onAutostrada: () -> Unit) {

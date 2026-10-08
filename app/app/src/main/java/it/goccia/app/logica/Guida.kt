@@ -46,6 +46,8 @@ sealed interface PercorsoGuida {
         val capienza: Double,
         val consumo: Double,
         val pienoCompleto: Boolean,
+        /** le bandiere scelte per le soste (vedi [Tragitto.pianifica]); vuoto = tutte */
+        val bandiere: Set<String> = emptySet(),
     ) : PercorsoGuida {
         override val autonomiaPienoKm: Double get() = if (consumo > 0) capienza * 100 / consumo else 0.0
     }
@@ -200,12 +202,14 @@ object Guida {
     private fun alCarburante(p: PercorsoGuida.AlCarburante, km: Double, restanti: Double, autonomia: Double, livello: Double): Quadro {
         // i distributori davanti, con i km contati da qui
         val avanti = p.lungo.filter { it.km > km + 0.2 && it.km <= p.lunghezzaKm }.map { it.copy(km = it.km - km) }
-        val piano = Tragitto.pianifica(avanti, restanti, p.capienza, p.consumo, livello, p.pienoCompleto)
+        val piano = Tragitto.pianifica(avanti, restanti, p.capienza, p.consumo, livello, p.pienoCompleto, p.bandiere)
         val scelta = piano.soste.firstOrNull()?.punto
         val riferimento = scelta ?: piano.migliore
-        // le prossime aree sulla strada, la consigliata e (se diverso) il piu conveniente raggiungibile
+        // le prossime aree sulla strada (delle bandiere scelte, finche bastano), la consigliata
+        // e (se diverso) il piu conveniente raggiungibile
+        val possibili = if (piano.bandiereIgnorate) avanti else avanti.filter { Bandiere.ammesso(it.distributore, p.bandiere) }
         val raggiungibile = piano.migliore?.takeIf { it.km <= autonomia }
-        val mostrati = (avanti.filter { it.sullaStrada }.take(4) + listOfNotNull(scelta, raggiungibile))
+        val mostrati = (possibili.filter { it.sullaStrada }.take(4) + listOfNotNull(scelta, raggiungibile))
             .distinctBy { it.distributore.id }
             .sortedBy { it.km }
         val rispetto = if (scelta != null) "vs consigliato" else "vs il più conveniente"

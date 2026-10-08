@@ -182,6 +182,8 @@ data class Impostazioni(
     val prese: List<String> = listOf("C", "T"),
     /** colonnine: potenza minima mostrata, kW (0 = tutte) */
     val potenzaMinima: Int = 0,
+    /** viaggi: bandiere tra cui scegliere le soste (voci di Bandiere.SCELTE_VIAGGI); vuoto = tutte */
+    val bandiereViaggio: List<String> = emptyList(),
 )
 
 /** Come l'utente ci dice quanto paga l'energia a casa. */

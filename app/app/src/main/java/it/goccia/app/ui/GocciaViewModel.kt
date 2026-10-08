@@ -37,6 +37,7 @@ import it.goccia.app.dati.TariffaCasa
 import it.goccia.app.dati.TariffeColonnine
 import it.goccia.app.dati.TipoLuogo
 import it.goccia.app.dati.ViaggioRecente
+import it.goccia.app.logica.Bandiere
 import it.goccia.app.logica.ColonninaSulPercorso
 import it.goccia.app.logica.Consiglio
 import it.goccia.app.logica.Convenienza
@@ -182,6 +183,8 @@ sealed interface StatoViaggio {
         val consumo: Double = 6.0,
         val pienoCompleto: Boolean = true,
         val self: Boolean = true,
+        /** le bandiere tra cui si sono scelte le soste; vuoto = tutte */
+        val bandiere: Set<String> = emptySet(),
     ) : StatoViaggio
 
     data class ProntoElettrico(
@@ -991,7 +994,8 @@ class GocciaViewModel(private val c: Contenitore) : ViewModel() {
                             distributori, carburante, u.impostazioni.preferisciSelf, campioni, Tragitto.distanzaPerMinuti(deviazioneMin), adesso,
                         )
                     }
-                    val piano = Tragitto.pianifica(lungo, percorso.distanzaKm, capienza, consumo, livello, pienoCompleto)
+                    val bandiere = u.impostazioni.bandiereViaggio.toSet()
+                    val piano = Tragitto.pianifica(lungo, percorso.distanzaKm, capienza, consumo, livello, pienoCompleto, bandiere)
                     _viaggio.value = StatoViaggio.Pronto(
                         partenza = partenza.copy(coordinate = da),
                         arrivo = arrivo,
@@ -1006,6 +1010,7 @@ class GocciaViewModel(private val c: Contenitore) : ViewModel() {
                         consumo = consumo,
                         pienoCompleto = pienoCompleto,
                         self = u.impostazioni.preferisciSelf,
+                        bandiere = bandiere,
                     )
                 }
                 val recente = ViaggioRecente(partenza.nome, da.lat, da.lon, arrivo.nome, arrivo.coordinate.lat, arrivo.coordinate.lon, System.currentTimeMillis())
@@ -1048,6 +1053,7 @@ class GocciaViewModel(private val c: Contenitore) : ViewModel() {
                 capienza = s.capienza,
                 consumo = s.consumo,
                 pienoCompleto = s.pienoCompleto,
+                bandiere = s.bandiere,
             ) to s.livello
             is StatoViaggio.ProntoElettrico -> PercorsoGuida.Elettrico(
                 destinazione = s.arrivo.nome,
@@ -1098,6 +1104,12 @@ class GocciaViewModel(private val c: Contenitore) : ViewModel() {
     fun salvaTariffeColonnine(t: TariffeColonnine) = modifica { it.copy(tariffeColonnine = t) }
 
     fun scegliPrese(prese: Set<Presa>) = impostazioni { it.copy(prese = prese.map { p -> p.codice }) }
+
+    /** Le bandiere tra cui scegliere le soste dei viaggi; vuoto (o tutte spuntate) = tutte. */
+    fun scegliBandiereViaggio(bandiere: Set<String>) {
+        val scelte = Bandiere.SCELTE_VIAGGI.filter { it in bandiere }
+        impostazioni { it.copy(bandiereViaggio = if (scelte.size == Bandiere.SCELTE_VIAGGI.size) emptyList() else scelte) }
+    }
 
     fun scegliPotenzaMinima(kw: Int) = impostazioni { it.copy(potenzaMinima = kw) }
 }
