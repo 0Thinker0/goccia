@@ -19,3 +19,6 @@ public/
 Thumbs.db
 __pycache__/
 *.pyc
+
+# Materiale che non riguarda il codice: si tiene in locale, fuori dal repository
+/store/
