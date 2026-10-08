@@ -35,6 +35,11 @@ jobs:
       - name: Indirizzo dei dati (GitHub Pages di questo repository)
         run: echo "GOCCIA_DATI_URL=https://${GITHUB_REPOSITORY_OWNER,,}.github.io/${GITHUB_REPOSITORY#*/}/" >> "$GITHUB_ENV"
 
+      # Numero di versione dell'app. Il repository è stato ricreato dopo 20 build dell'anteprima:
+      # la numerazione continua da lì, perché ogni versione nuova si installi sopra la precedente.
+      - name: Numero della build
+        run: echo "GOCCIA_NUMERO_BUILD=$((GITHUB_RUN_NUMBER + 20))" >> "$GITHUB_ENV"
+
       # Chiave privata di firma (secret del repository). Senza,
       # l'APK si firma con la chiave di prova dell'anteprima e il bundle per Google Play non si fa.
       - name: Chiave di firma
@@ -106,7 +111,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          NOTE="Versione di prova numero ${GITHUB_RUN_NUMBER}, compilata dal commit ${GITHUB_SHA::7}.
+          NOTE="Versione di prova numero ${GOCCIA_NUMERO_BUILD}, compilata dal commit ${GITHUB_SHA::7}.
           Per installarla sul telefono scarica goccia.apk da qui sotto e aprila (Android chiede di consentire l'installazione da questa fonte).
           Le versioni successive si installano sopra questa senza perdere i dati."
           if ! gh release view anteprima >/dev/null 2>&1; then
@@ -116,6 +121,6 @@ jobs:
           if [ -f goccia-play.aab ]; then
             gh release upload anteprima goccia-play.aab --clobber
             NOTE="$NOTE
-          goccia-play.aab è il pacchetto da caricare su Google Play Console (versione ${GITHUB_RUN_NUMBER})."
+          goccia-play.aab è il pacchetto da caricare su Google Play Console (versione ${GOCCIA_NUMERO_BUILD})."
           fi
           gh release edit anteprima --notes "$NOTE"

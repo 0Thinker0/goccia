@@ -10,7 +10,9 @@ val datiUrl: String = (System.getenv("GOCCIA_DATI_URL")?.takeIf { it.isNotBlank(
     ?: providers.gradleProperty("goccia.datiUrl").get())
     .let { if (it.endsWith("/")) it else "$it/" }
 
-val numeroBuild: Int = System.getenv("GITHUB_RUN_NUMBER")?.toIntOrNull() ?: 1
+// Numero di versione: nel workflow "App Android" lo calcola il passo "Numero della build",
+// altrimenti è il numero del run (prova sull'emulatore) o 1 in locale.
+val numeroBuild: Int = (System.getenv("GOCCIA_NUMERO_BUILD") ?: System.getenv("GITHUB_RUN_NUMBER"))?.toIntOrNull() ?: 1
 
 // Per la prova sull'emulatore (x86_64) servono anche le librerie native x86.
 val tutteLeAbi: Boolean = providers.gradleProperty("goccia.tutteLeAbi").isPresent
