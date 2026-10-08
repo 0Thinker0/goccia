@@ -175,6 +175,11 @@ tocca "La tua posizione"
 # con un quarto di serbatoio serve una sosta: cosi la modalita autostrada ha qualcosa da consigliare
 tocca "1/4"
 foto viaggio-pronto
+# le bandiere tra cui scegliere le soste: un menu a spunta, che si chiude con indietro
+if tocca "Tutte le bandiere"; then
+  foto viaggio-bandiere 2
+  indietro
+fi
 tocca "Calcola soste"
 foto viaggio-risultato 30
 adb shell input swipe 540 2000 540 1300 500

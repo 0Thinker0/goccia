@@ -11,6 +11,8 @@ import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -140,6 +142,7 @@ fun SchermataViaggio(
 
 // ------------------------------------------------------------------ pianificazione
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun Pianifica(vm: GocciaViewModel, stato: StatoViaggio, onAuto: () -> Unit) {
     val utente by vm.utente.collectAsStateWithLifecycle()
@@ -304,8 +307,8 @@ private fun Pianifica(vm: GocciaViewModel, stato: StatoViaggio, onAuto: () -> Un
             )
         }
 
-        // opzioni
-        Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        // opzioni: vanno a capo, cosi si vedono tutte senza scorrere
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             ChipScelta("Deviazione max ${DEVIAZIONI[deviazione]} min", false, onClick = { deviazione = (deviazione + 1) % DEVIAZIONI.size }, icona = Icone.Orologio)
             if (elettrica == null) {
                 ChipScelta(if (pienoCompleto) "Pieno completo" else "Solo quanto basta", false, onClick = { pienoCompleto = !pienoCompleto }, icona = Icone.Pompa)
