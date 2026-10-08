@@ -1,0 +1,5 @@
+10-08 11:19:45.848  5327  5327 I Goccia  : tempo reale: 68 distributori entro 5 km, in 2052 ms
+10-08 11:23:05.559  5327  5327 I Goccia  : tempo reale: scheda di 59289, 3 prezzi, servizi [DISABILI, RICARICA]
+10-08 11:34:29.404  5327  5327 I Goccia  : pun: p65e5b57b9209f0686f7cc561 tempo reale true, liberi 0 su 2 (2 punti)
+10-08 11:34:38.626  5327  5327 I Goccia  : pun: p65e5b57b9209f0686f7cc561 tempo reale true, liberi 0 su 2 (2 punti)
+10-08 11:34:59.195  5327  5327 I Goccia  : pun: p65e5b57b9209f0686f7cc561 tempo reale true, liberi 0 su 2 (2 punti)

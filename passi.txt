@@ -1,0 +1,171 @@
+== localizzazione accesa: true
+== geo fix: OK 
+Performing Streamed Install
+Success
+Starting: Intent { cmp=it.goccia.app/.MainActivity }
+== introduzione
+foto 01-benvenuto
+toccato 'Iniziamo' in 506,2189
+foto 02-permessi
+toccato 'Continua' in 506,2189
+foto 03-auto
+toccato 'Gasolio' in 649,979
+toccato 'Continua' in 506,2189
+foto 04-luoghi
+toccato 'Salva la posizione attuale come Casa' in 574,688
+foto 05-luoghi-casa
+toccato 'Fatto, andiamo!' in 506,2189
+== home
+foto 06-home
+foto 07-home-2
+foto 08-home-3
+foto 09-home-4
+== mappa e lista
+toccato 'Mappa' in 327,2273
+foto 10-mappa
+foto 11-mappa-spostata
+toccato 'Cerca in quest'area' in 570,590
+foto 12-mappa-area
+trascinato 'Espandi i dettagli' da 540,1645 di -800
+foto 13-mappa-foglio-espanso
+trascinato 'Riduci i dettagli' da 540,1142 di 500
+foto 14-mappa-foglio-piccolo
+toccato 'Torna al segnaposto' in 975,1513
+foto 15-mappa-mirino
+foto 16-mappa-segnaposto
+foto 17-mappa-tocco-vuoto
+foto 18-mappa-spostata-2
+toccato 'Torna al segnaposto' in 975,2039
+foto 19-mappa-mirino-2
+toccato 'Vicino a te' in 226,1986
+foto 20-mappa-partenza
+toccato 'Casa' in 213,1723
+foto 21-mappa-casa
+toccato 'Vicino a Casa' in 252,1986
+toccato 'Dove sei adesso' in 309,1597
+foto 22-mappa-posizione
+toccato 'Vedi come lista' in 958,212
+foto 23-lista
+toccato 'Distanza' in 541,691
+foto 24-lista-distanza
+== dettaglio e rifornimento
+toccato 'cent vs media' in 386,1089
+foto 25-dettaglio
+toccato 'Avvisami' in 324,1428
+foto 26-dettaglio-avviso
+foto 27-dettaglio-2
+toccato 'Registra pieno' in 824,2229
+foto 28-rifornimento
+toccato '50 €' in 664,1212
+foto 29-rifornimento-50
+toccato 'Salva rifornimento' in 540,2224
+foto 30-salvato
+toccato 'Fatto' in 540,2047
+== viaggio
+toccato 'Viaggio' in 539,2273
+foto 31-viaggio
+toccato 'Dove vai?' in 251,610
+toccato 'Cerca un comune' in 339,381
+foto 32-viaggio-cerca
+toccato 'Roma (RM)' in 451,706
+toccato 'Partenza' in 224,396
+toccato 'Scegli sulla mappa' in 574,549
+foto 33-viaggio-mappa
+foto 34-viaggio-mappa-spostata
+toccato 'Conferma il punto' in 574,2016
+foto 35-viaggio-coordinate
+toccato 'Partenza' in 224,396
+toccato 'La tua posizione' in 272,707
+toccato '1/4' in 417,1038
+foto 36-viaggio-pronto
+toccato 'Tutte le bandiere' in 279,1471
+foto 37-viaggio-bandiere
+toccato 'Calcola soste' in 574,1633
+foto 38-viaggio-risultato
+foto 39-viaggio-risultato-2
+== modalita autostrada
+toccato 'Modalità autostrada' in 425,2024
+foto 40-autostrada
+== log:   : guida: percorso di 380 km; km 20 = 44.395791,11.259037; km 60 = 44.084406,11.231637; km 120 = 43.723771,11.375428
+foto 41-autostrada-km60
+== log:   : guida: consigliata d63611 al km 137 = 43.611994,11.481791; 8 km prima = 43.676982,11.452733
+foto 42-autostrada-preavviso
+foto 43-autostrada-notifiche
+foto 44-autostrada-domanda
+toccato 'Sì, il pieno' in 310,1041
+foto 45-autostrada-pieno
+toccato 'Termina la modalità autostrada' in 574,2242
+foto 46-autostrada-fine
+/sdcard/autostrada.mp4: 1 file pulled, 0 skipped. 159.3 MB/s (2012806 bytes in 0.012s)
+== preferiti e avvisi
+toccato 'Preferiti' in 751,2273
+foto 47-preferiti
+toccato 'Avvisi' in 778,330
+foto 48-avvisi
+toccato 'Crea il primo avviso' in 540,1239
+foto 49-nuovo-avviso
+toccato 'Crea avviso' in 540,2224
+foto 50-avvisi-dopo
+== profilo e impostazioni
+toccato 'Profilo' in 963,2273
+foto 51-profilo
+toccato 'Sostieni il progetto' in 416,1689
+foto 52-sostieni
+foto 53-sostieni-2
+toccato 'Impostazioni' in 985,202
+foto 54-impostazioni
+foto 55-impostazioni-2
+foto 56-impostazioni-3
+== widget
+toccato 'Prezzi vicino a te' in 335,1260
+foto 57-widget-richiesta
+toccato 'Add to home screen' in 831,2253
+toccato 'La tua auto' in 283,1415
+toccato 'Add to home screen' in 831,2253
+foto 58-widget-home
+Starting: Intent { cmp=it.goccia.app/.MainActivity }
+Warning: Activity not started, its current task has been brought to the front
+== home dopo il rifornimento
+toccato 'Home' in 117,2273
+foto 59-home-finale
+== auto elettrica: nuova auto
+toccato 'Profilo' in 963,2273
+toccato 'Aggiungi auto' in 557,525
+foto 60-ev-nuova-auto
+toccato 'Elettrica' in 159,1110
+foto 61-ev-auto-elettrica
+toccato 'Salva' in 540,2224
+== auto elettrica: home
+toccato 'Home' in 117,2273
+foto 62-ev-home
+foto 63-ev-home-2
+foto 64-ev-home-3
+== auto elettrica: colonnine
+toccato 'Mappa' in 953,741
+foto 65-ev-mappa
+toccato 'Cerca in quest'area' in 570,590
+foto 66-ev-mappa-area
+toccato 'Dettagli e costi' in 788,2032
+foto 67-ev-colonnina
+foto 68-ev-colonnina-2
+foto 69-ev-colonnina-3
+== auto elettrica: viaggio
+toccato 'Viaggio' in 539,2273
+foto 70-ev-viaggio
+toccato 'Calcola soste' in 574,1734
+foto 71-ev-viaggio-risultato
+foto 72-ev-viaggio-risultato-2
+foto 73-ev-viaggio-risultato-3
+toccato 'Modalità autostrada' in 425,1717
+foto 74-ev-autostrada
+toccato 'Termina la modalità autostrada' in 574,2242
+== auto elettrica: tariffa di casa
+toccato 'Profilo' in 963,2273
+toccato 'Impostazioni' in 985,202
+toccato 'Tariffa di casa' in 225,1077
+foto 75-ev-tariffa
+foto 76-ev-tariffa-2
+foto 77-ev-tariffa-3
+== widget con l'auto elettrica
+foto 78-widget-home-ev
+fine

@@ -1,0 +1,30 @@
+10-08 11:20:33.755  5327  5327 I Goccia  : mappa: adatto la vista a 5 punti vicini
+10-08 11:20:35.152  5327  5327 I Goccia  : mappa: 323 prezzi, sorgente ok
+10-08 11:21:01.766  5327  5327 I Goccia  : mappa: cerco in quest'area (zoom 13.2)
+10-08 11:21:01.788  5327  5327 I Goccia  : mappa: adatto la vista a 5 punti vicini
+10-08 11:21:01.866  5327  5327 I Goccia  : mappa: 323 prezzi, sorgente ok
+10-08 11:21:02.089  5327  5327 I Goccia  : mappa: 323 prezzi, sorgente ok
+10-08 11:21:32.558  5327  5327 I Goccia  : mappa: torno al segnaposto (Vicino a te)
+10-08 11:21:32.584  5327  5327 I Goccia  : mappa: adatto la vista a 5 punti vicini
+10-08 11:21:32.702  5327  5327 I Goccia  : mappa: 323 prezzi, sorgente ok
+10-08 11:21:32.935  5327  5327 I Goccia  : mappa: 323 prezzi, sorgente ok
+10-08 11:21:36.570  5327  5327 I Goccia  : mappa: 323 prezzi, sorgente ok
+10-08 11:21:36.571  5327  5327 I Goccia  : mappa: adatto la vista a 5 punti vicini
+10-08 11:21:36.670  5327  5327 I Goccia  : mappa: 323 prezzi, sorgente ok
+10-08 11:22:02.825  5327  5327 I Goccia  : mappa: torno al segnaposto (Vicino a te)
+10-08 11:22:02.843  5327  5327 I Goccia  : mappa: adatto la vista a 5 punti vicini
+10-08 11:22:02.910  5327  5327 I Goccia  : mappa: 323 prezzi, sorgente ok
+10-08 11:22:02.968  5327  5327 I Goccia  : mappa: adatto la vista a 5 punti vicini
+10-08 11:22:03.135  5327  5327 I Goccia  : mappa: 323 prezzi, sorgente ok
+10-08 11:22:20.854  5327  5327 I Goccia  : mappa: adatto la vista a 5 punti vicini
+10-08 11:22:20.933  5327  5327 I Goccia  : mappa: 323 prezzi, sorgente ok
+10-08 11:22:35.248  5327  5327 I Goccia  : mappa: adatto la vista a 5 punti vicini
+10-08 11:22:35.305  5327  5327 I Goccia  : mappa: 323 prezzi, sorgente ok
+10-08 11:22:35.589  5327  5327 I Goccia  : mappa: 323 prezzi, sorgente ok
+10-08 11:34:05.428  5327  5327 I Goccia  : mappa: adatto la vista a 4 punti vicini
+10-08 11:34:05.938  5327  5327 I Goccia  : mappa: 147 colonnine, sorgente ok
+10-08 11:34:27.155  5327  5327 I Goccia  : mappa: cerco in quest'area (zoom 14.4)
+10-08 11:34:27.168  5327  5327 I Goccia  : mappa: adatto la vista a 4 punti vicini
+10-08 11:34:27.170  5327  5327 I Goccia  : mappa: 58 colonnine, sorgente ok
+10-08 11:34:27.301  5327  5327 I Goccia  : mappa: 58 colonnine, sorgente ok
+10-08 11:34:59.810  5327  5327 I Goccia  : mappa: 58 colonnine, sorgente ok
