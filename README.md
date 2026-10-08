@@ -2,6 +2,8 @@
 
 App Android gratuita per trovare il distributore di carburante più conveniente in Italia: prezzi ufficiali in tempo reale, mappa, viaggi con la sosta consigliata, avvisi di prezzo e, per le auto elettriche, colonnine con i punti liberi. Niente account, niente pubblicità, niente abbonamenti.
 
+Pagina del progetto, termini d'uso e informativa privacy: <https://orlandogabriele.com/projects/goccia.html>.
+
 ## Cosa fa
 
 - **Home**: i distributori più convenienti vicino a te, autonomia stimata della tua auto, risparmio del mese e andamento dei prezzi in provincia.
@@ -32,7 +34,7 @@ giorno; riserva OpenStreetMap) ┘                       Osservaprezzi (prezzi i
 ```
 
 - **`pipeline/`**: script Node senza dipendenze. Due volte al giorno scarica i CSV del Ministero (anagrafica impianti e prezzi delle 8), scarta righe e coordinate sbagliate, calcola le medie e pubblica un file JSON per provincia, lo storico delle medie (400 giorni) e quello di ogni distributore (35 giorni e 12 mesi). Al primo avvio ricostruisce da solo l'ultimo mese da un archivio pubblico dei CSV. Scarta i prezzi lontanissimi dalla mediana italiana dello stesso carburante (errori di battitura). Ogni giorno scarica le colonnine dalla Piattaforma Unica Nazionale (PUN) del GSE, il registro obbligatorio dei punti di ricarica pubblici, con prese, potenze e prezzi a consumo dichiarati dai gestori, e le divide in tessere di mezzo grado; se la PUN non risponde usa OpenStreetMap o le tessere del giorno prima.
-- **`site/`**: la pagina di presentazione e l'informativa privacy pubblicate insieme ai dati.
+- **`site/`**: due pagine pubblicate insieme ai dati che rimandano alla [pagina del progetto](https://orlandogabriele.com/projects/goccia.html) e all'[informativa privacy](https://orlandogabriele.com/projects/goccia.html#informativa), così restano validi i link delle versioni già installate.
 - **`app/`**: l'app in Kotlin e Jetpack Compose. Scarica solo le province che servono, le tiene in memoria per l'uso offline e fa tutti i calcoli sul telefono (distanze, media della zona, convenienza reale con il tragitto, autonomia, risparmio). Il file del Ministero ha i prezzi in vigore alle 8 del giorno prima: quando è in linea l'app chiede anche quelli di adesso all'API pubblica di Osservaprezzi (carburanti.mise.gov.it) e, aprendo una colonnina, quali punti sono liberi alla PUN. Nasconde i distributori che non comunicano i prezzi da oltre un mese.
 
 Tutto gira su servizi gratuiti: GitHub Actions per elaborare i dati e compilare l'APK, GitHub Pages per distribuirli, OpenFreeMap per la mappa.
@@ -56,7 +58,7 @@ Tutto gira su servizi gratuiti: GitHub Actions per elaborare i dati e compilare 
 - Versione per Google Play: `./gradlew bundleRelease -Pgoccia.play -Pgoccia.tutteLeAbi`. Con `-Pgoccia.play` i caffè passano da Google Play Billing (prodotti `caffe_1`, `caffe_3`, `caffe_5`) e non c'è nessun link esterno per donare; senza, la versione di GitHub mostra il link di `goccia.donazioni` (`app/gradle.properties`) se c'è. La firma usa la chiave privata indicata da `GOCCIA_KEYSTORE_FILE` e dalle variabili `GOCCIA_KEYSTORE_PASSWORD`, `GOCCIA_KEY_ALIAS`, `GOCCIA_KEY_PASSWORD` (su GitHub arrivano dai secret del repository).
 - Prova sull'emulatore: il workflow "Prova sull'emulatore" installa l'APK, attraversa le schermate (compresi widget e modalità autostrada con un viaggio simulato) e pubblica screenshot e log nel ramo `ci-prova`. Usa il rendering SwANGLE: con il vecchio SwiftShader MapLibre non disegna segnaposto ed etichette.
 
-Nella build su GitHub l'indirizzo dei dati viene preso dalle Pages del repository; in locale da `app/gradle.properties` (`goccia.datiUrl`).
+Nella build su GitHub l'indirizzo dei dati viene preso dalle Pages del repository; in locale da `app/gradle.properties` (`goccia.datiUrl`). Lo stesso file ha l'indirizzo dell'informativa privacy aperta dalle Impostazioni (`goccia.privacy`).
 
 ## Fonti e licenze
 

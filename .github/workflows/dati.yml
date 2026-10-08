@@ -70,10 +70,6 @@ jobs:
           # riassunto visibile anche dalle API (annotazioni)
           grep -E "^Estrazione|impianti in anagrafica|righe prezzi|province |comuni |[Cc]olonnine|dimensioni|Errore" pipeline.log | while IFS= read -r riga; do echo "::notice::${riga}"; done || true
 
-      - name: Inserisci il nome del repository nelle pagine
-        if: steps.pipeline.outputs.nuovo == 'true'
-        run: sed -i "s#__REPO__#${{ github.repository }}#g" public/*.html
-
       - uses: actions/upload-pages-artifact@v3
         if: steps.pipeline.outputs.nuovo == 'true'
         with:

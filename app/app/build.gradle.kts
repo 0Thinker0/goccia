@@ -19,6 +19,9 @@ val tutteLeAbi: Boolean = providers.gradleProperty("goccia.tutteLeAbi").isPresen
 val repository: String = System.getenv("GITHUB_REPOSITORY")?.takeIf { it.isNotBlank() }
     ?: providers.gradleProperty("goccia.repo").get()
 
+// Informativa sulla privacy (pagina del progetto sul sito dell'autore).
+val privacyUrl: String = providers.gradleProperty("goccia.privacy").get()
+
 // Versione per Google Play (-Pgoccia.play): i caffe si offrono con gli acquisti in-app di Google
 // Play e non c'e nessun link esterno per donare (le regole di Play non lo permettono).
 val perPlay: Boolean = providers.gradleProperty("goccia.play").isPresent
@@ -43,6 +46,7 @@ android {
         versionName = "1.0.$numeroBuild"
         buildConfigField("String", "DATI_URL", "\"$datiUrl\"")
         buildConfigField("String", "REPO", "\"$repository\"")
+        buildConfigField("String", "PRIVACY_URL", "\"$privacyUrl\"")
         buildConfigField("String", "DONAZIONI", "\"$donazioni\"")
         buildConfigField("boolean", "PLAY", "$perPlay")
         // i telefoni Android sono ARM: niente librerie x86 (solo emulatori) e APK piu leggero

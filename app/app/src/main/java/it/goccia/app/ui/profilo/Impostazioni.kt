@@ -273,7 +273,7 @@ fun SchermataImpostazioni(
                 RigaVoce(
                     "Informativa sulla privacy",
                     divisore = false,
-                    onClick = { apriLink(context, BuildConfig.DATI_URL + "privacy.html") },
+                    onClick = { apriLink(context, BuildConfig.PRIVACY_URL) },
                 )
             }
 
