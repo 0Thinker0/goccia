@@ -1,0 +1,31 @@
+10-14 07:47:01.569  5292  5292 I Goccia  : mappa: adatto la vista a 5 punti vicini
+10-14 07:47:03.189  5292  5292 I Goccia  : mappa: 323 prezzi, sorgente ok
+10-14 07:47:29.567  5292  5292 I Goccia  : mappa: cerco in quest'area (zoom 13.2)
+10-14 07:47:29.583  5292  5292 I Goccia  : mappa: adatto la vista a 5 punti vicini
+10-14 07:47:29.674  5292  5292 I Goccia  : mappa: 323 prezzi, sorgente ok
+10-14 07:47:29.931  5292  5292 I Goccia  : mappa: 323 prezzi, sorgente ok
+10-14 07:48:00.470  5292  5292 I Goccia  : mappa: torno al segnaposto (Vicino a te)
+10-14 07:48:00.644  5292  5292 I Goccia  : mappa: adatto la vista a 5 punti vicini
+10-14 07:48:00.805  5292  5292 I Goccia  : mappa: 323 prezzi, sorgente ok
+10-14 07:48:01.073  5292  5292 I Goccia  : mappa: 323 prezzi, sorgente ok
+10-14 07:48:04.199  5292  5292 I Goccia  : mappa: adatto la vista a 5 punti vicini
+10-14 07:48:04.267  5292  5292 I Goccia  : mappa: 323 prezzi, sorgente ok
+10-14 07:48:04.366  5292  5292 I Goccia  : mappa: 323 prezzi, sorgente ok
+10-14 07:48:09.459  5292  5292 I Goccia  : mappa: 323 prezzi, sorgente ok
+10-14 07:48:16.224  5292  5292 I Goccia  : mappa: 323 prezzi, sorgente ok
+10-14 07:48:31.373  5292  5292 I Goccia  : mappa: torno al segnaposto (Vicino a te)
+10-14 07:48:31.401  5292  5292 I Goccia  : mappa: adatto la vista a 5 punti vicini
+10-14 07:48:31.591  5292  5292 I Goccia  : mappa: 323 prezzi, sorgente ok
+10-14 07:48:31.671  5292  5292 I Goccia  : mappa: adatto la vista a 5 punti vicini
+10-14 07:48:31.714  5292  5292 I Goccia  : mappa: 323 prezzi, sorgente ok
+10-14 07:48:49.236  5292  5292 I Goccia  : mappa: adatto la vista a 5 punti vicini
+10-14 07:48:49.279  5292  5292 I Goccia  : mappa: 323 prezzi, sorgente ok
+10-14 07:49:03.539  5292  5292 I Goccia  : mappa: adatto la vista a 5 punti vicini
+10-14 07:49:03.632  5292  5292 I Goccia  : mappa: 323 prezzi, sorgente ok
+10-14 08:00:37.119  5292  5292 I Goccia  : mappa: adatto la vista a 4 punti vicini
+10-14 08:00:37.134  5292  5292 I Goccia  : mappa: 146 colonnine, sorgente ok
+10-14 08:00:58.167  5292  5292 I Goccia  : mappa: cerco in quest'area (zoom 14.4)
+10-14 08:00:58.179  5292  5292 I Goccia  : mappa: adatto la vista a 4 punti vicini
+10-14 08:00:58.183  5292  5292 I Goccia  : mappa: 58 colonnine, sorgente ok
+10-14 08:00:58.264  5292  5292 I Goccia  : mappa: 58 colonnine, sorgente ok
+10-14 08:01:31.202  5292  5292 I Goccia  : mappa: 58 colonnine, sorgente ok

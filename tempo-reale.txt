@@ -1,0 +1,5 @@
+10-14 07:46:13.765  5292  5292 I Goccia  : tempo reale: 68 distributori entro 5 km, in 2233 ms
+10-14 07:49:34.261  5292  5292 I Goccia  : tempo reale: scheda di 60825, 10 prezzi, servizi []
+10-14 08:01:00.817  5292  5292 I Goccia  : pun: p65e5b57b9209f0686f7cc561 tempo reale true, liberi 1 su 2 (2 punti)
+10-14 08:01:09.939  5292  5292 I Goccia  : pun: p65e5b57b9209f0686f7cc561 tempo reale true, liberi 1 su 2 (2 punti)
+10-14 08:01:30.712  5292  5292 I Goccia  : pun: p65e5b57b9209f0686f7cc561 tempo reale true, liberi 1 su 2 (2 punti)
