@@ -54,6 +54,7 @@ import it.goccia.app.ui.GocciaViewModel
 import it.goccia.app.ui.apriLink
 import it.goccia.app.ui.componenti.BarraTitolo
 import it.goccia.app.ui.componenti.CREDITI
+import it.goccia.app.ui.componenti.Fonti
 import it.goccia.app.ui.componenti.Gruppo
 import it.goccia.app.ui.componenti.RigaInterruttore
 import it.goccia.app.ui.componenti.RigaVoce
@@ -258,14 +259,36 @@ fun SchermataImpostazioni(
                     )
                 }
                 Riga(Icone.Database, Colori.Testo3) {
+                    Text(Fonti.NON_AFFILIATA, style = Testi.Didascalia.copy(color = Colori.TestoChip))
+                }
+                RigaVoce(
+                    "Prezzi in vigore · Osservaprezzi",
+                    sottotitolo = "Ministero delle Imprese e del Made in Italy",
+                    valore = "mise.gov.it",
+                    altezza = 62.dp,
+                    onClick = { apriLink(context, Fonti.OSSERVAPREZZI) },
+                )
+                RigaVoce(
+                    "Prezzi e impianti · open data",
+                    sottotitolo = "Ministero delle Imprese e del Made in Italy · licenza IODL 2.0",
+                    valore = "mimit.gov.it",
+                    altezza = 62.dp,
+                    onClick = { apriLink(context, Fonti.OPEN_DATA_MIMIT) },
+                )
+                RigaVoce(
+                    "Colonnine di ricarica",
+                    sottotitolo = "GSE – Piattaforma Unica Nazionale · licenza CC BY 4.0",
+                    valore = "PUN",
+                    altezza = 62.dp,
+                    onClick = { apriLink(context, Fonti.PUN) },
+                )
+                Riga(Icone.Database, Colori.Testo3) {
                     Text(
                         buildAnnotatedString {
-                            withStyle(SpanStyle(fontWeight = FontWeight.ExtraBold)) { append("Prezzi: ") }
-                            append("Ministero delle Imprese e del Made in Italy – Osservaprezzi carburanti: file di ogni mattina (licenza IODL 2.0) e prezzi in vigore letti in tempo reale. ")
-                            withStyle(SpanStyle(fontWeight = FontWeight.ExtraBold)) { append("Colonnine: ") }
-                            append("GSE – Piattaforma Unica Nazionale (PUN), licenza CC BY 4.0; in sua assenza © OpenStreetMap contributors, licenza ODbL. ")
                             withStyle(SpanStyle(fontWeight = FontWeight.ExtraBold)) { append("Mappe: ") }
-                            append("© OpenStreetMap, OpenFreeMap, OpenMapTiles.")
+                            append("© OpenStreetMap, OpenFreeMap, OpenMapTiles. ")
+                            withStyle(SpanStyle(fontWeight = FontWeight.ExtraBold)) { append("Colonnine, se la PUN non risponde: ") }
+                            append("© OpenStreetMap contributors, licenza ODbL.")
                         },
                         style = Testi.Didascalia.copy(color = Colori.TestoChip),
                     )

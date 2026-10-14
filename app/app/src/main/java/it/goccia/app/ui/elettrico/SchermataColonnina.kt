@@ -50,6 +50,8 @@ import it.goccia.app.ui.componenti.BarraTitolo
 import it.goccia.app.ui.componenti.BottoneIcona
 import it.goccia.app.ui.componenti.BottonePrimario
 import it.goccia.app.ui.componenti.BottoneTesto
+import it.goccia.app.ui.componenti.Fonti
+import it.goccia.app.ui.componenti.NotaFonte
 import it.goccia.app.ui.componenti.Opzione
 import it.goccia.app.ui.componenti.Riquadro
 import it.goccia.app.ui.componenti.Scheda
@@ -218,16 +220,22 @@ fun SchermataColonnina(vm: GocciaViewModel, id: String, onIndietro: () -> Unit, 
                     )
                 }
             }
-            Text(
-                if (c.daPun) {
+            if (c.daPun) {
+                NotaFonte(
                     "Colonnine, stato e prezzi dei gestori: GSE – Piattaforma Unica Nazionale (PUN), licenza CC BY 4.0. " +
-                        "Se il gestore non indica il prezzo usiamo la tua tariffa o i ${stime.notaColonnine}."
-                } else {
-                    "Colonnine: © OpenStreetMap contributors, licenza ODbL. Tariffe: quelle che inserisci tu, altrimenti ${stime.notaColonnine}."
-                },
-                style = Testi.Piccolo.copy(color = Colori.Testo3, fontWeight = FontWeight.Medium),
-                modifier = Modifier.padding(horizontal = 4.dp),
-            )
+                        "Se il gestore non indica il prezzo usiamo la tua tariffa o i ${stime.notaColonnine}. Goccia non è affiliata al GSE.",
+                    etichetta = "piattaformaunicanazionale.it",
+                    url = Fonti.PUN,
+                    stile = Testi.Piccolo.copy(color = Colori.Testo3, fontWeight = FontWeight.Medium),
+                    modifier = Modifier.padding(horizontal = 4.dp),
+                )
+            } else {
+                Text(
+                    "Colonnine: © OpenStreetMap contributors, licenza ODbL. Tariffe: quelle che inserisci tu, altrimenti ${stime.notaColonnine}.",
+                    style = Testi.Piccolo.copy(color = Colori.Testo3, fontWeight = FontWeight.Medium),
+                    modifier = Modifier.padding(horizontal = 4.dp),
+                )
+            }
         }
         Column(Modifier.fillMaxWidth().background(Colori.Superficie)) {
             Box(Modifier.fillMaxWidth().height(1.dp).background(Colori.Bordo))

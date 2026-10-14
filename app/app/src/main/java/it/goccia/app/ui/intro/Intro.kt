@@ -71,6 +71,8 @@ import it.goccia.app.dati.TipoLuogo
 import it.goccia.app.logica.Formati
 import it.goccia.app.ui.GocciaViewModel
 import it.goccia.app.ui.componenti.BottonePrimario
+import it.goccia.app.ui.componenti.Fonti
+import it.goccia.app.ui.componenti.NotaFonte
 import it.goccia.app.ui.componenti.BottoneIcona
 import it.goccia.app.ui.componenti.BottoneSecondario
 import it.goccia.app.ui.componenti.BottoneTesto
@@ -293,6 +295,13 @@ private fun Benvenuto() {
             "Trova il pieno più conveniente, gratis e senza pubblicità",
             "Prezzi ufficiali comunicati dai distributori al Ministero, aggiornati ogni giorno. Niente account, niente abbonamenti.",
             Modifier.padding(horizontal = 28.dp),
+        )
+        NotaFonte(
+            "App indipendente, non affiliata al Ministero né ad altri enti pubblici.",
+            etichetta = "carburanti.mise.gov.it",
+            url = Fonti.OSSERVAPREZZI,
+            stile = Testi.Piccolo.copy(color = Colori.Testo3, fontWeight = FontWeight.Medium),
+            modifier = Modifier.padding(start = 28.dp, end = 28.dp, top = 14.dp),
         )
     }
 }

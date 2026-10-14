@@ -58,8 +58,10 @@ import it.goccia.app.ui.componenti.BottoneIcona
 import it.goccia.app.ui.componenti.BottoneInterruttore
 import it.goccia.app.ui.componenti.BottonePrimario
 import it.goccia.app.ui.componenti.BottoneSecondario
+import it.goccia.app.ui.componenti.Fonti
 import it.goccia.app.ui.componenti.GraficoLinea
 import it.goccia.app.ui.componenti.LogoBandiera
+import it.goccia.app.ui.componenti.NotaFonte
 import it.goccia.app.ui.componenti.Riquadro
 import it.goccia.app.ui.componenti.Scheda
 import it.goccia.app.ui.componenti.Segmentato
@@ -201,14 +203,16 @@ private fun ContenutoDettaglio(vm: GocciaViewModel, d: Distributore, onIndietro:
             }
             if (scheda != null && scheda.servizi.isNotEmpty()) Servizi(scheda.servizi)
             Storico(vm, d, carburante, self)
-            Text(
-                "Fonte: prezzi comunicati dal gestore al Ministero delle Imprese e del Made in Italy – Osservaprezzi carburanti. " +
+            NotaFonte(
+                "Prezzi comunicati dal gestore al Ministero delle Imprese e del Made in Italy. " +
                     if (lettiIl != null) {
                         "Prezzi in vigore letti in tempo reale alle ${Formati.ora(lettiIl * 1000)}; storico dal file pubblicato ogni mattina."
                     } else {
                         "Dati aggiornati ogni mattina (estrazione del ${dati.indice?.estrazione?.let { Formati.dataIso(it) } ?: "—"})."
-                    },
-                style = Testi.Piccolo.copy(color = Colori.Testo3, fontWeight = FontWeight.Medium),
+                    } + " Goccia non è affiliata al Ministero.",
+                etichetta = "Osservaprezzi carburanti (carburanti.mise.gov.it)",
+                url = Fonti.OSSERVAPREZZI,
+                stile = Testi.Piccolo.copy(color = Colori.Testo3, fontWeight = FontWeight.Medium),
                 modifier = Modifier.padding(start = 24.dp, end = 24.dp, top = 18.dp),
             )
         }
